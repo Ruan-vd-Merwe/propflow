@@ -4,20 +4,18 @@ import { createClient } from '@/lib/supabase/server'
 import { NavBar } from '@/components/NavBar'
 import { RiskBadge } from '@/components/RiskBadge'
 import { calculateRiskScore } from '@/lib/risk'
-import type { Payment, Property, Tenant } from '@/lib/types'
+import { getComponentHealth } from '@/lib/maintenance'
+import type { Payment, Property, Tenant, MaintenanceJob, PropertyComponent, BodyCorpFlag } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Fetch properties owned by this landlord
+  // ── Core data ─────────────────────────────────────────────────────────────
   const { data: properties } = await supabase
     .from('properties')
     .select('*')
@@ -27,7 +25,6 @@ export default async function DashboardPage() {
   const propertyList: Property[] = properties ?? []
   const propertyIds = propertyList.map((p) => p.id)
 
-  // Fetch all tenants for these properties
   const { data: tenants } = propertyIds.length
     ? await supabase.from('tenants').select('*').in('property_id', propertyIds)
     : { data: [] }
@@ -35,14 +32,50 @@ export default async function DashboardPage() {
   const tenantList: Tenant[] = tenants ?? []
   const tenantIds = tenantList.map((t) => t.id)
 
-  // Fetch all payments for these tenants
   const { data: payments } = tenantIds.length
     ? await supabase.from('payments').select('*').in('tenant_id', tenantIds)
     : { data: [] }
 
   const paymentList: Payment[] = payments ?? []
 
-  // Compute per-tenant risk scores
+  // ── Intelligence data ─────────────────────────────────────────────────────
+  // Maintenance jobs
+  const { data: jobsRaw } = propertyIds.length
+    ? await supabase
+        .from('maintenance_jobs')
+        .select('id, status, urgency, title, property_id, updated_at')
+        .in('property_id', propertyIds)
+        .not('status', 'in', '("completed","declined")')
+        .order('updated_at', { ascending: false })
+    : { data: [] }
+
+  const activeJobs = (jobsRaw ?? []) as Pick<MaintenanceJob, 'id' | 'status' | 'urgency' | 'title' | 'property_id' | 'updated_at'>[]
+
+  // Property components (for overdue / due-soon counts)
+  const { data: componentsRaw } = propertyIds.length
+    ? await supabase
+        .from('property_components')
+        .select('id, property_id, name, component_type, installed_date, lifespan_max_years')
+        .in('property_id', propertyIds)
+    : { data: [] }
+
+  const components = (componentsRaw ?? []) as Pick<PropertyComponent,
+    'id' | 'property_id' | 'name' | 'component_type' | 'installed_date' | 'lifespan_max_years'>[]
+
+  // Body corporate flags (unresolved)
+  const { data: bcFlagsRaw } = propertyIds.length
+    ? await supabase
+        .from('body_corporate_flags')
+        .select('id, property_id, severity, title, requires_owner_action, resolved')
+        .in('property_id', propertyIds)
+        .eq('resolved', false)
+        .order('severity')
+    : { data: [] }
+
+  const bcFlags = (bcFlagsRaw ?? []) as Pick<BodyCorpFlag,
+    'id' | 'property_id' | 'severity' | 'title' | 'requires_owner_action' | 'resolved'>[]
+
+  // ── Computed stats ────────────────────────────────────────────────────────
   const paymentsByTenant = new Map<string, Payment[]>()
   for (const p of paymentList) {
     if (!paymentsByTenant.has(p.tenant_id)) paymentsByTenant.set(p.tenant_id, [])
@@ -55,17 +88,32 @@ export default async function DashboardPage() {
     tenantsByProperty.get(t.property_id)!.push(t)
   }
 
-  // Summary stats
+  const propMap = new Map(propertyList.map((p) => [p.id, p.name]))
+
   const totalProperties = propertyList.length
-  const totalTenants = tenantList.length
-  const atRisk = tenantList.filter((t) => {
-    const risk = calculateRiskScore(paymentsByTenant.get(t.id) ?? [])
-    return risk.colour === 'red'
+  const totalTenants    = tenantList.length
+  const atRisk          = tenantList.filter((t) => {
+    return calculateRiskScore(paymentsByTenant.get(t.id) ?? []).colour === 'red'
   }).length
-  const totalRentCents = tenantList.reduce((sum, t) => sum + t.monthly_rent, 0)
+  const totalRentCents  = tenantList.reduce((s, t) => s + t.monthly_rent, 0)
+
+  // Maintenance
+  const urgentJobs      = activeJobs.filter((j) => j.urgency === 'urgent')
+  const quotesToReview  = activeJobs.filter((j) => j.status === 'quote_received')
+  const overdueComps    = components.filter((c) => getComponentHealth(c.installed_date, c.lifespan_max_years).status === 'red')
+  const dueSoonComps    = components.filter((c) => getComponentHealth(c.installed_date, c.lifespan_max_years).status === 'amber')
+
+  // Body corporate
+  const bcRedFlags      = bcFlags.filter((f) => f.severity === 'red')
+  const bcAmberFlags    = bcFlags.filter((f) => f.severity === 'amber')
+  const bcActionItems   = bcFlags.filter((f) => f.requires_owner_action)
 
   function formatRand(cents: number) {
     return `R ${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+  }
+
+  function formatDate(d: string) {
+    return new Date(d).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })
   }
 
   return (
@@ -79,19 +127,206 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate-500">Your properties at a glance</p>
         </div>
 
-        {/* Stats row */}
+        {/* Top stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatCard label="Properties" value={String(totalProperties)} />
-          <StatCard label="Tenants" value={String(totalTenants)} />
+          <StatCard label="Properties"    value={String(totalProperties)} />
+          <StatCard label="Tenants"       value={String(totalTenants)} />
           <StatCard
             label="High Risk"
             value={String(atRisk)}
             valueClass={atRisk > 0 ? 'text-red-600' : 'text-emerald-600'}
           />
-          <StatCard label="Monthly Rent" value={formatRand(totalRentCents)} />
+          <StatCard label="Monthly Rent"  value={formatRand(totalRentCents)} />
         </div>
 
-        {/* Properties */}
+        {/* ── Intelligence section ─────────────────────────────────────────── */}
+        {(activeJobs.length > 0 || overdueComps.length > 0 || dueSoonComps.length > 0 || bcFlags.length > 0) && (
+          <div className="mb-8 grid gap-4 sm:grid-cols-2">
+
+            {/* Maintenance card */}
+            {(activeJobs.length > 0 || overdueComps.length > 0 || dueSoonComps.length > 0) && (
+              <div className="card p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="font-semibold text-slate-900">🔧 Maintenance</h2>
+                  <Link href="/maintenance-jobs" className="text-xs font-medium text-violet-600 hover:underline">
+                    View all →
+                  </Link>
+                </div>
+
+                {/* Mini stat row */}
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  <MiniStat
+                    label="Urgent jobs"
+                    value={urgentJobs.length}
+                    colour={urgentJobs.length > 0 ? 'red' : 'neutral'}
+                  />
+                  <MiniStat
+                    label="Quotes to review"
+                    value={quotesToReview.length}
+                    colour={quotesToReview.length > 0 ? 'amber' : 'neutral'}
+                  />
+                  <MiniStat
+                    label="Overdue components"
+                    value={overdueComps.length}
+                    colour={overdueComps.length > 0 ? 'red' : 'neutral'}
+                  />
+                </div>
+
+                {/* Urgent jobs list */}
+                {urgentJobs.length > 0 && (
+                  <div className="space-y-1">
+                    {urgentJobs.slice(0, 3).map((job) => (
+                      <Link
+                        key={job.id}
+                        href={`/maintenance-jobs/${job.id}`}
+                        className="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2 text-sm transition hover:bg-red-100"
+                      >
+                        <span className="truncate font-medium text-red-800">{job.title}</span>
+                        <span className="ml-2 shrink-0 text-xs text-red-500">{propMap.get(job.property_id) ?? ''}</span>
+                      </Link>
+                    ))}
+                    {urgentJobs.length > 3 && (
+                      <p className="pl-3 text-xs text-slate-400">+{urgentJobs.length - 3} more urgent jobs</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Quotes to review */}
+                {quotesToReview.length > 0 && urgentJobs.length === 0 && (
+                  <div className="space-y-1">
+                    {quotesToReview.slice(0, 3).map((job) => (
+                      <Link
+                        key={job.id}
+                        href={`/maintenance-jobs/${job.id}`}
+                        className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition hover:bg-amber-100"
+                      >
+                        <span className="truncate font-medium text-amber-800">{job.title}</span>
+                        <span className="ml-2 shrink-0 text-xs text-amber-600">Quote ready</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Overdue components */}
+                {overdueComps.length > 0 && urgentJobs.length === 0 && quotesToReview.length === 0 && (
+                  <div className="space-y-1">
+                    {overdueComps.slice(0, 3).map((c) => (
+                      <Link
+                        key={c.id}
+                        href={`/properties/${c.property_id}/components`}
+                        className="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2 text-sm transition hover:bg-red-100"
+                      >
+                        <span className="truncate font-medium text-red-800">{c.name}</span>
+                        <span className="ml-2 shrink-0 text-xs text-red-500">
+                          {propMap.get(c.property_id) ?? ''}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {dueSoonComps.length > 0 && (
+                  <p className="mt-2 text-xs text-amber-600">
+                    🟡 {dueSoonComps.length} component{dueSoonComps.length > 1 ? 's' : ''} due for replacement within 12 months
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Body Corporate card */}
+            {bcFlags.length > 0 && (
+              <div className="card p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="font-semibold text-slate-900">🏢 Body Corporate</h2>
+                  <Link href="/body-corporate" className="text-xs font-medium text-violet-600 hover:underline">
+                    View all →
+                  </Link>
+                </div>
+
+                {/* Mini stat row */}
+                <div className="mb-4 grid grid-cols-3 gap-2">
+                  <MiniStat label="Red flags"     value={bcRedFlags.length}   colour={bcRedFlags.length > 0   ? 'red'   : 'neutral'} />
+                  <MiniStat label="Amber flags"   value={bcAmberFlags.length} colour={bcAmberFlags.length > 0 ? 'amber' : 'neutral'} />
+                  <MiniStat label="Action items"  value={bcActionItems.length} colour={bcActionItems.length > 0 ? 'amber' : 'neutral'} />
+                </div>
+
+                {/* Red flags list */}
+                {bcRedFlags.length > 0 && (
+                  <div className="space-y-1">
+                    {bcRedFlags.slice(0, 3).map((flag) => (
+                      <Link
+                        key={flag.id}
+                        href="/body-corporate"
+                        className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm transition hover:bg-red-100"
+                      >
+                        <span className="shrink-0 text-xs">🔴</span>
+                        <span className="truncate font-medium text-red-800">{flag.title}</span>
+                        {flag.requires_owner_action && (
+                          <span className="ml-auto shrink-0 rounded-full bg-red-200 px-1.5 py-0.5 text-xs font-medium text-red-800">
+                            Action
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                    {bcRedFlags.length > 3 && (
+                      <p className="pl-3 text-xs text-slate-400">+{bcRedFlags.length - 3} more red flags</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Amber flags if no red */}
+                {bcRedFlags.length === 0 && bcAmberFlags.length > 0 && (
+                  <div className="space-y-1">
+                    {bcAmberFlags.slice(0, 3).map((flag) => (
+                      <Link
+                        key={flag.id}
+                        href="/body-corporate"
+                        className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm transition hover:bg-amber-100"
+                      >
+                        <span className="shrink-0 text-xs">🟡</span>
+                        <span className="truncate font-medium text-amber-800">{flag.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Placeholder card if no BC flags but jobs exist — keep grid balanced */}
+            {bcFlags.length === 0 && (activeJobs.length > 0 || overdueComps.length > 0) && (
+              <div className="card flex flex-col items-center justify-center p-5 text-center">
+                <p className="text-2xl">🏢</p>
+                <p className="mt-2 font-semibold text-slate-700">Body Corporate</p>
+                <p className="mt-1 text-sm text-slate-400">No unresolved flags</p>
+                <Link href="/body-corporate/new" className="mt-3 text-xs font-medium text-violet-600 hover:underline">
+                  Parse meeting minutes →
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Quick actions (when everything is clear) ───────────────────── */}
+        {activeJobs.length === 0 && overdueComps.length === 0 && bcFlags.length === 0 && propertyList.length > 0 && (
+          <div className="mb-8 grid gap-4 sm:grid-cols-2">
+            <Link href="/body-corporate/new" className="card flex items-center gap-4 p-5 transition hover:border-slate-300 hover:shadow-md">
+              <span className="text-2xl">🏢</span>
+              <div>
+                <p className="font-semibold text-slate-800">Parse Body Corporate Minutes</p>
+                <p className="text-sm text-slate-400">Upload PDF or paste text for AI analysis</p>
+              </div>
+            </Link>
+            <Link href="/maintenance-jobs" className="card flex items-center gap-4 p-5 transition hover:border-slate-300 hover:shadow-md">
+              <span className="text-2xl">🔧</span>
+              <div>
+                <p className="font-semibold text-slate-800">Maintenance Jobs</p>
+                <p className="text-sm text-slate-400">Track contractors and component lifespans</p>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {/* ── Properties ────────────────────────────────────────────────────── */}
         <div>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
             Properties
@@ -106,65 +341,197 @@ export default async function DashboardPage() {
               {propertyList.map((property) => {
                 const propertyTenants = tenantsByProperty.get(property.id) ?? []
 
-                return (
-                  <Link
-                    key={property.id}
-                    href={`/properties/${property.id}`}
-                    className="card block p-5 transition hover:border-slate-300 hover:shadow-md"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{property.name}</h3>
-                        <p className="mt-0.5 text-sm text-slate-500">{property.address}</p>
-                      </div>
-                      <span className="ml-4 shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                        {propertyTenants.length} tenant{propertyTenants.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                // Per-property intelligence counts
+                const propJobs     = activeJobs.filter((j) => j.property_id === property.id)
+                const propOverdue  = components.filter(
+                  (c) => c.property_id === property.id &&
+                    getComponentHealth(c.installed_date, c.lifespan_max_years).status === 'red'
+                )
+                const propBcFlags  = bcFlags.filter((f) => f.property_id === property.id && f.severity === 'red')
 
-                    {/* Tenant risk preview */}
-                    {propertyTenants.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {propertyTenants.map((t) => {
-                          const risk = calculateRiskScore(paymentsByTenant.get(t.id) ?? [])
-                          return (
-                            <div
-                              key={t.id}
-                              className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5"
-                            >
-                              <span className="text-sm font-medium text-slate-700">
-                                {t.full_name}
-                              </span>
-                              <RiskBadge risk={risk} size="sm" />
-                            </div>
-                          )
-                        })}
+                return (
+                  <div key={property.id} className="card overflow-hidden">
+                    <Link
+                      href={`/properties/${property.id}`}
+                      className="block p-5 transition hover:bg-slate-50"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{property.name}</h3>
+                          <p className="mt-0.5 text-sm text-slate-500">{property.address}</p>
+                        </div>
+                        <span className="ml-4 shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                          {propertyTenants.length} tenant{propertyTenants.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      {/* Tenant risk preview */}
+                      {propertyTenants.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {propertyTenants.map((t) => {
+                            const risk = calculateRiskScore(paymentsByTenant.get(t.id) ?? [])
+                            return (
+                              <div
+                                key={t.id}
+                                className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5"
+                              >
+                                <span className="text-sm font-medium text-slate-700">{t.full_name}</span>
+                                <RiskBadge risk={risk} size="sm" />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </Link>
+
+                    {/* Per-property intelligence strip */}
+                    {(propJobs.length > 0 || propOverdue.length > 0 || propBcFlags.length > 0) && (
+                      <div className="flex flex-wrap gap-0 border-t border-slate-100">
+                        {propJobs.length > 0 && (
+                          <Link
+                            href="/maintenance-jobs"
+                            className="flex items-center gap-1.5 border-r border-slate-100 px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                          >
+                            🔧 <span>{propJobs.length} job{propJobs.length !== 1 ? 's' : ''}</span>
+                            {propJobs.some((j) => j.urgency === 'urgent') && (
+                              <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-red-600">urgent</span>
+                            )}
+                          </Link>
+                        )}
+                        {propOverdue.length > 0 && (
+                          <Link
+                            href={`/properties/${property.id}/components`}
+                            className="flex items-center gap-1.5 border-r border-slate-100 px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                          >
+                            ⚠️ <span>{propOverdue.length} overdue component{propOverdue.length !== 1 ? 's' : ''}</span>
+                          </Link>
+                        )}
+                        {propBcFlags.length > 0 && (
+                          <Link
+                            href="/body-corporate"
+                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                          >
+                            🔴 <span>{propBcFlags.length} body corp flag{propBcFlags.length !== 1 ? 's' : ''}</span>
+                          </Link>
+                        )}
+                        <Link
+                          href={`/properties/${property.id}/components`}
+                          className="ml-auto flex items-center gap-1 px-4 py-2 text-xs font-medium text-violet-600 transition hover:bg-slate-50"
+                        >
+                          Maintenance tracker →
+                        </Link>
                       </div>
                     )}
-                  </Link>
+
+                    {/* Quiet strip when no alerts */}
+                    {propJobs.length === 0 && propOverdue.length === 0 && propBcFlags.length === 0 && (
+                      <div className="flex justify-end border-t border-slate-100">
+                        <Link
+                          href={`/properties/${property.id}/components`}
+                          className="flex items-center gap-1 px-4 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-50 hover:text-violet-600"
+                        >
+                          Maintenance tracker →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
           )}
         </div>
+
+        {/* ── Recent maintenance activity ───────────────────────────────────── */}
+        {activeJobs.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Active Maintenance Jobs
+              </h2>
+              <Link href="/maintenance-jobs" className="text-xs font-medium text-violet-600 hover:underline">
+                View all →
+              </Link>
+            </div>
+            <div className="card overflow-hidden">
+              {activeJobs.slice(0, 5).map((job, i) => {
+                const statusBadge = {
+                  draft:          'bg-slate-100 text-slate-600',
+                  sent:           'bg-blue-100 text-blue-700',
+                  quote_received: 'bg-amber-100 text-amber-700',
+                  approved:       'bg-emerald-100 text-emerald-700',
+                  declined:       'bg-red-100 text-red-700',
+                  completed:      'bg-slate-100 text-slate-500',
+                }[job.status] ?? 'bg-slate-100 text-slate-600'
+                const statusLabel = {
+                  draft: 'Draft', sent: 'Sent', quote_received: 'Quote',
+                  approved: 'Approved', declined: 'Declined', completed: 'Done',
+                }[job.status] ?? job.status
+                const urgencyIcon = { urgent: '🔴', normal: '🟡', planned: '🟢' }[job.urgency]
+
+                return (
+                  <Link
+                    key={job.id}
+                    href={`/maintenance-jobs/${job.id}`}
+                    className={`flex items-center gap-3 px-5 py-3 text-sm transition hover:bg-slate-50 ${
+                      i < activeJobs.slice(0, 5).length - 1 ? 'border-b border-slate-100' : ''
+                    }`}
+                  >
+                    <span>{urgencyIcon}</span>
+                    <span className="flex-1 truncate font-medium text-slate-800">{job.title}</span>
+                    <span className="shrink-0 text-xs text-slate-400">{propMap.get(job.property_id)}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge}`}>
+                      {statusLabel}
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-400">{formatDate(job.updated_at)}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
 }
+
+// ── Helper components ──────────────────────────────────────────────────────────
 
 function StatCard({
   label,
   value,
   valueClass = 'text-slate-900',
 }: {
-  label: string
-  value: string
+  label:       string
+  value:       string
   valueClass?: string
 }) {
   return (
     <div className="card p-5">
       <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
+    </div>
+  )
+}
+
+function MiniStat({
+  label,
+  value,
+  colour,
+}: {
+  label:  string
+  value:  number
+  colour: 'red' | 'amber' | 'neutral'
+}) {
+  const cls = colour === 'red'
+    ? 'text-red-600'
+    : colour === 'amber'
+    ? 'text-amber-600'
+    : 'text-slate-600'
+
+  return (
+    <div className="rounded-lg bg-slate-50 p-2 text-center">
+      <p className={`text-lg font-bold ${cls}`}>{value}</p>
+      <p className="text-xs text-slate-400 leading-tight">{label}</p>
     </div>
   )
 }
