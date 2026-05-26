@@ -86,6 +86,16 @@ export default async function PropertyPage({ params }: { params: { id: string } 
           <p className="mt-1 text-sm text-slate-500">{property.address}</p>
         </div>
 
+        {/* Quick links */}
+        <div className="mb-6 flex flex-wrap gap-3">
+          <Link
+            href={`/properties/${params.id}/components`}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            🔧 Maintenance Tracker
+          </Link>
+        </div>
+
         {/* Tenant table */}
         <div className="card overflow-hidden">
           <div className="border-b border-slate-100 px-6 py-4">

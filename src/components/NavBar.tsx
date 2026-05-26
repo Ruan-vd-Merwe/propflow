@@ -16,9 +16,11 @@ export function NavBar() {
   }
 
   const navLinks = [
-    { href: '/dashboard',    label: 'Dashboard' },
-    { href: '/applications', label: 'Applications' },
-    { href: '/queries',      label: 'Queries' },
+    { href: '/dashboard',         label: 'Dashboard' },
+    { href: '/applications',      label: 'Applications' },
+    { href: '/queries',           label: 'Queries' },
+    { href: '/body-corporate',    label: 'Body Corporate' },
+    { href: '/maintenance-jobs',  label: 'Maintenance' },
   ]
 
   return (

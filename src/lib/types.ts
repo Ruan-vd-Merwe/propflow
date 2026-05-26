@@ -233,3 +233,83 @@ export type CheckinResponse = {
   sent_at: string
   responded_at: string | null
 }
+
+
+// ─── Intelligence features ────────────────────────────────────────────────────
+
+export type ComponentTypeKey =
+  | 'geyser' | 'roof' | 'paint_interior' | 'paint_exterior'
+  | 'plumbing' | 'electrical' | 'carpets' | 'appliance'
+  | 'hvac' | 'windows_doors' | 'driveway' | 'other'
+
+export type PropertyComponent = {
+  id:                 string
+  property_id:        string
+  component_type:     ComponentTypeKey
+  name:               string
+  installed_date:     string   // YYYY-MM-DD
+  lifespan_min_years: number
+  lifespan_max_years: number
+  brand:              string | null
+  model_number:       string | null
+  notes:              string | null
+  last_serviced_date: string | null
+  created_at:         string
+  updated_at:         string
+}
+
+export type JobStatus = 'draft' | 'sent' | 'quote_received' | 'approved' | 'declined' | 'completed'
+export type JobUrgency = 'urgent' | 'normal' | 'planned'
+
+export type MaintenanceJob = {
+  id:                    string
+  property_id:           string
+  component_id:          string | null
+  tenant_query_id:       string | null
+  title:                 string
+  generated_description: string | null
+  final_description:     string | null
+  urgency:               JobUrgency
+  contractor_name:       string | null
+  contractor_email:      string | null
+  contractor_phone:      string | null
+  quote_text:            string | null
+  quote_amount_cents:    number | null
+  quote_summary:         string | null
+  quote_received_at:     string | null
+  status:                JobStatus
+  landlord_notes:        string | null
+  created_at:            string
+  updated_at:            string
+}
+
+export type BodyCorpFlagCategory =
+  | 'special_levy' | 'maintenance' | 'legal' | 'financial' | 'action_required'
+
+export type BodyCorpDocument = {
+  id:            string
+  property_id:   string
+  title:         string
+  source:        'pdf' | 'text_paste'
+  filename:      string | null
+  raw_text:      string | null
+  meeting_date:  string | null
+  claude_summary: string | null
+  flag_count:    { red: number; amber: number; green: number }
+  created_at:    string
+}
+
+export type BodyCorpFlag = {
+  id:                   string
+  document_id:          string
+  property_id:          string
+  category:             BodyCorpFlagCategory
+  severity:             'red' | 'amber' | 'green'
+  title:                string
+  description:          string
+  amount_zar:           number | null
+  due_date:             string | null
+  requires_owner_action: boolean
+  resolved:             boolean
+  created_at:           string
+}
