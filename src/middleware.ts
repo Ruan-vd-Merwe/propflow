@@ -31,8 +31,16 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protect all routes except /login
-  if (!user && pathname !== '/login') {
+  // Public routes — no auth required
+  const isPublic =
+    pathname === '/login' ||
+    pathname.startsWith('/apply/') ||
+    pathname.startsWith('/tenant/') ||
+    pathname.startsWith('/checkin/') ||
+    pathname.startsWith('/api/')
+
+  // Protect all non-public routes
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
