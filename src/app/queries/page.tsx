@@ -39,11 +39,15 @@ export default async function QueriesPage() {
   const propByName = new Map((properties ?? []).map((p) => [p.id, p.name]))
 
   const { data: tenants } = propIds.length
-    ? await supabase.from('tenants').select('id, full_name, property_id').in('property_id', propIds)
+    ? await supabase
+        .from('tenants')
+        .select('id, full_name, property_id, portal_token, access_token')
+        .in('property_id', propIds)
     : { data: [] }
 
   const tenantIds     = (tenants ?? []).map((t) => t.id)
-  const tenantById    = new Map((tenants ?? []).map((t) => [t.id, t]))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tenantById    = new Map((tenants ?? []).map((t: any) => [t.id, t]))
 
   const { data: queries } = tenantIds.length
     ? await supabase
@@ -96,13 +100,41 @@ export default async function QueriesPage() {
           </div>
         </div>
 
+        {/* Tenant portal links */}
+        {(tenants ?? []).length > 0 && (
+          <div className="mb-6 card p-5">
+            <h2 className="mb-3 text-sm font-semibold text-slate-700">Tenant portal links</h2>
+            <p className="mb-3 text-xs text-slate-400">
+              Share these links with your tenants so they can submit queries and check-ins.
+            </p>
+            <div className="divide-y divide-slate-100">
+              {(tenants ?? []).map((t: any) => {
+                const token = t.portal_token ?? t.access_token
+                const url   = `/tenant/${token}`
+                return (
+                  <div key={t.id} className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0">
+                    <span className="text-sm font-medium text-slate-800">{t.full_name}</span>
+                    <span className="font-mono text-xs text-violet-700 truncate max-w-xs">{url}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Query list */}
         {queryList.length === 0 ? (
           <div className="card p-12 text-center">
             <p className="text-slate-500">No queries yet.</p>
-            <p className="mt-2 text-sm text-slate-400">
-              Tenants submit queries via their portal link: <span className="font-mono">/tenant/[token]</span>
-            </p>
+            {(tenants ?? []).length === 0 ? (
+              <p className="mt-2 text-sm text-slate-400">
+                Add tenants to your properties first, then share their portal links.
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-400">
+                Share the portal links above with your tenants so they can submit queries.
+              </p>
+            )}
           </div>
         ) : (
           <div className="card overflow-hidden">

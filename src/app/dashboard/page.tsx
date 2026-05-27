@@ -479,6 +479,105 @@ export default async function DashboardPage() {
           )}
         </div>
 
+        {/* ── My Tenants ───────────────────────────────────────────────────── */}
+        {tenantList.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                My Tenants
+              </h2>
+              <Link href="/tenants/browse" className="text-xs font-medium text-violet-600 hover:underline">
+                Find new tenants →
+              </Link>
+            </div>
+
+            <div className="card overflow-hidden">
+              {/* Table header */}
+              <div className="hidden grid-cols-[1.5fr_1fr_110px_100px_100px] gap-4 border-b border-slate-100 px-6 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 sm:grid">
+                <span>Tenant</span>
+                <span>Property</span>
+                <span>Lease</span>
+                <span>Rent / mo</span>
+                <span>Risk</span>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {tenantList.map((tenant) => {
+                  const risk       = calculateRiskScore(paymentsByTenant.get(tenant.id) ?? [])
+                  const pmts       = paymentsByTenant.get(tenant.id) ?? []
+                  const paid       = pmts.filter((p) => p.status === 'paid').length
+                  const pctOnTime  = pmts.length > 0 ? Math.round((paid / pmts.length) * 100) : null
+                  const lastPmt    = [...pmts].sort(
+                    (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
+                  )[0]
+                  const riskCls    =
+                    risk.colour === 'green' ? 'bg-green-100 text-green-800' :
+                    risk.colour === 'amber' ? 'bg-amber-100 text-amber-800' :
+                                              'bg-red-100 text-red-800'
+
+                  const leaseEnd  = tenant.lease_end
+                    ? new Date(tenant.lease_end).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })
+                    : '—'
+                  const leaseStart = tenant.lease_start
+                    ? new Date(tenant.lease_start).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })
+                    : '—'
+
+                  return (
+                    <Link
+                      key={tenant.id}
+                      href={`/properties/${tenant.property_id}`}
+                      className="flex flex-col gap-2 px-6 py-4 transition hover:bg-slate-50 sm:grid sm:grid-cols-[1.5fr_1fr_110px_100px_100px] sm:items-center sm:gap-4"
+                    >
+                      {/* Tenant name + payment history */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
+                          {tenant.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <div>
+                          <p className="font-semibold leading-tight text-slate-900">{tenant.full_name}</p>
+                          {pctOnTime !== null ? (
+                            <p className="text-xs text-slate-400">
+                              {pctOnTime}% on time · {pmts.length} payment{pmts.length !== 1 ? 's' : ''}
+                              {lastPmt && (
+                                <span className={lastPmt.status === 'paid' ? ' text-emerald-600' : ' text-red-600'}>
+                                  {' '}· last {lastPmt.status}
+                                </span>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-slate-400">No payments recorded</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Property */}
+                      <p className="text-sm text-slate-600 truncate">
+                        {propMap.get(tenant.property_id) ?? '—'}
+                      </p>
+
+                      {/* Lease dates */}
+                      <p className="text-xs text-slate-500">
+                        {leaseStart}<br />
+                        <span className="text-slate-400">→ {leaseEnd}</span>
+                      </p>
+
+                      {/* Rent */}
+                      <p className="text-sm font-medium text-slate-900">
+                        {formatRand(tenant.monthly_rent)}
+                      </p>
+
+                      {/* Risk badge */}
+                      <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${riskCls}`}>
+                        {risk.label}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Recent maintenance activity ───────────────────────────────────── */}
         {activeJobs.length > 0 && (
           <div className="mt-8">

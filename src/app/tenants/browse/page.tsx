@@ -249,7 +249,7 @@ export default async function BrowsePage({
     score: MatchScore | null
   }
 
-  let rows: Row[] = tenantProfileList.map((tp) => ({
+  const rows: Row[] = tenantProfileList.map((tp) => ({
     tp,
     name: displayName(nameMap.get(tp.user_id) ?? 'Tenant'),
     score: sortPropertyListing ? calculateMatchScore(tp, sortPropertyListing) : null,

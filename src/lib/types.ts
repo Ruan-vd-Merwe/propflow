@@ -86,8 +86,9 @@ export type Tenant = {
   phone: string
   lease_start: string
   lease_end: string
-  monthly_rent: number // in cents
-  access_token: string // unique tenant portal token
+  monthly_rent: number   // in cents
+  access_token: string   // hex token (legacy portal lookup)
+  portal_token: string   // UUID token — use in shareable /tenant/[token] links
   created_at: string
 }
 

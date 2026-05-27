@@ -12,7 +12,10 @@ export default async function TenantPortalPage({
 }) {
   const supabase = createServiceClient()
 
-  // Look up tenant by access_token
+  // Look up tenant by portal_token (UUID) — fall back to legacy access_token
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.token)
+  const column = isUuid ? 'portal_token' : 'access_token'
+
   const { data: tenant } = await supabase
     .from('tenants')
     .select(`
@@ -21,7 +24,7 @@ export default async function TenantPortalPage({
         profiles!inner ( full_name, email )
       )
     `)
-    .eq('access_token', params.token)
+    .eq(column, params.token)
     .single()
 
   if (!tenant) notFound()

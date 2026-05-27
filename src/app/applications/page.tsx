@@ -66,9 +66,14 @@ export default async function ApplicationsPage() {
           {propertyList.length > 0 && (
             <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
               <p className="font-medium text-slate-700">Share apply link:</p>
-              <p className="mt-0.5 text-xs text-slate-400">
-                /apply/<span className="font-mono">[property-id]</span>
+              <p className="mt-0.5 font-mono text-xs text-violet-700">
+                /apply/{propertyList[0].id}
               </p>
+              {propertyList.length > 1 && (
+                <p className="mt-0.5 text-xs text-slate-400">
+                  or choose a property — each has its own link
+                </p>
+              )}
             </div>
           )}
         </div>
