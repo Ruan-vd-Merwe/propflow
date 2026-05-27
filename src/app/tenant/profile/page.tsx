@@ -255,6 +255,7 @@ function IntroductionRow({ intro }: { intro: IntroductionRequest }) {
 }
 
 // Client component for visibility toggle
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function VisibilityToggle({ userId, currentValue }: { userId: string; currentValue: boolean }) {
   // We render a form that posts to an API to toggle — keeps the page server-rendered
   return (
