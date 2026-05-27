@@ -17,6 +17,7 @@ export function NavBar() {
 
   const navLinks = [
     { href: '/dashboard',         label: 'Dashboard' },
+    { href: '/tenants/browse',    label: 'Find Tenants' },
     { href: '/applications',      label: 'Applications' },
     { href: '/queries',           label: 'Queries' },
     { href: '/body-corporate',    label: 'Body Corporate' },

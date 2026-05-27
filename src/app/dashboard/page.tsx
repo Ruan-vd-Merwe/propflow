@@ -5,6 +5,7 @@ import { NavBar } from '@/components/NavBar'
 import { RiskBadge } from '@/components/RiskBadge'
 import { calculateRiskScore } from '@/lib/risk'
 import { getComponentHealth } from '@/lib/maintenance'
+import { PaymentWarningsButton } from './PaymentWarningsButton'
 import type { Payment, Property, Tenant, MaintenanceJob, PropertyComponent, BodyCorpFlag } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -97,6 +98,37 @@ export default async function DashboardPage() {
   }).length
   const totalRentCents  = tenantList.reduce((s, t) => s + t.monthly_rent, 0)
 
+  // ── Payment warnings stats ─────────────────────────────────────────────────
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+
+  // Warning window: payments 3 days before due up to 14 days overdue
+  const warnWindowStart = new Date(todayMidnight)
+  warnWindowStart.setDate(todayMidnight.getDate() - 14)
+  const warnWindowEnd = new Date(todayMidnight)
+  warnWindowEnd.setDate(todayMidnight.getDate() + 3)
+
+  // Payments in the warning window that are unpaid
+  const paymentsInWindow = paymentList.filter((p) => {
+    if (p.status === 'paid') return false
+    const due = new Date(p.due_date)
+    due.setHours(0, 0, 0, 0)
+    return due >= warnWindowStart && due <= warnWindowEnd
+  })
+
+  // Tenants with at least one payment currently overdue (past due, unpaid)
+  const overdueTenantsSet = new Set(
+    paymentList
+      .filter((p) => {
+        if (p.status === 'paid') return false
+        const due = new Date(p.due_date)
+        due.setHours(0, 0, 0, 0)
+        return due <= todayMidnight
+      })
+      .map((p) => p.tenant_id),
+  )
+  const overdueTenantsCount = overdueTenantsSet.size
+
   // Maintenance
   const urgentJobs      = activeJobs.filter((j) => j.urgency === 'urgent')
   const quotesToReview  = activeJobs.filter((j) => j.status === 'quote_received')
@@ -122,9 +154,15 @@ export default async function DashboardPage() {
 
       <main className="mx-auto max-w-6xl px-6 py-8">
         {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">Your properties at a glance</p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Your properties at a glance</p>
+          </div>
+          <PaymentWarningsButton
+            overdueCount={overdueTenantsCount}
+            warningWindowCount={paymentsInWindow.length}
+          />
         </div>
 
         {/* Top stats */}
