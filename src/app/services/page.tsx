@@ -253,11 +253,11 @@ function BookingForm({
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ServiceBookingFormEmbed({
   providerId,
   providerName,
-  categoryName,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  categoryName: _categoryName,
   properties,
 }: {
   providerId: string

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   const service  = createServiceClient()
 
   // Verify the property belongs to the current user (or lookup via tenant_id)
-  let tenantIdToStore = tenant_id ?? null
+  const tenantIdToStore = tenant_id ?? null
   let propertyName = ''
   let tenantName   = 'Tenant'
 

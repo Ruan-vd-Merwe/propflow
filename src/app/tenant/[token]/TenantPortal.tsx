@@ -149,13 +149,11 @@ export function TenantPortal({
           property={property}
           landlord={landlord}
           nextPayment={nextPayment}
-          token={token}
           onNavigate={setActiveTab}
         />
       )}
       {activeTab === 'payments' && (
         <PaymentsTab
-          tenant={tenant}
           payments={initialPayments}
           token={token}
         />
@@ -195,14 +193,12 @@ function HomeTab({
   property,
   landlord,
   nextPayment,
-  token,
   onNavigate,
 }: {
   tenant: TenantInfo
   property: PropertyInfo
   landlord: LandlordInfo
   nextPayment: Payment | null
-  token: string
   onNavigate: (tab: TabId) => void
 }) {
   const days = nextPayment ? daysUntil(nextPayment.due_date) : null
@@ -339,11 +335,9 @@ function HomeTab({
 // ─── PAYMENTS TAB ─────────────────────────────────────────────────────────────
 
 function PaymentsTab({
-  tenant,
   payments,
   token,
 }: {
-  tenant: TenantInfo
   payments: Payment[]
   token: string
 }) {

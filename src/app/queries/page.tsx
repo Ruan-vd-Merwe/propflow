@@ -108,6 +108,7 @@ export default async function QueriesPage() {
               Share these links with your tenants so they can submit queries and check-ins.
             </p>
             <div className="divide-y divide-slate-100">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(tenants ?? []).map((t: any) => {
                 const token = t.portal_token ?? t.access_token
                 const url   = `/tenant/${token}`
