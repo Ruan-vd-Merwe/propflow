@@ -31,11 +31,14 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Verify token → get tenant
+    // Verify token → get tenant (accept both portal_token UUID and legacy access_token)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)
+    const tokenCol = isUuid ? 'portal_token' : 'access_token'
+
     const { data: tenant } = await supabase
       .from('tenants')
       .select('id, full_name, email')
-      .eq('access_token', token)
+      .eq(tokenCol, token)
       .single()
 
     if (!tenant) {

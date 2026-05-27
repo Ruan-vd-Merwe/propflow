@@ -1,108 +1,459 @@
 'use client'
 
 import { useState } from 'react'
-import type { TenantQuery, QueryCategory, QueryStatus } from '@/lib/types'
+import type { TenantQuery, Payment, QueryCategory, QueryStatus } from '@/lib/types'
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const CATEGORIES: {
-  value: QueryCategory
-  label: string
-  description: string
-  icon: string
-  colour: string
-  bgColour: string
-  borderColour: string
-  subcategories: { value: string; label: string }[]
-}[] = [
-  {
-    value:       'emergency',
-    label:       'Emergency',
-    description: 'Water, electricity, security, gas, structural damage',
-    icon:        '🚨',
-    colour:      'text-red-700',
-    bgColour:    'bg-red-50',
-    borderColour:'border-red-300',
-    subcategories: [
-      { value: 'water',      label: 'Water / flooding' },
-      { value: 'electricity',label: 'Electricity / power' },
-      { value: 'security',   label: 'Security / break-in' },
-      { value: 'gas',        label: 'Gas / smell / leak' },
-      { value: 'structural', label: 'Structural damage' },
-    ],
-  },
-  {
-    value:       'maintenance',
-    label:       'Maintenance',
-    description: 'Plumbing, appliances, doors, garden',
-    icon:        '🔧',
-    colour:      'text-amber-700',
-    bgColour:    'bg-amber-50',
-    borderColour:'border-amber-300',
-    subcategories: [
-      { value: 'plumbing',     label: 'Plumbing' },
-      { value: 'electrical',   label: 'Electrical' },
-      { value: 'appliances',   label: 'Appliances' },
-      { value: 'doors_windows',label: 'Doors / windows' },
-      { value: 'garden',       label: 'Garden / exterior' },
-      { value: 'other',        label: 'Other maintenance' },
-    ],
-  },
-  {
-    value:       'general',
-    label:       'General Query',
-    description: 'Noise, contract questions, parking, other',
-    icon:        '💬',
-    colour:      'text-slate-700',
-    bgColour:    'bg-slate-50',
-    borderColour:'border-slate-200',
-    subcategories: [
-      { value: 'noise',    label: 'Noise complaint' },
-      { value: 'contract', label: 'Lease / contract' },
-      { value: 'parking',  label: 'Parking' },
-      { value: 'other',    label: 'Other' },
-    ],
-  },
+type TenantInfo = {
+  id: string
+  full_name: string
+  email: string
+  phone: string | null
+  monthly_rent: number
+  lease_start: string
+  lease_end: string | null
+  portal_token: string
+}
+
+type PropertyInfo = {
+  id: string
+  name: string
+  address: string
+  province: string | null
+}
+
+type LandlordInfo = {
+  full_name: string
+  email: string
+  phone: string | null
+}
+
+type ServiceCategory = {
+  id: string; name: string; icon: string | null; description: string | null
+}
+
+type ServiceProvider = {
+  id: string; category_id: string; name: string; phone: string | null
+  whatsapp: string | null; area: string | null; province: string | null
+  rate_description: string | null
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { id: 'home',        label: 'Home',        icon: '🏠' },
+  { id: 'payments',    label: 'Payments',    icon: '💳' },
+  { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
+  { id: 'services',    label: 'Services',    icon: '⭐' },
+  { id: 'queries',     label: 'Queries',     icon: '💬' },
+] as const
+
+type TabId = (typeof TABS)[number]['id']
+
+const MAINTENANCE_CATEGORIES = [
+  { value: 'plumbing',      label: '🚿 Plumbing' },
+  { value: 'electrical',    label: '⚡ Electrical' },
+  { value: 'appliances',    label: '🔌 Appliances' },
+  { value: 'doors_windows', label: '🚪 Doors / Windows' },
+  { value: 'garden',        label: '🌿 Garden' },
+  { value: 'other',         label: '🔨 Other' },
 ]
 
-const STATUS_CONFIG: Record<QueryStatus, { label: string; className: string }> = {
-  open:        { label: 'Open',        className: 'bg-amber-100 text-amber-700' },
-  in_progress: { label: 'In Progress', className: 'bg-blue-100 text-blue-700' },
-  resolved:    { label: 'Resolved',    className: 'bg-emerald-100 text-emerald-700' },
+const QUERY_STATUS: Record<QueryStatus, { label: string; cls: string }> = {
+  open:        { label: 'Open',        cls: 'bg-amber-100 text-amber-700' },
+  in_progress: { label: 'In Progress', cls: 'bg-blue-100 text-blue-700' },
+  resolved:    { label: 'Resolved',    cls: 'bg-emerald-100 text-emerald-700' },
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtRand(cents: number) {
+  return `R${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-interface Draft {
-  category:    QueryCategory | null
-  subcategory: string
-  title:       string
-  description: string
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+function fmtMonth(iso: string) {
+  return new Date(iso).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })
+}
+
+function daysUntil(iso: string) {
+  const diff = new Date(iso).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)
+  return Math.round(diff / 86400000)
+}
+
+// ─── Card wrapper ─────────────────────────────────────────────────────────────
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl bg-white shadow-sm ${className}`}>
+      {children}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function TenantPortal({
   token,
+  tenant,
+  property,
+  landlord,
+  initialPayments,
   initialQueries,
+  serviceCategories,
+  serviceProviders,
+  nextPayment,
 }: {
   token: string
+  tenant: TenantInfo
+  property: PropertyInfo
+  landlord: LandlordInfo
+  initialPayments: Payment[]
   initialQueries: TenantQuery[]
+  serviceCategories: ServiceCategory[]
+  serviceProviders: ServiceProvider[]
+  nextPayment: Payment | null
 }) {
+  const [activeTab, setActiveTab] = useState<TabId>('home')
   const [queries,   setQueries]   = useState<TenantQuery[]>(initialQueries)
-  const [view,      setView]      = useState<'home' | 'new' | 'list'>('home')
-  const [draft,     setDraft]     = useState<Draft>({ category: null, subcategory: '', title: '', description: '' })
-  const [step,      setStep]      = useState<1 | 2>(1)
-  const [submitting,setSubmitting] = useState(false)
-  const [submitted, setSubmitted]  = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
+  const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(null)
 
-  const selectedCat = CATEGORIES.find((c) => c.value === draft.category)
+  return (
+    <div>
+      {/* Tab bar */}
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-2xl bg-white/10 p-1.5">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-medium transition ${
+              activeTab === tab.id
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="text-base">{tab.icon}</span>
+            <span className="hidden sm:block">{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-  async function submitQuery() {
-    if (!draft.category || !draft.title.trim() || !draft.description.trim()) return
+      {/* Tab content */}
+      {activeTab === 'home' && (
+        <HomeTab
+          tenant={tenant}
+          property={property}
+          landlord={landlord}
+          nextPayment={nextPayment}
+          token={token}
+          onNavigate={setActiveTab}
+        />
+      )}
+      {activeTab === 'payments' && (
+        <PaymentsTab
+          tenant={tenant}
+          payments={initialPayments}
+          token={token}
+        />
+      )}
+      {activeTab === 'maintenance' && (
+        <MaintenanceTab
+          queries={queries.filter((q) => q.category === 'maintenance')}
+          onSubmit={(q) => setQueries((prev) => [q, ...prev])}
+          token={token}
+        />
+      )}
+      {activeTab === 'services' && (
+        <ServicesTab
+          categories={serviceCategories}
+          providers={serviceProviders}
+          tenantId={tenant.id}
+          propertyId={property.id}
+          selectedCatId={selectedServiceCat}
+          onSelectCat={setSelectedServiceCat}
+        />
+      )}
+      {activeTab === 'queries' && (
+        <QueriesTab
+          queries={queries.filter((q) => q.category !== 'maintenance')}
+          onSubmit={(q) => setQueries((prev) => [q, ...prev])}
+          token={token}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── HOME TAB ─────────────────────────────────────────────────────────────────
+
+function HomeTab({
+  tenant,
+  property,
+  landlord,
+  nextPayment,
+  token,
+  onNavigate,
+}: {
+  tenant: TenantInfo
+  property: PropertyInfo
+  landlord: LandlordInfo
+  nextPayment: Payment | null
+  token: string
+  onNavigate: (tab: TabId) => void
+}) {
+  const days = nextPayment ? daysUntil(nextPayment.due_date) : null
+
+  const paymentColour =
+    days === null         ? 'bg-slate-50 border-slate-200' :
+    days < 0              ? 'bg-red-50 border-red-200' :
+    days <= 3             ? 'bg-amber-50 border-amber-200' :
+                            'bg-emerald-50 border-emerald-200'
+
+  const paymentTextColour =
+    days === null         ? 'text-slate-600' :
+    days < 0              ? 'text-red-700' :
+    days <= 3             ? 'text-amber-700' :
+                            'text-emerald-700'
+
+  return (
+    <div className="space-y-4">
+      {/* Payment status card */}
+      <Card className={`border ${paymentColour} p-5`}>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Next payment
+        </p>
+        {nextPayment ? (
+          <>
+            <p className={`text-2xl font-bold ${paymentTextColour}`}>
+              {fmtRand(nextPayment.amount)}
+            </p>
+            <p className={`mt-0.5 text-sm font-medium ${paymentTextColour}`}>
+              {days === 0  ? 'Due today'                        :
+               days === 1  ? 'Due tomorrow'                     :
+               days! < 0   ? `${Math.abs(days!)} days overdue`  :
+                             `Due in ${days} days (${fmtDate(nextPayment.due_date)})`}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500">No outstanding payments</p>
+        )}
+      </Card>
+
+      {/* Lease card */}
+      <Card className="border border-slate-100 p-5">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Lease details
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-xs text-slate-400">Property</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900 leading-tight">{property.name}</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-xs text-slate-400">Monthly rent</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">{fmtRand(tenant.monthly_rent)}</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-xs text-slate-400">Lease start</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">{fmtDate(tenant.lease_start)}</p>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-xs text-slate-400">Lease end</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+              {tenant.lease_end ? fmtDate(tenant.lease_end) : 'Month-to-month'}
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Landlord card */}
+      <Card className="border border-slate-100 p-5">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Your landlord
+        </p>
+        <p className="font-semibold text-slate-900">{landlord.full_name}</p>
+        <div className="mt-2 flex gap-2">
+          <a href={`mailto:${landlord.email}`}
+            className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+            ✉️ Email
+          </a>
+          {landlord.phone && (
+            <a href={`tel:${landlord.phone}`}
+              className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+              📞 Call
+            </a>
+          )}
+          {landlord.phone && (
+            <a href={`https://wa.me/27${landlord.phone.replace(/^0/, '').replace(/\D/g, '')}`}
+              target="_blank" rel="noreferrer"
+              className="flex-1 rounded-xl bg-green-100 py-2.5 text-center text-sm font-medium text-green-800 transition hover:bg-green-200">
+              💬 WhatsApp
+            </a>
+          )}
+        </div>
+      </Card>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => onNavigate('maintenance')}
+          className="rounded-2xl bg-amber-500 p-5 text-left transition active:scale-95"
+        >
+          <p className="text-2xl">🔧</p>
+          <p className="mt-2 font-semibold text-white">Report Issue</p>
+          <p className="text-xs text-amber-100">Maintenance request</p>
+        </button>
+        <button
+          onClick={() => onNavigate('queries')}
+          className="rounded-2xl bg-blue-600 p-5 text-left transition active:scale-95"
+        >
+          <p className="text-2xl">💬</p>
+          <p className="mt-2 font-semibold text-white">Ask Landlord</p>
+          <p className="text-xs text-blue-200">Send a query</p>
+        </button>
+        <button
+          onClick={() => onNavigate('payments')}
+          className="rounded-2xl bg-emerald-600 p-5 text-left transition active:scale-95"
+        >
+          <p className="text-2xl">💳</p>
+          <p className="mt-2 font-semibold text-white">Payments</p>
+          <p className="text-xs text-emerald-200">View history</p>
+        </button>
+        <button
+          onClick={() => onNavigate('services')}
+          className="rounded-2xl bg-violet-600 p-5 text-left transition active:scale-95"
+        >
+          <p className="text-2xl">⭐</p>
+          <p className="mt-2 font-semibold text-white">Services</p>
+          <p className="text-xs text-violet-200">Book local help</p>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── PAYMENTS TAB ─────────────────────────────────────────────────────────────
+
+function PaymentsTab({
+  tenant,
+  payments,
+  token,
+}: {
+  tenant: TenantInfo
+  payments: Payment[]
+  token: string
+}) {
+  const [notifiedId, setNotifiedId] = useState<string | null>(null)
+  const [notifying,  setNotifying]  = useState<string | null>(null)
+
+  async function notifyPaid(paymentId: string) {
+    setNotifying(paymentId)
+    try {
+      await fetch('/api/tenant/paid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, payment_id: paymentId }),
+      })
+      setNotifiedId(paymentId)
+    } finally {
+      setNotifying(null)
+    }
+  }
+
+  const today = new Date().toISOString().split('T')[0]
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-white/70">Payment history</p>
+
+      {payments.length === 0 && (
+        <Card className="border border-slate-100 p-8 text-center">
+          <p className="text-slate-500">No payment records yet.</p>
+        </Card>
+      )}
+
+      {payments.map((pmt) => {
+        const overdue = pmt.status !== 'paid' && pmt.due_date < today
+        const notified = notifiedId === pmt.id
+
+        return (
+          <Card
+            key={pmt.id}
+            className={`border p-4 ${
+              overdue ? 'border-red-200 bg-red-50' :
+              pmt.status === 'paid' ? 'border-slate-100' :
+              'border-amber-200 bg-amber-50'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-slate-900">{fmtMonth(pmt.due_date)}</p>
+                <p className="mt-0.5 text-xs text-slate-500">Due {fmtDate(pmt.due_date)}</p>
+                {pmt.paid_date && (
+                  <p className="mt-0.5 text-xs text-emerald-600">Paid {fmtDate(pmt.paid_date)}</p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-base font-bold text-slate-900">{fmtRand(pmt.amount)}</p>
+                <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                  pmt.status === 'paid'   ? 'bg-emerald-100 text-emerald-700' :
+                  pmt.status === 'late'   ? 'bg-amber-100 text-amber-700' :
+                                            'bg-red-100 text-red-700'
+                }`}>
+                  {pmt.status === 'paid' ? '✓ Paid' : overdue ? '⚠ Overdue' : '⏳ Unpaid'}
+                </span>
+              </div>
+            </div>
+
+            {/* "I paid" button for unpaid */}
+            {pmt.status !== 'paid' && (
+              <button
+                disabled={notifying === pmt.id || notified}
+                onClick={() => notifyPaid(pmt.id)}
+                className={`mt-3 w-full rounded-xl py-2.5 text-sm font-semibold transition ${
+                  notified
+                    ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                    : 'bg-slate-900 text-white hover:bg-slate-700 active:scale-95'
+                }`}
+              >
+                {notified          ? '✓ Landlord notified' :
+                 notifying === pmt.id ? 'Notifying…' :
+                                    '✓ I have paid — notify landlord'}
+              </button>
+            )}
+          </Card>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── MAINTENANCE TAB ──────────────────────────────────────────────────────────
+
+function MaintenanceTab({
+  queries,
+  onSubmit,
+  token,
+}: {
+  queries: TenantQuery[]
+  onSubmit: (q: TenantQuery) => void
+  token: string
+}) {
+  const [view,        setView]        = useState<'list' | 'new'>('list')
+  const [category,    setCategory]    = useState('')
+  const [title,       setTitle]       = useState('')
+  const [description, setDescription] = useState('')
+  const [urgency,     setUrgency]     = useState<'low' | 'medium' | 'high'>('medium')
+  const [submitting,  setSubmitting]  = useState(false)
+  const [error,       setError]       = useState<string | null>(null)
+  const [success,     setSuccess]     = useState(false)
+
+  async function submit() {
+    if (!title.trim() || !description.trim()) return
     setSubmitting(true)
     setError(null)
 
@@ -111,10 +462,10 @@ export function TenantPortal({
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
         token,
-        category:    draft.category,
-        subcategory: draft.subcategory || undefined,
-        title:       draft.title.trim(),
-        description: draft.description.trim(),
+        category:    'maintenance' as QueryCategory,
+        subcategory: category || undefined,
+        title:       title.trim(),
+        description: `[${urgency.toUpperCase()} URGENCY] ${description.trim()}`,
       }),
     })
 
@@ -123,257 +474,508 @@ export function TenantPortal({
 
     if (!res.ok) { setError(json.error ?? 'Failed to submit'); return }
 
-    // Optimistically add to list
-    setQueries((prev) => [{
-      id:              json.query.id,
-      tenant_id:       '',
-      category:        draft.category!,
-      subcategory:     draft.subcategory || null,
-      title:           draft.title.trim(),
-      description:     draft.description.trim(),
-      status:          'open',
-      landlord_notes:  null,
-      created_at:      json.query.created_at,
-      updated_at:      json.query.created_at,
-    }, ...prev])
+    onSubmit({
+      id: json.query.id, tenant_id: '', category: 'maintenance',
+      subcategory: category || null, title: title.trim(),
+      description: `[${urgency.toUpperCase()} URGENCY] ${description.trim()}`,
+      status: 'open', landlord_notes: null,
+      created_at: json.query.created_at, updated_at: json.query.created_at,
+    })
 
-    setSubmitted(true)
-    setDraft({ category: null, subcategory: '', title: '', description: '' })
-    setStep(1)
+    setSuccess(true)
+    setTitle(''); setDescription(''); setCategory(''); setUrgency('medium')
+    setView('list')
   }
 
-  function resetForm() {
-    setSubmitted(false)
-    setDraft({ category: null, subcategory: '', title: '', description: '' })
-    setStep(1)
-    setView('home')
-  }
-
-  // ── Submitted confirmation ──────────────────────────────────────────────────
-  if (submitted) {
+  if (success && view === 'list') {
     return (
-      <div className="card p-10 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
-          <span className="text-2xl">✓</span>
-        </div>
-        <h2 className="text-xl font-bold text-slate-900">Query Submitted</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Your landlord has been notified. You can track the status below.
-        </p>
-        <button
-          onClick={resetForm}
-          className="mt-6 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          Back to Home
-        </button>
+      <div className="space-y-3">
+        <SuccessBanner message="Maintenance request submitted. Your landlord has been notified." onClose={() => setSuccess(false)} />
+        <MaintenanceList queries={queries} onNew={() => setView('new')} />
       </div>
     )
   }
 
-  // ── Home view ───────────────────────────────────────────────────────────────
-  if (view === 'home') {
-    const open = queries.filter((q) => q.status !== 'resolved').length
-
+  if (view === 'new') {
     return (
-      <div className="space-y-4">
-        {/* CTA buttons */}
-        <div className="grid gap-3">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => { setDraft((d) => ({ ...d, category: cat.value })); setStep(1); setView('new') }}
-              className={`card flex items-center gap-4 p-5 text-left transition hover:shadow-md ${
-                cat.value === 'emergency' ? 'border-red-200 hover:border-red-300' : ''
-              }`}
-            >
-              <span className="text-3xl">{cat.icon}</span>
-              <div>
-                <p className={`font-semibold ${cat.colour}`}>{cat.label}</p>
-                <p className="text-sm text-slate-500">{cat.description}</p>
-              </div>
-              <svg className="ml-auto h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <button onClick={() => setView('list')} className="text-sm text-white/60 hover:text-white">← Back</button>
 
-        {/* Previous queries link */}
-        {queries.length > 0 && (
-          <button
-            onClick={() => setView('list')}
-            className="mt-2 flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-5 py-4 text-sm transition hover:bg-slate-50"
-          >
-            <span className="font-medium text-slate-700">My previous queries</span>
-            <div className="flex items-center gap-2">
-              {open > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                  {open} open
-                </span>
-              )}
-              <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </button>
-        )}
-      </div>
-    )
-  }
+        <Card className="border border-slate-100 p-5">
+          <p className="mb-4 font-semibold text-slate-900">Report a maintenance issue</p>
 
-  // ── Query list view ─────────────────────────────────────────────────────────
-  if (view === 'list') {
-    return (
-      <div>
-        <div className="mb-4 flex items-center gap-3">
-          <button onClick={() => setView('home')} className="text-sm text-slate-500 hover:text-slate-900">
-            ← Back
-          </button>
-          <h2 className="font-semibold text-slate-900">My Queries</h2>
-        </div>
-
-        {queries.length === 0 ? (
-          <div className="card p-10 text-center text-slate-500">No queries submitted yet.</div>
-        ) : (
-          <div className="space-y-3">
-            {queries.map((q) => {
-              const cat    = CATEGORIES.find((c) => c.value === q.category)
-              const status = STATUS_CONFIG[q.status]
-              return (
-                <div key={q.id} className="card p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span>{cat?.icon}</span>
-                        <p className="font-semibold text-slate-900">{q.title}</p>
-                      </div>
-                      <p className="mt-0.5 text-sm text-slate-500">{q.description}</p>
-                      {q.landlord_notes && (
-                        <div className="mt-2 rounded-lg bg-blue-50 p-2 text-sm text-blue-700">
-                          <span className="font-medium">Landlord note:</span> {q.landlord_notes}
-                        </div>
-                      )}
-                      <p className="mt-2 text-xs text-slate-400">{formatDate(q.created_at)}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
-                      {status.label}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // ── New query form ──────────────────────────────────────────────────────────
-  return (
-    <div>
-      <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => { setView('home'); setStep(1) }} className="text-sm text-slate-500 hover:text-slate-900">
-          ← Back
-        </button>
-        <h2 className="font-semibold text-slate-900">
-          {selectedCat?.icon} {selectedCat?.label}
-        </h2>
-      </div>
-
-      <div className="card p-6">
-        {step === 1 && (
           <div className="space-y-4">
-            {/* Subcategory */}
-            {selectedCat && (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  What type of issue?
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedCat.subcategories.map((sub) => (
-                    <button
-                      key={sub.value}
-                      onClick={() => setDraft((d) => ({ ...d, subcategory: sub.value }))}
-                      className={`rounded-lg border px-3 py-2 text-sm text-left transition ${
-                        draft.subcategory === sub.value
-                          ? `${selectedCat.bgColour} ${selectedCat.borderColour} ${selectedCat.colour} font-medium`
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      {sub.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Title */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-2 block text-xs font-medium text-slate-600">Category</label>
+              <div className="grid grid-cols-2 gap-2">
+                {MAINTENANCE_CATEGORIES.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setCategory(c.value)}
+                    className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                      category === c.value
+                        ? 'border-amber-400 bg-amber-50 font-medium text-amber-700'
+                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-600">
                 Brief summary <span className="text-red-500">*</span>
               </label>
               <input
-                className="input-field"
-                placeholder="e.g. Geyser leaking water in bathroom"
-                value={draft.title}
-                onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+                placeholder="e.g. Geyser leaking under basin"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-
-            <button
-              disabled={!draft.title.trim()}
-              onClick={() => setStep(2)}
-              className="btn-primary w-auto px-6"
-            >
-              Next →
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-slate-700">{draft.title}</p>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Describe the issue in detail <span className="text-red-500">*</span>
+              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
-                className="input-field resize-none"
-                rows={4}
-                placeholder="Please describe when it started, how severe it is, and any other relevant details…"
-                value={draft.description}
-                onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+                rows={3}
+                placeholder="When did it start? How bad is it?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 
-            {draft.category === 'emergency' && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                ⚠ For life-threatening emergencies (fire, gas leak, etc.), please call emergency services
-                (10111 / 10177) first, then submit this form.
+            <div>
+              <label className="mb-2 block text-xs font-medium text-slate-600">Urgency</label>
+              <div className="flex gap-2">
+                {(['low', 'medium', 'high'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => setUrgency(u)}
+                    className={`flex-1 rounded-xl py-2.5 text-sm font-medium capitalize transition ${
+                      urgency === u
+                        ? u === 'high'   ? 'bg-red-600 text-white'
+                          : u === 'medium' ? 'bg-amber-500 text-white'
+                          :                  'bg-slate-600 text-white'
+                        : 'border border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    {u === 'high' ? '🔴' : u === 'medium' ? '🟡' : '🟢'} {u}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <div className="flex gap-3">
+            <button
+              disabled={submitting || !title.trim() || !description.trim()}
+              onClick={submit}
+              className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 active:scale-95"
+            >
+              {submitting ? 'Submitting…' : 'Submit Request'}
+            </button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  return <MaintenanceList queries={queries} onNew={() => setView('new')} />
+}
+
+function MaintenanceList({ queries, onNew }: { queries: TenantQuery[]; onNew: () => void }) {
+  return (
+    <div className="space-y-3">
+      <button
+        onClick={onNew}
+        className="w-full rounded-2xl bg-amber-500 py-4 text-base font-semibold text-white transition hover:bg-amber-600 active:scale-95"
+      >
+        🔧 Report New Issue
+      </button>
+
+      {queries.length === 0 ? (
+        <Card className="border border-slate-100 p-8 text-center">
+          <p className="text-sm text-slate-500">No maintenance requests yet.</p>
+        </Card>
+      ) : (
+        queries.map((q) => {
+          const st = QUERY_STATUS[q.status]
+          return (
+            <Card key={q.id} className="border border-slate-100 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-slate-900 leading-tight">{q.title}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                  {st.label}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">{fmtDate(q.created_at)}</p>
+              {q.landlord_notes && (
+                <div className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                  <span className="font-semibold">Landlord: </span>{q.landlord_notes}
+                </div>
+              )}
+            </Card>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
+// ─── SERVICES TAB ─────────────────────────────────────────────────────────────
+
+function ServicesTab({
+  categories,
+  providers,
+  tenantId,
+  propertyId,
+  selectedCatId,
+  onSelectCat,
+}: {
+  categories: ServiceCategory[]
+  providers: ServiceProvider[]
+  tenantId: string
+  propertyId: string
+  selectedCatId: string | null
+  onSelectCat: (id: string | null) => void
+}) {
+  const [bookingProviderId, setBookingProviderId] = useState<string | null>(null)
+  const [bookedIds, setBookedIds] = useState<Set<string>>(new Set())
+  const [bookingDate, setBookingDate] = useState('')
+  const [bookingNotes, setBookingNotes] = useState('')
+  const [booking, setBooking] = useState(false)
+  const [bookError, setBookError] = useState<string | null>(null)
+
+  const visibleProviders = selectedCatId
+    ? providers.filter((p) => p.category_id === selectedCatId)
+    : []
+
+  async function submitBooking(providerId: string) {
+    if (!bookingDate) { setBookError('Please select a date'); return }
+    setBooking(true)
+    setBookError(null)
+    try {
+      const res = await fetch('/api/service-bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider_id:    providerId,
+          property_id:    propertyId,
+          tenant_id:      tenantId,
+          scheduled_date: bookingDate,
+          notes:          bookingNotes || undefined,
+        }),
+      })
+      if (!res.ok) { const j = await res.json(); setBookError(j.error ?? 'Booking failed'); return }
+      setBookedIds((s) => { const n = new Set(s); n.add(providerId); return n })
+      setBookingProviderId(null)
+      setBookingDate('')
+      setBookingNotes('')
+    } catch {
+      setBookError('Network error. Please try again.')
+    } finally {
+      setBooking(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-white/70">Book local services</p>
+
+      {/* Category selector */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => onSelectCat(selectedCatId === cat.id ? null : cat.id)}
+            className={`flex shrink-0 flex-col items-center gap-1 rounded-xl px-4 py-3 text-xs font-medium transition ${
+              selectedCatId === cat.id
+                ? 'bg-violet-600 text-white'
+                : 'bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <span className="text-xl">{cat.icon ?? '📦'}</span>
+            <span>{cat.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Providers */}
+      {selectedCatId && (
+        <div className="space-y-3">
+          {visibleProviders.length === 0 ? (
+            <Card className="border border-slate-100 p-8 text-center">
+              <p className="text-sm text-slate-500">No providers available in your area yet.</p>
+            </Card>
+          ) : (
+            visibleProviders.map((prov) => {
+              const isBooked = bookedIds.has(prov.id)
+              const isBooking = bookingProviderId === prov.id
+
+              return (
+                <Card key={prov.id} className="border border-slate-100 overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-900">{prov.name}</p>
+                        <p className="text-xs text-slate-500">📍 {prov.area ?? prov.province ?? '—'}</p>
+                        {prov.rate_description && (
+                          <p className="mt-1 text-xs font-medium text-violet-700">{prov.rate_description}</p>
+                        )}
+                      </div>
+                      {isBooked ? (
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                          ✓ Requested
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setBookingProviderId(isBooking ? null : prov.id)}
+                          className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-700"
+                        >
+                          📅 Book
+                        </button>
+                      )}
+                    </div>
+
+                    {prov.whatsapp && (
+                      <a
+                        href={`https://wa.me/27${prov.whatsapp.replace(/^0/, '').replace(/\D/g, '')}`}
+                        target="_blank" rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline"
+                      >
+                        💬 WhatsApp provider
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Inline booking form */}
+                  {isBooking && !isBooked && (
+                    <div className="border-t border-slate-100 bg-slate-50 p-4 space-y-3">
+                      <p className="text-xs font-semibold text-slate-700">Book {prov.name}</p>
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500">Preferred date</label>
+                        <input
+                          type="date"
+                          min={new Date().toISOString().split('T')[0]}
+                          value={bookingDate}
+                          onChange={(e) => setBookingDate(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500">Notes (optional)</label>
+                        <textarea
+                          value={bookingNotes}
+                          onChange={(e) => setBookingNotes(e.target.value)}
+                          rows={2}
+                          className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none"
+                          placeholder="Any special requirements…"
+                        />
+                      </div>
+                      {bookError && <p className="text-xs text-red-600">{bookError}</p>}
+                      <button
+                        disabled={booking || !bookingDate}
+                        onClick={() => submitBooking(prov.id)}
+                        className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                      >
+                        {booking ? 'Booking…' : 'Confirm Request'}
+                      </button>
+                    </div>
+                  )}
+                </Card>
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {!selectedCatId && (
+        <Card className="border border-slate-100 p-8 text-center">
+          <p className="text-sm text-slate-500">Select a service category above to see providers.</p>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ─── QUERIES TAB ─────────────────────────────────────────────────────────────
+
+function QueriesTab({
+  queries,
+  onSubmit,
+  token,
+}: {
+  queries: TenantQuery[]
+  onSubmit: (q: TenantQuery) => void
+  token: string
+}) {
+  const [view,        setView]        = useState<'list' | 'new'>('list')
+  const [category,    setCategory]    = useState<'emergency' | 'general'>('general')
+  const [title,       setTitle]       = useState('')
+  const [description, setDescription] = useState('')
+  const [submitting,  setSubmitting]  = useState(false)
+  const [error,       setError]       = useState<string | null>(null)
+  const [success,     setSuccess]     = useState(false)
+
+  async function submit() {
+    if (!title.trim() || !description.trim()) return
+    setSubmitting(true)
+    setError(null)
+
+    const res = await fetch('/api/queries', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token, category, title: title.trim(), description: description.trim() }),
+    })
+
+    const json = await res.json()
+    setSubmitting(false)
+
+    if (!res.ok) { setError(json.error ?? 'Failed to submit'); return }
+
+    onSubmit({
+      id: json.query.id, tenant_id: '', category,
+      subcategory: null, title: title.trim(), description: description.trim(),
+      status: 'open', landlord_notes: null,
+      created_at: json.query.created_at, updated_at: json.query.created_at,
+    })
+
+    setSuccess(true)
+    setTitle(''); setDescription(''); setView('list')
+  }
+
+  if (view === 'new') {
+    return (
+      <div className="space-y-3">
+        <button onClick={() => setView('list')} className="text-sm text-white/60 hover:text-white">← Back</button>
+
+        <Card className="border border-slate-100 p-5">
+          <p className="mb-4 font-semibold text-slate-900">Submit a query</p>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setStep(1)}
-                className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                onClick={() => setCategory('emergency')}
+                className={`rounded-xl border py-3 text-sm font-semibold transition ${
+                  category === 'emergency'
+                    ? 'border-red-400 bg-red-50 text-red-700'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
               >
-                ← Back
+                🚨 Emergency
               </button>
               <button
-                disabled={submitting || !draft.description.trim()}
-                onClick={submitQuery}
-                className="btn-primary w-auto px-6"
+                onClick={() => setCategory('general')}
+                className={`rounded-xl border py-3 text-sm font-semibold transition ${
+                  category === 'general'
+                    ? 'border-blue-400 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
               >
-                {submitting ? 'Submitting…' : 'Submit Query'}
+                💬 General
               </button>
             </div>
+
+            {category === 'emergency' && (
+              <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                ⚠ For life-threatening emergencies, call <strong>10111</strong> (police) or <strong>10177</strong> (ambulance) first.
+              </div>
+            )}
+
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none"
+              placeholder="Brief summary"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <textarea
+              className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none"
+              rows={3}
+              placeholder="Describe your query in detail…"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <button
+              disabled={submitting || !title.trim() || !description.trim()}
+              onClick={submit}
+              className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-50 active:scale-95 ${
+                category === 'emergency' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {submitting ? 'Submitting…' : 'Send Query'}
+            </button>
           </div>
-        )}
+        </Card>
       </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {success && (
+        <SuccessBanner message="Query submitted — your landlord has been notified." onClose={() => setSuccess(false)} />
+      )}
+
+      <button
+        onClick={() => setView('new')}
+        className="w-full rounded-2xl bg-blue-600 py-4 text-base font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+      >
+        💬 New Query
+      </button>
+
+      {queries.length === 0 ? (
+        <Card className="border border-slate-100 p-8 text-center">
+          <p className="text-sm text-slate-500">No queries yet.</p>
+        </Card>
+      ) : (
+        queries.map((q) => {
+          const st = QUERY_STATUS[q.status]
+          const isEmergency = q.category === 'emergency'
+          return (
+            <Card
+              key={q.id}
+              className={`border p-4 ${isEmergency ? 'border-red-200 bg-red-50' : 'border-slate-100'}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-medium text-slate-900 leading-tight">
+                    {isEmergency ? '🚨 ' : ''}{q.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">{fmtDate(q.created_at)}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                  {st.label}
+                </span>
+              </div>
+              {q.landlord_notes && (
+                <div className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                  <span className="font-semibold">Landlord: </span>{q.landlord_notes}
+                </div>
+              )}
+            </Card>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+function SuccessBanner({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+      <p className="text-sm font-medium text-emerald-800">✓ {message}</p>
+      <button onClick={onClose} className="shrink-0 text-emerald-500 hover:text-emerald-700">✕</button>
     </div>
   )
 }

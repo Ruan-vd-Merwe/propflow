@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendPaymentNotification } from '@/lib/resend'
+import {
+  sendPaymentReminder,
+  sendPaymentDueToday,
+  sendPaymentOverdue,
+} from '@/lib/whatsapp'
 import type { CommunicationType } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -41,9 +46,9 @@ export async function POST(req: NextRequest) {
     .select(`
       id, due_date, amount, status,
       tenants!inner (
-        id, full_name, email, access_token, monthly_rent,
+        id, full_name, email, phone, access_token, monthly_rent,
         properties!inner ( name, address,
-          profiles!inner ( full_name, email, id )
+          profiles!inner ( full_name, email, id, phone )
         )
       )
     `)
@@ -106,6 +111,25 @@ export async function POST(req: NextRequest) {
       landlordName:     landlord.full_name,
       landlordEmail:    landlord.email,
     })
+
+    // Send WhatsApp (fire-and-forget — failure doesn't block logging)
+    if (tenant.phone) {
+      const waOpts = {
+        phone:    tenant.phone,
+        name:     tenant.full_name,
+        amount:   payment.amount,
+        property: property.name,
+        dueDate:  payment.due_date,
+        daysLate: daysFromDue,
+      }
+      if (notifType === 'payment_before_3d') {
+        sendPaymentReminder(waOpts).catch(console.error)
+      } else if (notifType === 'payment_due_today') {
+        sendPaymentDueToday(waOpts).catch(console.error)
+      } else if (daysFromDue > 0) {
+        sendPaymentOverdue(waOpts).catch(console.error)
+      }
+    }
 
     // Log to DB
     await supabase.from('communications_log').insert({

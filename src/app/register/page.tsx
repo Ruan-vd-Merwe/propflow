@@ -89,6 +89,7 @@ export default function RegisterPage() {
   // ── Tenant step 3 ──────────────────────────────────────────────────────────
   const [employmentStatus, setEmploymentStatus] = useState('')
   const [monthlyIncome,    setMonthlyIncome]    = useState('')  // Rands
+  const [whatsappOptIn,    setWhatsappOptIn]    = useState(true)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const totalSteps = path === 'landlord' ? 2 : 4  // step 0 + steps
@@ -144,6 +145,7 @@ export default function RegisterPage() {
         employment_status:    employmentStatus || null,
         monthly_income:       monthlyIncome ? parseInt(monthlyIncome) * 100 : null,
         is_visible:           true,
+        whatsapp_opted_in:    whatsappOptIn,
       })
     }
 
@@ -552,6 +554,25 @@ export default function RegisterPage() {
                   </p>
                 </div>
               )}
+
+              {/* WhatsApp opt-in */}
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
+                <input
+                  type="checkbox"
+                  checked={whatsappOptIn}
+                  onChange={e => setWhatsappOptIn(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-green-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-green-800">
+                    💬 Receive WhatsApp notifications
+                  </p>
+                  <p className="mt-0.5 text-xs text-green-700">
+                    Get instant updates for rent reminders, maintenance status, and introduction
+                    requests on your phone number above. You can opt out anytime.
+                  </p>
+                </div>
+              </label>
             </div>
 
             {error && (

@@ -20,6 +20,7 @@ export function NavBar() {
     { href: '/tenants/browse',    label: 'Find Tenants' },
     { href: '/applications',      label: 'Applications' },
     { href: '/queries',           label: 'Queries' },
+    { href: '/services',          label: 'Services' },
     { href: '/body-corporate',    label: 'Body Corporate' },
     { href: '/maintenance-jobs',  label: 'Maintenance' },
   ]

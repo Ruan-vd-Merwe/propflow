@@ -7,6 +7,7 @@ import { RiskBadge } from '@/components/RiskBadge'
 import { calculateRiskScore } from '@/lib/risk'
 import { calculateMatchScore, displayName } from '@/lib/matching'
 import { IntroduceButton } from './IntroduceButton'
+import { SharePortalButton } from './SharePortalButton'
 import type { Payment, Tenant, PropertyListing, TenantProfile, MatchScore } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -186,7 +187,7 @@ export default async function PropertyPage({
   // ── Tenants tab — always fetched ──────────────────────────────────────────
   const { data: tenants } = await supabase
     .from('tenants')
-    .select('*')
+    .select('*, portal_token')
     .eq('property_id', property.id)
     .order('full_name')
 
@@ -356,12 +357,8 @@ export default async function PropertyPage({
             ) : (
               <div className="divide-y divide-slate-100">
                 {tenantsWithRisk.map((tenant) => (
-                  <Link
-                    key={tenant.id}
-                    href={`/tenants/${tenant.id}`}
-                    className="flex items-center justify-between px-6 py-4 transition hover:bg-slate-50"
-                  >
-                    <div className="flex items-center gap-4">
+                  <div key={tenant.id} className="flex items-center justify-between px-6 py-4 transition hover:bg-slate-50">
+                    <Link href={`/tenants/${tenant.id}`} className="flex flex-1 items-center gap-4 min-w-0">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600">
                         {tenant.full_name
                           .split(' ')
@@ -369,13 +366,13 @@ export default async function PropertyPage({
                           .slice(0, 2)
                           .join('')}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-semibold text-slate-900">{tenant.full_name}</p>
-                        <p className="text-sm text-slate-500">{tenant.email}</p>
+                        <p className="text-sm text-slate-500 truncate">{tenant.email}</p>
                       </div>
-                    </div>
+                    </Link>
 
-                    <div className="flex items-center gap-6 text-right">
+                    <div className="flex items-center gap-3 text-right">
                       <div className="hidden sm:block">
                         <p className="text-sm font-medium text-slate-900">
                           {fmtRand(tenant.monthly_rent)}
@@ -386,21 +383,21 @@ export default async function PropertyPage({
                         </p>
                       </div>
                       <RiskBadge risk={tenant.risk} />
-                      <svg
-                        className="h-4 w-4 text-slate-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {(tenant as any).portal_token && (
+                        <SharePortalButton
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          portalToken={(tenant as any).portal_token}
+                          tenantName={tenant.full_name}
                         />
-                      </svg>
+                      )}
+                      <Link href={`/tenants/${tenant.id}`}>
+                        <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}

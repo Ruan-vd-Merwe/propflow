@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient }        from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendIntroductionEmails } from '@/lib/resend'
+import { sendIntroductionWhatsApp } from '@/lib/whatsapp'
 import { displayName }         from '@/lib/matching'
 
 export const runtime = 'nodejs'
@@ -49,12 +50,13 @@ export async function POST(req: NextRequest) {
   const service = createServiceClient()
 
   const [{ data: landlordProfile }, { data: tenantProfile }] = await Promise.all([
-    service.from('profiles').select('full_name, email').eq('id', user.id).single(),
-    service.from('profiles').select('full_name, email').eq('id', tenant_id).single(),
+    service.from('profiles').select('full_name, email, phone').eq('id', user.id).single(),
+    service.from('profiles').select('full_name, email, phone').eq('id', tenant_id).single(),
   ])
 
   if (landlordProfile && tenantProfile) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://propflow-delta-two.vercel.app'
+    // Email (existing)
     await sendIntroductionEmails({
       tenantEmail:      tenantProfile.email,
       tenantFullName:   tenantProfile.full_name,
@@ -66,6 +68,14 @@ export async function POST(req: NextRequest) {
       propertyProvince: property.province ?? '',
       appUrl,
     })
+    // WhatsApp (fire-and-forget)
+    if (tenantProfile.phone) {
+      sendIntroductionWhatsApp({
+        phone:  tenantProfile.phone,
+        name:   tenantProfile.full_name,
+        suburb: property.suburb ?? property.province ?? 'your area',
+      }).catch(console.error)
+    }
   }
 
   return NextResponse.json({ success: true, introduction: intro }, { status: 201 })
