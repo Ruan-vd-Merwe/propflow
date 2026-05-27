@@ -1,9 +1,15 @@
 // ─── Existing types ───────────────────────────────────────────────────────────
 
+export type UserType = 'landlord' | 'tenant'
+
 export type Profile = {
   id: string
   full_name: string
   email: string
+  user_type: UserType | null
+  phone: string | null
+  province: string | null
+  city: string | null
   created_at: string
 }
 
@@ -13,6 +19,63 @@ export type Property = {
   name: string
   address: string
   created_at: string
+}
+
+// Extended property with marketplace fields (all nullable for backward compat)
+export type PropertyListing = Property & {
+  property_type: 'apartment' | 'house' | 'townhouse' | 'room' | null
+  bedrooms: number | null
+  asking_rent: number | null   // cents
+  available_from: string | null
+  suburb: string | null
+  province: string | null
+  description: string | null
+  is_listed: boolean
+  photos: string[]
+}
+
+// ─── Marketplace ──────────────────────────────────────────────────────────────
+
+export type TenantProfile = {
+  id: string
+  user_id: string
+  sa_id_number: string | null
+  looking_in_area: string | null
+  looking_in_province: string | null
+  current_area: string | null
+  current_province: string | null
+  budget_min: number | null    // cents
+  budget_max: number | null    // cents
+  move_in_date: string | null  // YYYY-MM-DD
+  lease_length_months: number | null
+  employment_status: 'employed' | 'self_employed' | 'student' | 'other' | null
+  monthly_income: number | null  // cents (net)
+  is_visible: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type IntroductionRequest = {
+  id: string
+  landlord_id: string
+  tenant_id: string
+  property_id: string
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
+}
+
+export type MatchScore = {
+  total: number   // 0–100
+  budget: number  // 0–30
+  area: number    // 0–25
+  income: number  // 0–25  (affordability proxy)
+  date: number    // 0–20
+}
+
+export type TenantMatch = {
+  profile: Pick<Profile, 'id' | 'full_name' | 'email'>
+  tenantProfile: TenantProfile
+  match: MatchScore
 }
 
 export type Tenant = {

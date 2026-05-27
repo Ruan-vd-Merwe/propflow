@@ -32,20 +32,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes — no auth required
+  // Note: /tenant/profile is auth-protected even though /tenant/[token] is public
   const isPublic =
     pathname === '/login' ||
+    pathname === '/register' ||
     pathname.startsWith('/apply/') ||
-    pathname.startsWith('/tenant/') ||
     pathname.startsWith('/checkin/') ||
-    pathname.startsWith('/api/')
+    pathname.startsWith('/api/') ||
+    (pathname.startsWith('/tenant/') && pathname !== '/tenant/profile')
 
   // Protect all non-public routes
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Redirect authenticated users away from /login
-  if (user && pathname === '/login') {
+  // Redirect authenticated users away from /login and /register
+  if (user && (pathname === '/login' || pathname === '/register')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

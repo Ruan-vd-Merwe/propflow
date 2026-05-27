@@ -379,6 +379,96 @@ export function monthlyCheckinEmail(d: CheckinEmailData): { subject: string; htm
   return { subject, html: baseLayout('#3b82f6', content) }
 }
 
+// ─── Introduction emails ──────────────────────────────────────────────────────
+
+export interface IntroductionEmailData {
+  tenantDisplayName: string   // "Sarah D." (privacy)
+  tenantFullName:    string   // only revealed to tenant themselves
+  landlordName:      string
+  propertyName:      string
+  propertySuburb:    string
+  propertyProvince:  string
+  appUrl:            string
+}
+
+export function introductionToTenantEmail(d: IntroductionEmailData): { subject: string; html: string } {
+  const subject = `A landlord is interested in your profile on PropFlow`
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
+      You have a new introduction request 🎉
+    </h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
+      Hi ${d.tenantDisplayName},
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      A landlord on PropFlow is interested in your profile for a property in
+      <strong>${d.propertySuburb}, ${d.propertyProvince}</strong>.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0"
+      style="width:100%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin:0 0 24px;">
+      <tr><td style="padding:16px 20px;">
+        <p style="margin:0;font-size:13px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">Property</p>
+        <p style="margin:4px 0 0;font-size:15px;color:#0f172a;font-weight:600;">${d.propertyName}</p>
+        <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${d.propertySuburb}, ${d.propertyProvince}</p>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.6;">
+      Log in to PropFlow to view the introduction request and decide whether to accept or decline.
+      Your contact details are kept private until you choose to accept.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      <tr><td style="background:#0f172a;border-radius:8px;padding:12px 28px;">
+        <a href="${d.appUrl}/tenant/profile"
+          style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          View Introduction Request →
+        </a>
+      </td></tr>
+    </table>
+    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
+      If you are not looking for a property right now, you can hide your profile by toggling
+      "Actively looking" off in your PropFlow profile.
+    </p>
+  `
+  return { subject, html: baseLayout('#10b981', content) }
+}
+
+export function introductionToLandlordEmail(d: IntroductionEmailData): { subject: string; html: string } {
+  const subject = `Introduction request sent — ${d.propertyName}`
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
+      Introduction request sent ✓
+    </h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
+      Hi ${d.landlordName},
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      Your introduction request has been sent to the tenant for
+      <strong>${d.propertyName}</strong>. We will notify you as soon as they respond.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0"
+      style="width:100%;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin:0 0 24px;">
+      <tr><td style="padding:16px 20px;">
+        <p style="margin:0;font-size:13px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;">What happens next</p>
+        <ul style="margin:8px 0 0;padding-left:18px;font-size:14px;color:#334155;line-height:1.8;">
+          <li>The tenant will be notified by email</li>
+          <li>They can accept or decline the introduction</li>
+          <li>If they accept, their full contact details will be shared with you</li>
+          <li>You can view all your introduction requests on the property page</li>
+        </ul>
+      </td></tr>
+    </table>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      <tr><td style="background:#0f172a;border-radius:8px;padding:12px 28px;">
+        <a href="${d.appUrl}/properties"
+          style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          View My Properties →
+        </a>
+      </td></tr>
+    </table>
+  `
+  return { subject, html: baseLayout('#3b82f6', content) }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function formatAmountRand(cents: number): string {

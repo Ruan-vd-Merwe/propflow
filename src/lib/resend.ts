@@ -7,10 +7,13 @@ import {
   paymentLate7dEmail,
   paymentLate14dEmail,
   monthlyCheckinEmail,
+  introductionToTenantEmail,
+  introductionToLandlordEmail,
   formatAmountRand,
   formatDateLong,
   type PaymentEmailData,
   type CheckinEmailData,
+  type IntroductionEmailData,
 } from './email-templates'
 
 /** Lazy-init Resend client — returns null if API key is not configured */
@@ -95,6 +98,58 @@ export async function sendPaymentNotification(opts: {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return { success: false, resend_id: null, error: msg }
   }
+}
+
+// ─── Introduction emails ──────────────────────────────────────────────────────
+
+export async function sendIntroductionEmails(opts: {
+  tenantEmail:     string
+  tenantFullName:  string
+  tenantDisplayName: string
+  landlordEmail:   string
+  landlordName:    string
+  propertyName:    string
+  propertySuburb:  string
+  propertyProvince: string
+  appUrl:          string
+}): Promise<{ tenant: SendResult; landlord: SendResult }> {
+  const resend = getResend()
+  const data: IntroductionEmailData = {
+    tenantDisplayName: opts.tenantDisplayName,
+    tenantFullName:    opts.tenantFullName,
+    landlordName:      opts.landlordName,
+    propertyName:      opts.propertyName,
+    propertySuburb:    opts.propertySuburb,
+    propertyProvince:  opts.propertyProvince,
+    appUrl:            opts.appUrl,
+  }
+
+  const tenantEmail   = introductionToTenantEmail(data)
+  const landlordEmail = introductionToLandlordEmail(data)
+
+  if (!resend) {
+    console.log(`[resend DEV] Introduction → tenant: ${opts.tenantEmail}`)
+    console.log(`[resend DEV] Introduction → landlord: ${opts.landlordEmail}`)
+    return {
+      tenant:   { success: true, resend_id: `dev_t_${Date.now()}` },
+      landlord: { success: true, resend_id: `dev_l_${Date.now()}` },
+    }
+  }
+
+  const [tRes, lRes] = await Promise.allSettled([
+    resend.emails.send({ from: FROM_ADDRESS, to: [opts.tenantEmail],   subject: tenantEmail.subject,   html: tenantEmail.html }),
+    resend.emails.send({ from: FROM_ADDRESS, to: [opts.landlordEmail], subject: landlordEmail.subject, html: landlordEmail.html }),
+  ])
+
+  const tResult: SendResult = tRes.status === 'fulfilled' && !tRes.value.error
+    ? { success: true,  resend_id: tRes.value.data?.id ?? null }
+    : { success: false, resend_id: null, error: tRes.status === 'rejected' ? String(tRes.reason) : tRes.value.error?.message }
+
+  const lResult: SendResult = lRes.status === 'fulfilled' && !lRes.value.error
+    ? { success: true,  resend_id: lRes.value.data?.id ?? null }
+    : { success: false, resend_id: null, error: lRes.status === 'rejected' ? String(lRes.reason) : lRes.value.error?.message }
+
+  return { tenant: tResult, landlord: lResult }
 }
 
 // ─── Monthly check-in notification ───────────────────────────────────────────
