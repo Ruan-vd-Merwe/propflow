@@ -8,6 +8,7 @@ import { calculateRiskScore } from '@/lib/risk'
 import { calculateMatchScore, displayName } from '@/lib/matching'
 import { IntroduceButton } from './IntroduceButton'
 import { SharePortalButton } from './SharePortalButton'
+import { PropertyPhotoUpload } from './PropertyPhotoUpload'
 import type { Payment, Tenant, PropertyListing, TenantProfile, MatchScore } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -297,6 +298,14 @@ export default async function PropertyPage({
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
           <p className="mt-1 text-sm text-slate-500">{property.address}</p>
+        </div>
+
+        {/* Photos */}
+        <div className="mb-6 card p-5">
+          <PropertyPhotoUpload
+            propertyId={property.id}
+            initialPhotos={(property as { photos?: string[] }).photos ?? []}
+          />
         </div>
 
         {/* Quick links */}

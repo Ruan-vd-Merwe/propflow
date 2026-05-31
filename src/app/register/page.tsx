@@ -149,7 +149,7 @@ export default function RegisterPage() {
       })
     }
 
-    router.push(path === 'landlord' ? '/onboarding' : '/tenant/profile')
+    router.push(path === 'landlord' ? '/onboarding?welcome=1' : '/tenant/profile?welcome=1')
     router.refresh()
   }
 
@@ -481,6 +481,11 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-slate-900 hover:underline">Sign in</Link>
+          </p>
         </div>
       </div>
     )
@@ -594,6 +599,11 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-slate-900 hover:underline">Sign in</Link>
+          </p>
         </div>
       </div>
     )
@@ -626,7 +636,7 @@ export default function RegisterPage() {
       return
     }
 
-    router.push('/onboarding')
+    router.push('/onboarding?welcome=1')
     router.refresh()
   }
 }

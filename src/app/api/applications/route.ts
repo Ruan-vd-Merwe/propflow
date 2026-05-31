@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       monthly_income_cents,
       requested_rent_cents,
       bank_statement_filename,
+      bank_statement_url,
       bank_statement_analysis,
     } = body as {
       property_id: string
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       monthly_income_cents?: number
       requested_rent_cents?: number
       bank_statement_filename?: string
+      bank_statement_url?: string
       bank_statement_analysis?: BankStatementAnalysis
     }
 
@@ -107,6 +109,7 @@ export async function POST(req: NextRequest) {
         requested_rent_cents:      requested_rent_cents ?? null,
         id_verification:           idVerification,
         bank_statement_filename:   bank_statement_filename ?? null,
+        bank_statement_url:        bank_statement_url ?? null,
         bank_statement_analysis:   analysis,
         ratio_flag:                ratio_flag ?? null,
         ratio_percent:             ratio_percent ?? null,

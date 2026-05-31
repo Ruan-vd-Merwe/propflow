@@ -16,6 +16,10 @@ interface FormState {
   // Step 2
   bankFile: File | null
   bankFilename: string
+  bankUrl: string | null
+  bankUploading: boolean
+  bankUploadProgress: number   // 0–100 simulated
+  bankUploadError: string | null
   bankAnalysis: BankStatementAnalysis | null
   bankParseError: string | null
   bankParsing: boolean
@@ -29,6 +33,10 @@ const EMPTY: FormState = {
   monthly_income: '',
   bankFile: null,
   bankFilename: '',
+  bankUrl: null,
+  bankUploading: false,
+  bankUploadProgress: 0,
+  bankUploadError: null,
   bankAnalysis: null,
   bankParseError: null,
   bankParsing: false,
@@ -72,39 +80,77 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
 
     setForm((prev) => ({
       ...prev,
-      bankFile:       file,
-      bankFilename:   file.name,
-      bankAnalysis:   null,
-      bankParseError: null,
-      bankParsing:    true,
+      bankFile:            file,
+      bankFilename:        file.name,
+      bankUrl:             null,
+      bankUploading:       true,
+      bankUploadProgress:  0,
+      bankUploadError:     null,
+      bankAnalysis:        null,
+      bankParseError:      null,
+      bankParsing:         true,
     }))
 
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
+    // Simulate upload progress while both requests run in parallel
+    const progressInterval = setInterval(() => {
+      setForm((prev) => ({
+        ...prev,
+        bankUploadProgress: Math.min(prev.bankUploadProgress + 12, 85),
+      }))
+    }, 200)
 
-      const res  = await fetch('/api/parse-bank-statement', { method: 'POST', body: fd })
-      const json = await res.json()
+    const fd = new FormData()
+    fd.append('file', file)
 
-      if (!res.ok || json.error) {
+    const [uploadRes, parseRes] = await Promise.allSettled([
+      fetch('/api/upload-bank-statement', { method: 'POST', body: fd }),
+      fetch('/api/parse-bank-statement',  { method: 'POST', body: fd }),
+    ])
+
+    clearInterval(progressInterval)
+
+    // Handle upload result
+    if (uploadRes.status === 'fulfilled' && uploadRes.value.ok) {
+      const uploadJson = await uploadRes.value.json()
+      setForm((prev) => ({
+        ...prev,
+        bankUploading:      false,
+        bankUploadProgress: 100,
+        bankUrl:            uploadJson.url ?? null,
+        bankUploadError:    uploadJson.error ?? null,
+      }))
+    } else {
+      const msg = uploadRes.status === 'rejected'
+        ? 'Upload failed — network error'
+        : 'Upload failed'
+      setForm((prev) => ({
+        ...prev,
+        bankUploading:   false,
+        bankUploadError: msg,
+      }))
+    }
+
+    // Handle parse result
+    if (parseRes.status === 'fulfilled') {
+      const parseJson = await parseRes.value.json()
+      if (!parseRes.value.ok || parseJson.error) {
         setForm((prev) => ({
           ...prev,
           bankParsing:    false,
-          bankParseError: json.error ?? 'Failed to parse statement',
+          bankParseError: parseJson.error ?? 'Failed to parse statement',
         }))
-        return
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          bankParsing:  false,
+          bankAnalysis: parseJson.analysis as BankStatementAnalysis,
+        }))
       }
-
-      setForm((prev) => ({
-        ...prev,
-        bankParsing:  false,
-        bankAnalysis: json.analysis as BankStatementAnalysis,
-      }))
-    } catch {
+    } else {
       setForm((prev) => ({
         ...prev,
         bankParsing:    false,
-        bankParseError: 'Network error — please try again',
+        bankParseError: 'Network error — could not analyse statement',
       }))
     }
   }
@@ -135,6 +181,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
           monthly_income_cents:      Math.round(parseFloat(form.monthly_income) * 100),
           requested_rent_cents:      rentCents > 0 ? rentCents : undefined,
           bank_statement_filename:   form.bankFilename || undefined,
+          bank_statement_url:        form.bankUrl || undefined,
           bank_statement_analysis:   form.bankAnalysis ?? undefined,
         }),
       })
@@ -353,9 +400,9 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-sm font-medium text-slate-700">
-                  {form.bankFilename || 'Click to upload PDF'}
+                  {form.bankFilename ? form.bankFilename : 'Click to upload PDF'}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">Max 10 MB · Digital statements only</p>
+                <p className="mt-0.5 text-xs text-slate-400">PDF only · Max 10 MB · Digital statements</p>
                 <input
                   ref={fileRef}
                   type="file"
@@ -364,6 +411,34 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
                   onChange={handleFileChange}
                 />
               </div>
+
+              {/* Upload progress */}
+              {form.bankFilename && (form.bankUploading || form.bankUploadProgress > 0) && (
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                    <span className="truncate font-medium text-slate-700">{form.bankFilename}</span>
+                    {form.bankUploadProgress < 100
+                      ? <span>{form.bankUploadProgress}%</span>
+                      : <span className="text-green-600 font-semibold">Uploaded</span>
+                    }
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full transition-all duration-200 ${
+                        form.bankUploadProgress < 100 ? 'bg-slate-600' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${form.bankUploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Upload error */}
+              {form.bankUploadError && (
+                <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  {form.bankUploadError}
+                </p>
+              )}
 
               {/* Parsing spinner */}
               {form.bankParsing && (
@@ -375,8 +450,8 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
 
               {/* Parse error */}
               {form.bankParseError && (
-                <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                  {form.bankParseError}
+                <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+                  {form.bankParseError} (statement uploaded but analysis unavailable)
                 </p>
               )}
 

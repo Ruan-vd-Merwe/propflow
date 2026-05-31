@@ -29,10 +29,16 @@ function MatchBadge({ score }: { score: number }) {
   )
 }
 
-export default async function TenantProfilePage() {
+export default async function TenantProfilePage({
+  searchParams,
+}: {
+  searchParams: { welcome?: string }
+}) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const isWelcome = searchParams.welcome === '1'
 
   // Load tenant profile
   const { data: tp } = await supabase
@@ -116,6 +122,15 @@ export default async function TenantProfilePage() {
           </div>
         </div>
       </nav>
+
+      {isWelcome && (
+        <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
+          <p className="font-semibold">Welcome to PropFlow!</p>
+          <p className="mt-0.5 text-sm text-green-100">
+            Your profile is set up. Landlords matching your preferences will be able to find and contact you.
+          </p>
+        </div>
+      )}
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Profile card */}

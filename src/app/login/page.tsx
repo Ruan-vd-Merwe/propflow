@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -91,7 +92,14 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-4 text-center text-sm text-slate-500">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-semibold text-slate-900 hover:underline">
+            Sign up
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center text-xs text-slate-400">
           PropFlow · Property Management Platform
         </p>
       </div>

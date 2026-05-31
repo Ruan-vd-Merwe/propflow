@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,39 @@ const PROPERTY_TYPES = [
 
 type OnboardStep = 'property' | 'tenants' | 'done'
 
+function OnboardingProgress({ step }: { step: OnboardStep }) {
+  const steps = [
+    { label: 'Create account', done: true },
+    { label: 'Add your property', done: step !== 'property', current: step === 'property' },
+    { label: 'Add your tenants', done: step === 'done', current: step === 'tenants' },
+  ]
+  return (
+    <div className="mb-8 flex items-start justify-center gap-0">
+      {steps.map((s, i) => (
+        <div key={i} className="flex items-center">
+          {i > 0 && (
+            <div className={`mx-1 mt-4 h-0.5 w-10 shrink-0 sm:w-16 ${s.done || (i === 1 && step !== 'property') ? 'bg-slate-900' : 'bg-slate-200'}`} />
+          )}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+              s.done    ? 'bg-green-600 text-white' :
+              s.current ? 'bg-slate-900 text-white' :
+                          'bg-slate-200 text-slate-400'
+            }`}>
+              {s.done ? '✓' : i + 1}
+            </div>
+            <span className={`max-w-[80px] text-center text-xs leading-tight ${
+              s.current ? 'font-semibold text-slate-900' : s.done ? 'text-slate-500' : 'text-slate-300'
+            }`}>
+              {s.label}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 interface TenantRow {
   full_name: string
   email: string
@@ -36,6 +69,11 @@ function emptyTenant(): TenantRow {
 export default function OnboardingPage() {
   const router   = useRouter()
   const supabase = createClient()
+
+  const [isWelcome, setIsWelcome] = useState(false)
+  useEffect(() => {
+    setIsWelcome(new URLSearchParams(window.location.search).get('welcome') === '1')
+  }, [])
 
   const [step,    setStep]    = useState<OnboardStep>('property')
   const [loading, setLoading] = useState(false)
@@ -195,16 +233,27 @@ export default function OnboardingPage() {
       <div className="min-h-screen bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-xl">
           {/* Header */}
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900">
               <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Welcome to PropFlow 👋</h1>
-            <p className="mt-2 text-slate-500">Let&apos;s add your first property to get started</p>
+            {isWelcome ? (
+              <>
+                <h1 className="text-2xl font-bold text-slate-900">Welcome to PropFlow!</h1>
+                <p className="mt-2 text-slate-500">Account created. Now let&apos;s add your first property.</p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-slate-900">Add your first property</h1>
+                <p className="mt-2 text-slate-500">Let&apos;s get your property set up</p>
+              </>
+            )}
           </div>
+
+          <OnboardingProgress step="property" />
 
           <div className="card p-6">
             <div className="space-y-5">
@@ -377,13 +426,15 @@ export default function OnboardingPage() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-2xl">
+          <OnboardingProgress step="tenants" />
+
           <div className="mb-8 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-green-600">
               <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Property added! 🎉</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Property added!</h1>
             <p className="mt-2 text-slate-500">
               Do you already have tenants in this property? Add them now to start tracking payments.
             </p>
@@ -533,16 +584,27 @@ export default function OnboardingPage() {
   }
 
   // ── Done ───────────────────────────────────────────────────────────────────
+  return <DoneScreen />
+}
+
+function DoneScreen() {
+  const router = useRouter()
+  useEffect(() => {
+    const t = setTimeout(() => router.push('/dashboard'), 3000)
+    return () => clearTimeout(t)
+  }, [router])
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md text-center">
+        <OnboardingProgress step="done" />
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
           <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">All set! 🚀</h1>
-        <p className="mt-3 text-slate-500">Your property and tenants have been added. You&apos;re ready to go.</p>
+        <h1 className="text-2xl font-bold text-slate-900">All set!</h1>
+        <p className="mt-3 text-slate-500">Your property and tenants have been added. Taking you to the dashboard…</p>
         <button onClick={() => router.push('/dashboard')}
           className="btn-primary mt-8">
           Go to dashboard →
