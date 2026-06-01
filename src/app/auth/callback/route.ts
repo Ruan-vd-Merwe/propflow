@@ -4,13 +4,15 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
+  const supabase = createClient()
 
   if (code) {
-    const supabase = createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return NextResponse.redirect(new URL('/login?error=expired', request.url))
+    }
   }
 
-  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {

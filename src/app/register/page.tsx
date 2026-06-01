@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -54,13 +53,16 @@ function StepDots({ steps, current }: { steps: number; current: number }) {
 }
 
 export default function RegisterPage() {
-  const router  = useRouter()
   const supabase = createClient()
 
   const [step,       setStep]       = useState<Step>(0)
   const [path,       setPath]       = useState<UserPath>('landlord')
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState<string | null>(null)
+
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [resendLoading,    setResendLoading]    = useState(false)
+  const [resendMessage,    setResendMessage]    = useState<string | null>(null)
 
   // ── Shared fields ──────────────────────────────────────────────────────────
   const [fullName,  setFullName]  = useState('')
@@ -81,18 +83,36 @@ export default function RegisterPage() {
   const [currentProvince,   setCurrentProvince]   = useState('')
   const [lookingArea,       setLookingArea]        = useState('')
   const [lookingProvince,   setLookingProvince]    = useState('')
-  const [budgetMin,         setBudgetMin]          = useState(3000)   // Rands
-  const [budgetMax,         setBudgetMax]          = useState(15000)  // Rands
+  const [budgetMin,         setBudgetMin]          = useState(3000)
+  const [budgetMax,         setBudgetMax]          = useState(15000)
   const [moveInDate,        setMoveInDate]         = useState('')
   const [leaseLength,       setLeaseLength]        = useState<number>(12)
 
   // ── Tenant step 3 ──────────────────────────────────────────────────────────
   const [employmentStatus, setEmploymentStatus] = useState('')
-  const [monthlyIncome,    setMonthlyIncome]    = useState('')  // Rands
+  const [monthlyIncome,    setMonthlyIncome]    = useState('')
   const [whatsappOptIn,    setWhatsappOptIn]    = useState(true)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const totalSteps = path === 'landlord' ? 2 : 4  // step 0 + steps
+  const totalSteps = path === 'landlord' ? 2 : 4
+
+  async function handleResend() {
+    setResendLoading(true)
+    setResendMessage(null)
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+      },
+    })
+    setResendLoading(false)
+    if (resendError) {
+      setResendMessage('Failed to resend. Please try again.')
+    } else {
+      setResendMessage('Email resent. Check your inbox.')
+    }
+  }
 
   async function handleSubmit() {
     setLoading(true)
@@ -109,7 +129,6 @@ export default function RegisterPage() {
       metadata.city     = city
     }
 
-    // Sign up with Supabase
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -132,7 +151,6 @@ export default function RegisterPage() {
       return
     }
 
-    // For tenants, create the tenant_profiles row
     if (path === 'tenant') {
       await supabase.from('tenant_profiles').insert({
         user_id:              userId,
@@ -141,7 +159,7 @@ export default function RegisterPage() {
         current_province:     currentProvince || null,
         looking_in_area:      lookingArea || null,
         looking_in_province:  lookingProvince || null,
-        budget_min:           budgetMin  * 100,   // to cents
+        budget_min:           budgetMin  * 100,
         budget_max:           budgetMax  * 100,
         move_in_date:         moveInDate || null,
         lease_length_months:  leaseLength,
@@ -152,8 +170,52 @@ export default function RegisterPage() {
       })
     }
 
-    router.push(path === 'landlord' ? '/onboarding?welcome=1' : '/tenant/profile?welcome=1')
-    router.refresh()
+    setLoading(false)
+    setShowConfirmation(true)
+  }
+
+  // ── Confirmation screen ────────────────────────────────────────────────────
+  if (showConfirmation) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
+            <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+
+          <h2 className="mb-3 text-2xl font-bold text-slate-900">Check your email</h2>
+          <p className="mb-2 text-base text-slate-600">
+            We sent a confirmation link to{' '}
+            <strong className="text-slate-900">{email}</strong>.{' '}
+            Click the link to activate your account.
+          </p>
+          <p className="mb-8 text-sm text-slate-400">
+            The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
+          </p>
+
+          <button
+            onClick={handleResend}
+            disabled={resendLoading}
+            className="mb-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            {resendLoading ? 'Sending…' : 'Resend confirmation email'}
+          </button>
+
+          {resendMessage && (
+            <p className={`mb-4 text-sm ${resendMessage.startsWith('Email resent') ? 'text-green-600' : 'text-red-600'}`}>
+              {resendMessage}
+            </p>
+          )}
+
+          <Link href="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 hover:underline">
+            ← Back to login
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   // ── Step 0: Choose path ────────────────────────────────────────────────────
@@ -640,7 +702,7 @@ export default function RegisterPage() {
       return
     }
 
-    router.push('/onboarding?welcome=1')
-    router.refresh()
+    setLoading(false)
+    setShowConfirmation(true)
   }
 }

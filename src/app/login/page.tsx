@@ -1,34 +1,65 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const errorParam = searchParams.get('error')
+
+  const [email,            setEmail]            = useState('')
+  const [password,         setPassword]         = useState('')
+  const [error,            setError]            = useState<string | null>(null)
+  const [loading,          setLoading]          = useState(false)
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null)
+  const [resendLoading,    setResendLoading]    = useState(false)
+  const [resendMessage,    setResendMessage]    = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setUnconfirmedEmail(null)
+    setResendMessage(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setError(error.message)
+    if (signInError) {
+      if (signInError.message.toLowerCase().includes('email not confirmed')) {
+        setUnconfirmedEmail(email)
+      } else {
+        setError(signInError.message)
+      }
       setLoading(false)
       return
     }
 
     router.push('/dashboard')
     router.refresh()
+  }
+
+  async function handleResend() {
+    if (!unconfirmedEmail) return
+    setResendLoading(true)
+    setResendMessage(null)
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email: unconfirmedEmail,
+      options: {
+        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+      },
+    })
+    setResendLoading(false)
+    if (resendError) {
+      setResendMessage('Failed to resend. Please try again.')
+    } else {
+      setResendMessage('Email resent. Check your inbox.')
+    }
   }
 
   return (
@@ -44,6 +75,17 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-slate-900">PropFlow</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
         </div>
+
+        {/* Expired link banner */}
+        {errorParam === 'expired' && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Your confirmation link has expired.</p>
+            <p className="mt-0.5">
+              <Link href="/register" className="font-medium underline">Sign up again</Link>
+              {' '}to get a new one.
+            </p>
+          </div>
+        )}
 
         {/* Form */}
         <div className="card p-6">
@@ -86,6 +128,25 @@ export default function LoginPage() {
               </div>
             )}
 
+            {unconfirmedEmail && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
+                <p>Please confirm your email first. Check your inbox or spam folder.</p>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  className="mt-2 font-semibold underline disabled:opacity-50"
+                >
+                  {resendLoading ? 'Sending…' : 'Resend confirmation email'}
+                </button>
+                {resendMessage && (
+                  <p className={`mt-1 ${resendMessage.startsWith('Email resent') ? 'text-green-700' : 'text-red-600'}`}>
+                    {resendMessage}
+                  </p>
+                )}
+              </div>
+            )}
+
             <button type="submit" disabled={loading} className="btn-primary mt-2">
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
@@ -104,5 +165,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
