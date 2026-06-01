@@ -113,7 +113,10 @@ export default function RegisterPage() {
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: {
+        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+        data: metadata,
+      },
     })
 
     if (signUpError) {
@@ -620,6 +623,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
+        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
         data: {
           full_name: fullName,
           user_type: 'landlord',
