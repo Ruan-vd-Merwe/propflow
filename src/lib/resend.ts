@@ -23,7 +23,7 @@ function getResend(): Resend | null {
 }
 
 const FROM_ADDRESS =
-  process.env.RESEND_FROM_EMAIL ?? 'PropFlow <notifications@propflow.co.za>'
+  process.env.RESEND_FROM_EMAIL ?? 'PropTrust <notifications@proptrust.co.za>'
 
 export interface SendResult {
   success: boolean
@@ -43,7 +43,7 @@ function buildPaymentEmail(
     case 'payment_late_7d':   return paymentLate7dEmail(data)
     case 'payment_late_14d':  return paymentLate14dEmail(data)
     default:
-      return { subject: 'PropFlow notification', html: '<p>Notification</p>' }
+      return { subject: 'PropTrust notification', html: '<p>Notification</p>' }
   }
 }
 

@@ -1,5 +1,5 @@
 /**
- * PropFlow WhatsApp helper — Twilio WhatsApp sandbox / API
+ * PropTrust WhatsApp helper — Twilio WhatsApp sandbox / API
  *
  * All sending is fire-and-forget; failures are logged, never thrown,
  * so a WhatsApp failure never breaks the calling request.
@@ -73,7 +73,7 @@ export function sendPaymentReminder(opts: {
 }) {
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.name.split(' ')[0]}, just a reminder that your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is due on *${fmtDate(opts.dueDate)}*. Reply PAID if you've already paid. — PropFlow`
+    `Hi ${opts.name.split(' ')[0]}, just a reminder that your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is due on *${fmtDate(opts.dueDate)}*. Reply PAID if you've already paid. — PropTrust`
   )
 }
 
@@ -83,7 +83,7 @@ export function sendPaymentDueToday(opts: {
 }) {
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.name.split(' ')[0]}, your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is due *today* (${fmtDate(opts.dueDate)}). Please pay as soon as possible. Reply PAID once done. — PropFlow`
+    `Hi ${opts.name.split(' ')[0]}, your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is due *today* (${fmtDate(opts.dueDate)}). Please pay as soon as possible. Reply PAID once done. — PropTrust`
   )
 }
 
@@ -93,7 +93,7 @@ export function sendPaymentOverdue(opts: {
 }) {
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.name.split(' ')[0]}, your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is now *${opts.daysLate} day${opts.daysLate !== 1 ? 's' : ''} overdue*. Please pay urgently to avoid further action. — PropFlow`
+    `Hi ${opts.name.split(' ')[0]}, your rent of *${fmtRand(opts.amount)}* for *${opts.property}* is now *${opts.daysLate} day${opts.daysLate !== 1 ? 's' : ''} overdue*. Please pay urgently to avoid further action. — PropTrust`
   )
 }
 
@@ -103,7 +103,7 @@ export function sendMaintenanceUpdate(opts: {
 }) {
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.name.split(' ')[0]}, your maintenance request *"${opts.subject}"* has been updated to: *${opts.status}*. — PropFlow`
+    `Hi ${opts.name.split(' ')[0]}, your maintenance request *"${opts.subject}"* has been updated to: *${opts.status}*. — PropTrust`
   )
 }
 
@@ -113,7 +113,7 @@ export function sendIntroductionWhatsApp(opts: {
 }) {
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.name.split(' ')[0]}, a landlord is interested in your PropFlow profile for a property in *${opts.suburb}*. Log in at *propflow-delta-two.vercel.app* to respond. — PropFlow`
+    `Hi ${opts.name.split(' ')[0]}, a landlord is interested in your PropTrust profile for a property in *${opts.suburb}*. Log in at *proptrust.co.za* to respond. — PropTrust`
   )
 }
 
@@ -123,7 +123,7 @@ export function sendTenantPaidNotification(opts: {
 }) {
   return sendWhatsApp(
     opts.landlordPhone,
-    `📬 *${opts.tenantName}* says they have paid rent of *${fmtRand(opts.amount)}* for *${opts.property}*. Please verify and mark as paid in PropFlow.`
+    `📬 *${opts.tenantName}* says they have paid rent of *${fmtRand(opts.amount)}* for *${opts.property}*. Please verify and mark as paid in PropTrust.`
   )
 }
 
@@ -135,6 +135,6 @@ export function sendBookingToProvider(opts: {
   const notesPart = opts.notes ? `\nNotes: ${opts.notes}` : ''
   return sendWhatsApp(
     opts.phone,
-    `Hi ${opts.providerName}, you have a new booking request via *PropFlow*:\n\n*Service:* ${opts.service}\n*Tenant:* ${opts.tenantName}\n*Property:* ${opts.property}\n*Date:* ${fmtDate(opts.date)}${notesPart}\n\nReply to confirm. — PropFlow`
+    `Hi ${opts.providerName}, you have a new booking request via *PropTrust*:\n\n*Service:* ${opts.service}\n*Tenant:* ${opts.tenantName}\n*Property:* ${opts.property}\n*Date:* ${fmtDate(opts.date)}${notesPart}\n\nReply to confirm. — PropTrust`
   )
 }

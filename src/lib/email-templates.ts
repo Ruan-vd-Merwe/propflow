@@ -27,7 +27,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PropFlow</title>
+  <title>PropTrust</title>
 </head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f8fafc;">
@@ -43,7 +43,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
                   <span style="color:#ffffff;font-size:15px;line-height:28px;display:block;">🏠</span>
                 </td>
                 <td style="padding-left:10px;vertical-align:middle;">
-                  <span style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.3px;">PropFlow</span>
+                  <span style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.3px;">PropTrust</span>
                 </td>
               </tr>
             </table>
@@ -64,7 +64,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
         <tr>
           <td style="border-top:1px solid #e2e8f0;background:#f8fafc;padding:16px 28px;">
             <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;">
-              PropFlow Property Management · Automated notification<br />
+              PropTrust Property Management · Automated notification<br />
               ${footerNote ? footerNote + '<br />' : ''}
               Please do not reply to this email. Contact your landlord directly.
             </p>
@@ -392,7 +392,7 @@ export interface IntroductionEmailData {
 }
 
 export function introductionToTenantEmail(d: IntroductionEmailData): { subject: string; html: string } {
-  const subject = `A landlord is interested in your profile on PropFlow`
+  const subject = `A landlord is interested in your profile on PropTrust`
   const content = `
     <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
       You have a new introduction request 🎉
@@ -401,7 +401,7 @@ export function introductionToTenantEmail(d: IntroductionEmailData): { subject: 
       Hi ${d.tenantDisplayName},
     </p>
     <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
-      A landlord on PropFlow is interested in your profile for a property in
+      A landlord on PropTrust is interested in your profile for a property in
       <strong>${d.propertySuburb}, ${d.propertyProvince}</strong>.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0"
@@ -413,7 +413,7 @@ export function introductionToTenantEmail(d: IntroductionEmailData): { subject: 
       </td></tr>
     </table>
     <p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.6;">
-      Log in to PropFlow to view the introduction request and decide whether to accept or decline.
+      Log in to PropTrust to view the introduction request and decide whether to accept or decline.
       Your contact details are kept private until you choose to accept.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
@@ -426,7 +426,7 @@ export function introductionToTenantEmail(d: IntroductionEmailData): { subject: 
     </table>
     <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
       If you are not looking for a property right now, you can hide your profile by toggling
-      "Actively looking" off in your PropFlow profile.
+      "Actively looking" off in your PropTrust profile.
     </p>
   `
   return { subject, html: baseLayout('#10b981', content) }

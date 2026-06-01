@@ -159,21 +159,21 @@ export async function PATCH(
 
       if (process.env.RESEND_API_KEY) {
         const resend  = new Resend(process.env.RESEND_API_KEY)
-        const from    = process.env.RESEND_FROM_EMAIL ?? 'PropFlow <notifications@propflow.co.za>'
+        const from    = process.env.RESEND_FROM_EMAIL ?? 'PropTrust <notifications@proptrust.co.za>'
         const subject = `Maintenance Enquiry — ${job.title} — ${prop.name}`
 
         const html = /* html */`<!DOCTYPE html>
 <html><head><meta charset="utf-8"/></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
 <div style="background:#0f172a;padding:16px 24px;border-radius:8px 8px 0 0;">
-  <span style="color:#fff;font-size:17px;font-weight:700;">PropFlow — Maintenance Enquiry</span>
+  <span style="color:#fff;font-size:17px;font-weight:700;">PropTrust — Maintenance Enquiry</span>
 </div>
 <div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 8px 8px;">
   <p>Dear ${contractor_name ?? 'Contractor'},</p>
   <pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;color:#334155;">${final_description}</pre>
   <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0"/>
   <p style="font-size:12px;color:#94a3b8;">
-    Sent via PropFlow Property Management<br/>
+    Sent via PropTrust Property Management<br/>
     Reply directly to this email or contact ${landlord.full_name} at ${landlord.email}
   </p>
 </div>

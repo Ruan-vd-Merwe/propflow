@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   ])
 
   if (landlordProfile && tenantProfile) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://propflow-delta-two.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://proptrust.co.za'
     // Email (existing)
     await sendIntroductionEmails({
       tenantEmail:      tenantProfile.email,

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const today     = new Date()
   const monthKey  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
   const monthLabel = today.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })
-  const appBase    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://propflow.co.za'
+  const appBase    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://proptrust.co.za'
 
   // Get all active tenants (lease includes today)
   const todayStr = today.toISOString().split('T')[0]

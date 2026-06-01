@@ -31,7 +31,7 @@ function Logo() {
             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-slate-900">PropFlow</h1>
+      <h1 className="text-2xl font-bold text-slate-900">PropTrust</h1>
       <p className="mt-1 text-sm text-slate-500">Create your account</p>
     </div>
   )
@@ -103,7 +103,7 @@ export default function RegisterPage() {
       type: 'signup',
       email,
       options: {
-        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+        emailRedirectTo: 'https://proptrust.co.za/auth/callback',
       },
     })
     setResendLoading(false)
@@ -133,7 +133,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+        emailRedirectTo: 'https://proptrust.co.za/auth/callback',
         data: metadata,
       },
     })
@@ -685,7 +685,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+        emailRedirectTo: 'https://proptrust.co.za/auth/callback',
         data: {
           full_name: fullName,
           user_type: 'landlord',

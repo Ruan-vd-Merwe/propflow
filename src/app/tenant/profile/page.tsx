@@ -109,7 +109,7 @@ export default async function TenantProfilePage({
                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-slate-900">PropFlow</span>
+            <span className="text-lg font-bold text-slate-900">PropTrust</span>
           </div>
           <div className="flex items-center gap-4">
             {pendingCount > 0 && (
@@ -125,7 +125,7 @@ export default async function TenantProfilePage({
 
       {isWelcome && (
         <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
-          <p className="font-semibold">Welcome to PropFlow!</p>
+          <p className="font-semibold">Welcome to PropTrust!</p>
           <p className="mt-0.5 text-sm text-green-100">
             Your profile is set up. Landlords matching your preferences will be able to find and contact you.
           </p>

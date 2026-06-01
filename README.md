@@ -1,6 +1,6 @@
-# PropFlow
+# PropTrust
 
-A property management platform for South African landlords. Track tenants, payments, and risk scores — replacing the need for a rental agent.
+South Africa's trusted property platform. Track tenants, payments, and risk scores — replacing the need for a rental agent.
 
 ## Stack
 
@@ -24,7 +24,7 @@ In the **Supabase SQL Editor**, paste and run `supabase/schema.sql`.
 ### 3. Create the test user
 
 In the Supabase dashboard → **Authentication → Users → Add User**:
-- Email: `test@propflow.co.za`
+- Email: `test@proptrust.co.za`
 - Password: `password123`
 
 ### 4. Seed the database
@@ -51,7 +51,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and log in with `test@propflow.co.za` / `password123`.
+Open [http://localhost:3000](http://localhost:3000) and log in with `test@proptrust.co.za` / `password123`.
 
 ---
 

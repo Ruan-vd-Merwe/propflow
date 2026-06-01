@@ -242,7 +242,7 @@ export default function OnboardingPage() {
             </div>
             {isWelcome ? (
               <>
-                <h1 className="text-2xl font-bold text-slate-900">Welcome to PropFlow!</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Welcome to PropTrust!</h1>
                 <p className="mt-2 text-slate-500">Account created. Now let&apos;s add your first property.</p>
               </>
             ) : (

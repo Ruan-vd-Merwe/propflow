@@ -51,7 +51,7 @@ function LoginForm() {
       type: 'signup',
       email: unconfirmedEmail,
       options: {
-        emailRedirectTo: 'https://propflow-delta-two.vercel.app/auth/callback',
+        emailRedirectTo: 'https://proptrust.co.za/auth/callback',
       },
     })
     setResendLoading(false)
@@ -72,7 +72,7 @@ function LoginForm() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">PropFlow</h1>
+          <h1 className="text-2xl font-bold text-slate-900">PropTrust</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
         </div>
 
@@ -161,7 +161,7 @@ function LoginForm() {
         </p>
 
         <p className="mt-4 text-center text-xs text-slate-400">
-          PropFlow · Property Management Platform
+          PropTrust · South Africa's trusted property platform
         </p>
       </div>
     </div>

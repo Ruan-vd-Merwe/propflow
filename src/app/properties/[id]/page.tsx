@@ -437,7 +437,7 @@ export default async function PropertyPage({
               <div className="card p-12 text-center text-slate-500">
                 <p className="text-base font-semibold text-slate-700">No tenant profiles yet</p>
                 <p className="mt-2 text-sm">
-                  Tenants who register on PropFlow and mark themselves as actively looking will
+                  Tenants who register on PropTrust and mark themselves as actively looking will
                   appear here, ranked by match score.
                 </p>
               </div>

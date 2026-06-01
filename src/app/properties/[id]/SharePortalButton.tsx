@@ -12,7 +12,7 @@ export function SharePortalButton({
   const [copied, setCopied] = useState(false)
 
   function copy() {
-    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://propflow-delta-two.vercel.app'}/tenant/${portalToken}`
+    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://proptrust.co.za'}/tenant/${portalToken}`
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
