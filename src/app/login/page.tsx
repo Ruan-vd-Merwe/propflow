@@ -161,7 +161,7 @@ function LoginForm() {
         </p>
 
         <p className="mt-4 text-center text-xs text-slate-400">
-          PropTrust · South Africa's trusted property platform
+          PropTrust · South Africa&apos;s trusted property platform
         </p>
       </div>
     </div>
