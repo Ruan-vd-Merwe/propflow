@@ -118,7 +118,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    const metadata: Record<string, string> = {
+    const metadata: Record<string, unknown> = {
       full_name: fullName,
       user_type: path,
       phone,
@@ -127,9 +127,25 @@ export default function RegisterPage() {
     if (path === 'landlord') {
       metadata.province = province
       metadata.city     = city
+    } else {
+      // Store tenant profile fields in metadata — the auth/callback route
+      // creates the tenant_profiles row after email confirmation (PKCE flow
+      // returns user:null on signup, so we can't insert the row here).
+      metadata.sa_id_number        = saId || null
+      metadata.current_area        = currentArea || null
+      metadata.current_province    = currentProvince || null
+      metadata.looking_in_area     = lookingArea || null
+      metadata.looking_in_province = lookingProvince || null
+      metadata.budget_min          = budgetMin * 100
+      metadata.budget_max          = budgetMax * 100
+      metadata.move_in_date        = moveInDate || null
+      metadata.lease_length_months = leaseLength
+      metadata.employment_status   = employmentStatus || null
+      metadata.monthly_income      = monthlyIncome ? parseInt(monthlyIncome) * 100 : null
+      metadata.whatsapp_opted_in   = whatsappOptIn
     }
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -142,32 +158,6 @@ export default function RegisterPage() {
       setError(signUpError.message)
       setLoading(false)
       return
-    }
-
-    const userId = signUpData.user?.id
-    if (!userId) {
-      setError('Registration failed. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    if (path === 'tenant') {
-      await supabase.from('tenant_profiles').insert({
-        user_id:              userId,
-        sa_id_number:         saId || null,
-        current_area:         currentArea || null,
-        current_province:     currentProvince || null,
-        looking_in_area:      lookingArea || null,
-        looking_in_province:  lookingProvince || null,
-        budget_min:           budgetMin  * 100,
-        budget_max:           budgetMax  * 100,
-        move_in_date:         moveInDate || null,
-        lease_length_months:  leaseLength,
-        employment_status:    employmentStatus || null,
-        monthly_income:       monthlyIncome ? parseInt(monthlyIncome) * 100 : null,
-        is_visible:           true,
-        whatsapp_opted_in:    whatsappOptIn,
-      })
     }
 
     setLoading(false)
