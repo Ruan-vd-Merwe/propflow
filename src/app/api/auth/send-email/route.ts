@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const FROM = 'PropTrust <notifications@proptrust.co.za>'
+const FROM = 'PropTrust <onboarding@resend.dev>'
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
