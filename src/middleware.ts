@@ -34,6 +34,7 @@ export async function middleware(request: NextRequest) {
   // Public routes — no auth required
   // Note: /tenant/profile is auth-protected even though /tenant/[token] is public
   const isPublic =
+    pathname === '/' ||
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/forgot-password' ||
@@ -49,12 +50,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from /login and /register
+  // (leave / alone so logged-in users can still view the marketing page)
   if (user && (pathname === '/login' || pathname === '/register')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
-
-  // Allow / for everyone (marketing page handles its own auth redirect)
-  if (pathname === '/') return supabaseResponse
 
   return supabaseResponse
 }
