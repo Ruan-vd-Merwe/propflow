@@ -159,10 +159,21 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
             <p className="mt-1 text-sm text-slate-500">Your properties at a glance</p>
           </div>
-          <PaymentWarningsButton
-            overdueCount={overdueTenantsCount}
-            warningWindowCount={paymentsInWindow.length}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/properties/new"
+              className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Property
+            </Link>
+            <PaymentWarningsButton
+              overdueCount={overdueTenantsCount}
+              warningWindowCount={paymentsInWindow.length}
+            />
+          </div>
         </div>
 
         {/* Top stats */}
