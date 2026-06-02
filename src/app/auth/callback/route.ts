@@ -17,21 +17,25 @@ export async function GET(request: Request) {
 
   if (user) {
     const m = user.user_metadata ?? {}
+    const isLandlord = !!(m.is_landlord ?? (m.user_type === 'landlord'))
+    const isTenant   = !!(m.is_tenant   ?? (m.user_type === 'tenant'))
 
-    // Upsert profile so user_type, phone, province, city are always current
+    // Upsert profile with both role flags
     await supabase.from('profiles').upsert({
-      id:               user.id,
-      full_name:        m.full_name ?? user.email ?? '',
-      email:            user.email ?? '',
-      user_type:        m.user_type ?? null,
-      phone:            m.phone ?? null,
-      province:         m.province ?? null,
-      city:             m.city ?? null,
+      id:          user.id,
+      full_name:   m.full_name ?? user.email ?? '',
+      email:       user.email ?? '',
+      is_landlord: isLandlord,
+      is_tenant:   isTenant,
+      user_type:   isLandlord ? 'landlord' : 'tenant', // backwards compat
+      phone:       m.phone    ?? null,
+      province:    m.province ?? null,
+      city:        m.city     ?? null,
       whatsapp_opted_in: m.whatsapp_opted_in ?? true,
     })
 
     // Create tenant_profiles row on first confirmation
-    if (m.user_type === 'tenant') {
+    if (isTenant) {
       const { data: existing } = await supabase
         .from('tenant_profiles')
         .select('id')
@@ -58,21 +62,15 @@ export async function GET(request: Request) {
           })
         } catch (e) {
           console.error('tenant_profiles insert failed:', e)
-          // continue — don't block the redirect
         }
       }
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.user_type === 'tenant') {
-      return NextResponse.redirect(new URL('/tenant/profile', request.url))
+    // Redirect: dual-role or landlord → onboarding; tenant-only → tenant profile
+    if (isLandlord || (!isLandlord && !isTenant)) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
     }
-    return NextResponse.redirect(new URL('/onboarding', request.url))
+    return NextResponse.redirect(new URL('/tenant/profile', request.url))
   }
 
   return NextResponse.redirect(new URL('/login', request.url))

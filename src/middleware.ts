@@ -53,6 +53,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  // Allow / for everyone (marketing page handles its own auth redirect)
+  if (pathname === '/') return supabaseResponse
+
   return supabaseResponse
 }
 

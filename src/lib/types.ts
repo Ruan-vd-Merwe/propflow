@@ -7,6 +7,8 @@ export type Profile = {
   full_name: string
   email: string
   user_type: UserType | null
+  is_landlord: boolean
+  is_tenant: boolean
   phone: string | null
   province: string | null
   city: string | null

@@ -4,17 +4,54 @@ import { createClient } from '@/lib/supabase/server'
 import { NavBar } from '@/components/NavBar'
 import { RiskBadge } from '@/components/RiskBadge'
 import { calculateRiskScore } from '@/lib/risk'
+import { calculateMatchScore } from '@/lib/matching'
 import { getComponentHealth } from '@/lib/maintenance'
 import { PaymentWarningsButton } from './PaymentWarningsButton'
-import type { Payment, Property, Tenant, MaintenanceJob, PropertyComponent, BodyCorpFlag } from '@/lib/types'
+import type { Payment, Property, Tenant, MaintenanceJob, PropertyComponent, BodyCorpFlag, TenantProfile, PropertyListing } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { tab?: string }
+}) {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // ── Profile (for dual-role detection) ────────────────────────────────────
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('is_landlord, is_tenant, full_name')
+    .eq('id', user.id)
+    .single()
+
+  const isLandlord = profileRow?.is_landlord ?? true
+  const isTenant   = profileRow?.is_tenant   ?? false
+  const isDual     = isLandlord && isTenant
+  const tab        = isDual && searchParams.tab === 'tenant' ? 'tenant' : 'landlord'
+
+  // ── Tenant-tab data (only when dual-role and tenant tab active) ──────────
+  let myTenantProfile: TenantProfile | null = null
+  let myMatchedProperties: { property: PropertyListing; score: number }[] = []
+
+  if (isDual && tab === 'tenant') {
+    const { data: tp } = await supabase
+      .from('tenant_profiles').select('*').eq('user_id', user.id).single()
+    myTenantProfile = tp as TenantProfile | null
+
+    if (myTenantProfile) {
+      const { data: listedProps } = await supabase
+        .from('properties').select('*').eq('is_listed', true).limit(40)
+      myMatchedProperties = ((listedProps ?? []) as PropertyListing[])
+        .map(p => ({ property: p, score: calculateMatchScore(myTenantProfile!, p).total }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 9)
+    }
+  }
 
   // ── Core data ─────────────────────────────────────────────────────────────
   const { data: properties } = await supabase
@@ -153,6 +190,118 @@ export default async function DashboardPage() {
       <NavBar />
 
       <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Role switcher — only shown for dual-role users */}
+        {isDual && (
+          <div className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1">
+            <Link href="/dashboard"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                tab === 'landlord' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}>
+              🏠 My Properties
+            </Link>
+            <Link href="/dashboard?tab=tenant"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                tab === 'tenant' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}>
+              🔍 My Rental Search
+            </Link>
+          </div>
+        )}
+
+        {/* ── Tenant tab ──────────────────────────────────────────────────── */}
+        {tab === 'tenant' && (
+          <div>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">My Rental Search</h1>
+                <p className="mt-1 text-sm text-slate-500">Properties matched to your profile</p>
+              </div>
+              <Link href="/tenant/profile"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                Edit preferences →
+              </Link>
+            </div>
+
+            {!myTenantProfile ? (
+              <div className="card p-10 text-center">
+                <p className="text-slate-500">No tenant profile found.</p>
+                <Link href="/tenant/profile" className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline">
+                  Set up your profile →
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* Profile summary card */}
+                <div className="card mb-6 p-5">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-700">
+                        Looking in: {myTenantProfile.looking_in_area ?? '—'}
+                        {myTenantProfile.looking_in_province ? `, ${myTenantProfile.looking_in_province}` : ''}
+                      </p>
+                      {myTenantProfile.budget_max && (
+                        <p className="mt-0.5 text-sm text-slate-500">
+                          Budget: R{((myTenantProfile.budget_min ?? 0) / 100).toLocaleString()} –{' '}
+                          R{(myTenantProfile.budget_max / 100).toLocaleString()}/mo
+                        </p>
+                      )}
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      myTenantProfile.is_visible ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {myTenantProfile.is_visible ? '● Actively looking' : '○ Hidden'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Matched properties */}
+                {myMatchedProperties.length === 0 ? (
+                  <div className="card p-10 text-center text-slate-500">
+                    No listed properties match your search yet. Check back soon.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {myMatchedProperties.map(({ property: p, score }) => (
+                      <div key={p.id} className="card overflow-hidden">
+                        {p.photos?.length > 0 ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.photos[0]} alt={p.name} className="h-40 w-full object-cover" />
+                        ) : (
+                          <div className="flex h-40 items-center justify-center bg-slate-100">
+                            <svg className="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <div className="mb-1 flex items-start justify-between gap-2">
+                            <p className="font-semibold leading-snug text-slate-900">{p.name}</p>
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                              score >= 80 ? 'bg-green-100 text-green-700' :
+                              score >= 50 ? 'bg-amber-100 text-amber-700' :
+                                            'bg-red-100 text-red-700'
+                            }`}>{score}%</span>
+                          </div>
+                          <p className="text-xs text-slate-500">{p.suburb}{p.province ? `, ${p.province}` : ''}</p>
+                          {p.asking_rent && (
+                            <p className="mt-2 text-sm font-bold text-slate-900">
+                              R{(p.asking_rent / 100).toLocaleString()}<span className="text-xs font-normal text-slate-400">/mo</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Landlord tab ─────────────────────────────────────────────────── */}
+        {tab === 'landlord' && (<>
+
         {/* Page header */}
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -637,6 +786,8 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
+        {/* close landlord tab */}
+        </>)}
       </main>
     </div>
   )
