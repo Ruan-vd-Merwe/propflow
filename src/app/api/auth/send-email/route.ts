@@ -3,22 +3,18 @@ import { NextResponse } from 'next/server'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+
+// Switch to 'PropTrust <notifications@proptrust.co.za>' once the domain is
+// verified in the Resend dashboard (resend.com/domains).
 const FROM = 'PropTrust <onboarding@resend.dev>'
 
 export async function POST(request: Request) {
-  const rawBody = await request.text()
-
-  console.log('[send-email hook] raw body:', rawBody.slice(0, 500))
-
   let payload: { user: { email: string }; email_data: Record<string, string> }
   try {
-    payload = JSON.parse(rawBody)
+    payload = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
-
-  console.log('[send-email hook] user.email:', payload?.user?.email)
-  console.log('[send-email hook] action type:', payload?.email_data?.email_action_type)
 
   const { user, email_data } = payload
   const { token_hash, redirect_to, email_action_type } = email_data
@@ -77,9 +73,7 @@ export async function POST(request: Request) {
   })
 
   if (error) {
-    console.error('[send-email hook] Resend error name:', error.name)
-    console.error('[send-email hook] Resend error message:', error.message)
-    console.error('[send-email hook] to:', user.email, 'type:', email_action_type)
+    console.error('[send-email hook]', error.name, error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
