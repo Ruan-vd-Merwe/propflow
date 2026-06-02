@@ -1,8 +1,8 @@
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+// Lazy init — avoids module-level throw when env var is absent at build time
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 
 // Switch to 'PropTrust <notifications@proptrust.co.za>' once the domain is
 // verified in the Resend dashboard (resend.com/domains).
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       html = `<p><a href="${verifyUrl}">Click here</a> to continue.</p>`
   }
 
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await resend.emails.send({
     from: FROM,
     to: [user.email],
