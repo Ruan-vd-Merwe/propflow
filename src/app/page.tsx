@@ -1,218 +1,429 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-export default async function HomePage() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
+// ─── Smooth scroll ────────────────────────────────────────────────────────────
+// Added to <html> via useEffect below
+
+// ─── SVG icon helpers ─────────────────────────────────────────────────────────
+
+function IconHouse() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  )
+}
+function IconCheck({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  )
+}
+function IconX() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+function IconChevron() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+function IconMenu() {
+  return (
+    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  )
+}
+function IconClose() {
+  return (
+    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+function IconStar({ filled = true }: { filled?: boolean }) {
+  return (
+    <svg className={`h-4 w-4 ${filled ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} viewBox="0 0 20 20">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+    </svg>
+  )
+}
+
+// ─── Dropdown component ───────────────────────────────────────────────────────
+
+type DropdownItem = { label: string; sub?: string; href?: string }
+
+function NavDropdown({ label, items }: { label: string; items: DropdownItem[] }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+      >
+        {label}
+        <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>
+          <IconChevron />
+        </span>
+      </button>
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          NAVBAR
-      ───────────────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1.5 min-w-[220px] rounded-xl border border-slate-100 bg-white shadow-xl">
+          {items.map(item => (
+            <a
+              key={item.label}
+              href={item.href ?? '#'}
+              onClick={() => setOpen(false)}
+              className="flex flex-col px-4 py-3 transition hover:bg-slate-50 first:rounded-t-xl last:rounded-b-xl"
+            >
+              <span className="text-sm font-medium text-slate-900">{item.label}</span>
+              {item.sub && <span className="mt-0.5 text-xs text-slate-400">{item.sub}</span>}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-700">
-              <svg className="h-4.5 w-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <span className="text-[17px] font-bold tracking-tight text-slate-900">PropTrust</span>
-          </Link>
+// ─── Logo ─────────────────────────────────────────────────────────────────────
 
-          <nav className="hidden items-center gap-1 md:flex">
-            {[
-              { label: 'Features',      href: '#features' },
-              { label: 'For landlords', href: '#landlords' },
-              { label: 'For tenants',   href: '#tenants' },
-              { label: 'Pricing',       href: '#pricing' },
-            ].map(({ label, href }) => (
-              <a key={href} href={href}
-                className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-                {label}
-              </a>
-            ))}
+function Logo({ white = false }: { white?: boolean }) {
+  return (
+    <Link href="/" className="flex items-center gap-2.5">
+      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${white ? 'bg-blue-500' : 'bg-[#0f172a]'}`}>
+        <svg className="h-4.5 w-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      </div>
+      <span className={`text-[17px] font-bold tracking-tight ${white ? 'text-white' : 'text-[#0f172a]'}`}>
+        PropTrust
+      </span>
+    </Link>
+  )
+}
+
+// ─── Stars ────────────────────────────────────────────────────────────────────
+
+function Stars({ count = 5 }: { count?: number }) {
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <IconStar key={i} filled={i < count} />
+      ))}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export default function HomePage() {
+  // Smooth scroll
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'smooth'
+    return () => { document.documentElement.style.scrollBehavior = '' }
+  }, [])
+
+  // Navbar shadow on scroll
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Mobile menu
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // How it works tab
+  const [hwTab, setHwTab] = useState<'landlord' | 'tenant'>('landlord')
+
+  return (
+    <div className="min-h-screen bg-white font-sans text-slate-900 antialiased">
+
+      {/* ═══════════════════════════════════════════════════════
+          1. NAVBAR
+      ═══════════════════════════════════════════════════════ */}
+      <header className={`sticky top-0 z-50 border-b border-slate-200 bg-white transition-shadow ${scrolled ? 'shadow-md' : 'shadow-none'}`}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+
+          <Logo />
+
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            <NavDropdown
+              label="Solutions"
+              items={[
+                { label: 'For Landlords',          sub: 'Manage properties and tenants',    href: '#landlords' },
+                { label: 'For Tenants',             sub: 'Find your next home',              href: '#tenants' },
+                { label: 'For Property Managers',   sub: 'Professional portfolio tools',     href: '#pricing' },
+                { label: 'Tenant Screening',        sub: 'Verify before you sign',           href: '#features' },
+              ]}
+            />
+            <NavDropdown
+              label="Features"
+              items={[
+                { label: 'Risk Scoring',           href: '#features' },
+                { label: 'Payment Tracking',        href: '#features' },
+                { label: 'Body Corporate',          href: '#features' },
+                { label: 'Maintenance Management',  href: '#features' },
+                { label: 'Tenant Marketplace',      href: '#features' },
+                { label: 'WhatsApp Integration',    href: '#features' },
+              ]}
+            />
+            <a href="#pricing"
+              className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
+              Pricing
+            </a>
+            <NavDropdown
+              label="Resources"
+              items={[
+                { label: 'SA Rental Law Guide',      sub: 'Know your rights and obligations' },
+                { label: 'FAQ',                      sub: 'Common questions answered' },
+                { label: 'Blog',                     sub: 'Coming soon' },
+              ]}
+            />
+            <a href="#contact"
+              className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
+              Contact
+            </a>
           </nav>
 
           <div className="flex items-center gap-2.5">
             <Link href="/login"
-              className="hidden rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 sm:block">
-              Sign in
+              className="hidden rounded-lg border border-[#0f172a] px-4 py-2 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:block">
+              Login
             </Link>
             <Link href="/register"
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">
-              Get started free
+              className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800">
+              Get Started
             </Link>
+            <button onClick={() => setMobileOpen(o => !o)} className="ml-1 rounded-lg p-2 text-slate-600 transition hover:bg-slate-50 lg:hidden">
+              {mobileOpen ? <IconClose /> : <IconMenu />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile overlay */}
+        {mobileOpen && (
+          <div className="fixed inset-0 top-[57px] z-40 bg-white px-6 py-6 lg:hidden">
+            <nav className="space-y-1">
+              {[
+                { label: 'For Landlords',    href: '#landlords' },
+                { label: 'For Tenants',      href: '#tenants' },
+                { label: 'Features',         href: '#features' },
+                { label: 'Pricing',          href: '#pricing' },
+                { label: 'How it works',     href: '#how-it-works' },
+                { label: 'Contact',          href: '#contact' },
+              ].map(item => (
+                <a key={item.label} href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-4 py-3.5 text-base font-semibold text-slate-800 transition hover:bg-slate-50">
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            <div className="mt-6 flex flex-col gap-3">
+              <Link href="/login" onClick={() => setMobileOpen(false)}
+                className="rounded-xl border-2 border-[#0f172a] px-4 py-3 text-center text-base font-bold text-[#0f172a]">
+                Login
+              </Link>
+              <Link href="/register" onClick={() => setMobileOpen(false)}
+                className="rounded-xl bg-[#1e40af] px-4 py-3 text-center text-base font-bold text-white">
+                Get Started Free
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          HERO
-      ───────────────────────────────────────────────────────────────────── */}
-      <section className="overflow-hidden bg-white px-6 pb-16 pt-16 md:pb-24 md:pt-20">
-        <div className="mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2">
+      {/* ═══════════════════════════════════════════════════════
+          2. HERO
+      ═══════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-[#0f172a] px-6 pb-20 pt-16 md:pb-28 md:pt-20">
+        {/* Diagonal background pattern */}
+        <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="diag" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="20" stroke="white" strokeWidth="1.2" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#diag)" />
+        </svg>
 
-          {/* Left — copy */}
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              Built for South Africa
-            </div>
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[3fr_2fr]">
 
-            <h1 className="text-[2.6rem] font-extrabold leading-[1.12] tracking-tight text-slate-900 md:text-5xl">
-              Property management{' '}
-              <span className="text-blue-700">without the letting agent</span>
+          {/* Left */}
+          <div className="hero-enter">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#dcfce7] px-3.5 py-1.5 text-xs font-bold text-[#16a34a]">
+              🇿🇦 Built for South Africa
+            </span>
+
+            <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-white md:text-6xl">
+              Grow your rental<br />
+              <span className="text-[#3b82f6]">business with PropTrust</span>
             </h1>
 
-            <p className="mt-5 text-lg leading-relaxed text-slate-500">
-              PropTrust gives South African landlords the tools to screen tenants, collect rent and manage maintenance —
-              without paying an agent commission on every lease.
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-300">
+              South Africa&apos;s property platform for private landlords and tenants.
+              Find quality tenants, collect rent on time and manage everything —
+              without paying a cent to a letting agent.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/register"
-                className="rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
-                Start for free
-              </Link>
-              <a href="#how-it-works"
-                className="rounded-xl border border-slate-300 px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
-                See how it works
-              </a>
+            {/* Stars */}
+            <div className="mt-6 flex items-center gap-2.5">
+              <Stars />
+              <span className="text-sm font-semibold text-white">4.9 / 5.0</span>
+              <span className="text-sm text-slate-400">(Based on early landlord feedback)</span>
             </div>
 
-            <p className="mt-5 text-sm text-slate-400">
-              No credit card required. No agent commission. No lock-in.
-            </p>
+            {/* CTAs */}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/register"
+                className="rounded-full bg-[#3b82f6] px-7 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-95">
+                Start free trial
+              </Link>
+              <Link href="/register"
+                className="rounded-full border-2 border-white/30 px-7 py-3.5 text-base font-bold text-white transition hover:border-white/60 hover:bg-white/5 active:scale-95">
+                Book a demo
+              </Link>
+            </div>
+
+            <p className="mt-4 text-xs text-slate-500">No credit card required · Cancel anytime</p>
           </div>
 
-          {/* Right — product mockup */}
+          {/* Right — dashboard card */}
           <div className="flex justify-center">
-            <div className="w-full max-w-[380px]">
-              {/* Browser chrome */}
-              <div className="rounded-t-xl border border-slate-200 bg-slate-100 px-4 py-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-slate-300" />
-                  <span className="h-3 w-3 rounded-full bg-slate-300" />
-                  <span className="h-3 w-3 rounded-full bg-slate-300" />
-                  <span className="ml-3 flex-1 rounded-md bg-white px-3 py-1 text-xs text-slate-400">
-                    proptrust.co.za/dashboard
+            <div className="hero-card w-full max-w-[340px] rounded-2xl bg-white p-5 shadow-2xl"
+              style={{ transform: 'rotate(-2deg)' }}>
+
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">PropTrust Dashboard</span>
+                <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                  Live
+                </span>
+              </div>
+
+              {/* Property row */}
+              <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-900">12 Ocean View Drive, Sea Point</p>
+                  <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
+                    All paid ✓
                   </span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-slate-400">3 tenants · Lease expires Sep 2027</p>
+              </div>
+
+              {/* Tenant 1 — good score */}
+              <div className="mb-2 px-1">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-700">Sarah D.</span>
+                  <span className="text-[11px] font-bold text-green-700">87/100</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="score-bar-green h-full rounded-full bg-green-500" />
                 </div>
               </div>
 
-              {/* Dashboard window */}
-              <div className="rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 p-4 shadow-xl">
-
-                {/* Mini nav */}
-                <div className="mb-3 flex items-center gap-1">
-                  <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-700">
-                    <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  </div>
-                  <span className="ml-1 text-[11px] font-bold text-slate-700">PropTrust</span>
-                  <div className="ml-auto flex gap-1">
-                    {['Dashboard', 'Tenants', 'Payments'].map((t, i) => (
-                      <span key={t} className={`rounded px-2 py-0.5 text-[10px] font-medium ${
-                        i === 0 ? 'bg-blue-700 text-white' : 'text-slate-400'
-                      }`}>{t}</span>
-                    ))}
-                  </div>
+              {/* Tenant 2 — mid score */}
+              <div className="mb-3 px-1">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-700">James F.</span>
+                  <span className="text-[11px] font-bold text-amber-600">52/100</span>
                 </div>
-
-                {/* Stats row */}
-                <div className="mb-3 grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Properties', value: '4' },
-                    { label: 'Tenants',    value: '7' },
-                    { label: 'This month', value: 'R 68 400' },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-lg border border-slate-200 bg-white p-2.5 text-center">
-                      <p className="text-sm font-bold text-slate-900">{s.value}</p>
-                      <p className="text-[10px] text-slate-400">{s.label}</p>
-                    </div>
-                  ))}
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="score-bar-amber h-full rounded-full bg-amber-400" />
                 </div>
+              </div>
 
-                {/* Property row */}
-                <div className="mb-2 rounded-lg border border-slate-200 bg-white p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900">12 Ocean View, Sea Point</p>
-                      <p className="mt-0.5 text-[10px] text-slate-400">2 tenants · lease ends Aug 2026</p>
-                    </div>
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
-                      Current
-                    </span>
-                  </div>
-
-                  {/* Risk score */}
-                  <div className="mt-2.5">
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">Tenant risk score</span>
-                      <span className="text-[10px] font-bold text-green-700">87 / 100 — Low risk</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div className="animate-score-bar h-full rounded-full bg-green-500" />
-                    </div>
-                  </div>
+              {/* Payment notification */}
+              <div className="payment-notify mb-2 flex items-center gap-2.5 rounded-xl border border-green-200 bg-green-50 px-3 py-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-600 text-white">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-
-                {/* Payment notification */}
-                <div className="animate-paid mb-2 flex items-center gap-2.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600">
-                    <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-green-800">Rent received</p>
-                    <p className="text-[10px] text-green-600">R 14 500 · June 2026 · via EFT</p>
-                  </div>
+                <div>
+                  <p className="text-xs font-bold text-green-800">R12,500 received</p>
+                  <p className="text-[10px] text-green-600">Unit 4B · June 2026 · EFT</p>
                 </div>
+              </div>
 
-                {/* Tenant match */}
-                <div className="animate-match flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2">
-                  <div>
-                    <p className="text-xs font-semibold text-blue-900">New applicant matched</p>
-                    <p className="text-[10px] text-blue-600">Verified ID · Bank statement reviewed</p>
-                  </div>
-                  <span className="ml-3 shrink-0 rounded-full bg-blue-700 px-2.5 py-1 text-[10px] font-bold text-white">
-                    94% match
-                  </span>
+              {/* Match notification */}
+              <div className="match-notify flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2.5">
+                <div>
+                  <p className="text-xs font-bold text-blue-900">New tenant match</p>
+                  <p className="text-[10px] text-blue-600">Sea Point · R12k budget · Verified ID</p>
                 </div>
+                <span className="ml-2 shrink-0 rounded-full bg-[#1e40af] px-2.5 py-1 text-[10px] font-bold text-white">
+                  94% match
+                </span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Hero animations */}
+        <style>{`
+          .hero-enter { animation: heroSlideUp .65s cubic-bezier(.22,.68,0,1.2) both; }
+          .hero-card  { animation: cardSlideUp .75s .15s cubic-bezier(.22,.68,0,1.2) both; }
+          @keyframes heroSlideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes cardSlideUp { from { opacity:0; transform:translateY(32px) rotate(-2deg); } to { opacity:1; transform:translateY(0) rotate(-2deg); } }
+          .score-bar-green { animation: scoreGreen 1.4s .5s ease-out both; }
+          .score-bar-amber  { animation: scoreAmber 1.4s .7s ease-out both; }
+          @keyframes scoreGreen { from { width:0% } to { width:87% } }
+          @keyframes scoreAmber { from { width:0% } to { width:52% } }
+          .payment-notify { animation: notifyFade 4s 1s ease-in-out infinite; }
+          .match-notify   { animation: notifyFade 4s 2s ease-in-out infinite; }
+          @keyframes notifyFade {
+            0%,25%  { opacity:0; transform:translateY(6px) scale(.97); }
+            35%,80% { opacity:1; transform:translateY(0) scale(1); }
+            90%,100%{ opacity:0; }
+          }
+        `}</style>
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          CITIES / SOCIAL PROOF BAR
-      ───────────────────────────────────────────────────────────────────── */}
-      <div className="border-y border-slate-100 bg-slate-50 py-4">
+      {/* ═══════════════════════════════════════════════════════
+          3. SOCIAL PROOF BAR
+      ═══════════════════════════════════════════════════════ */}
+      <div className="border-y border-slate-100 bg-white py-4">
         <div className="flex items-center overflow-hidden">
-          <span className="shrink-0 pl-6 pr-6 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <span className="shrink-0 pl-6 pr-5 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Active across
           </span>
-          <div className="flex overflow-hidden">
-            <div className="animate-marquee flex shrink-0 items-center gap-10 whitespace-nowrap pr-10">
-              {[
-                'Cape Town', 'Stellenbosch', 'Johannesburg', 'Durban',
-                'Pretoria', 'Sandton', 'Paarl', 'George', 'Knysna', 'Hermanus',
-                'Cape Town', 'Stellenbosch', 'Johannesburg', 'Durban',
-                'Pretoria', 'Sandton', 'Paarl', 'George', 'Knysna', 'Hermanus',
-              ].map((city, i) => (
-                <span key={i} className="text-sm font-medium text-slate-500">{city}</span>
+          <div className="relative flex-1 overflow-hidden">
+            <div className="animate-marquee flex gap-10 whitespace-nowrap">
+              {CITIES.concat(CITIES).map((city, i) => (
+                <span key={i} className="text-sm font-medium text-slate-600">
+                  {city}
+                  <span className="ml-10 text-slate-300">·</span>
+                </span>
               ))}
             </div>
           </div>
@@ -220,90 +431,206 @@ export default async function HomePage() {
       </div>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          PROBLEM / VALUE STATEMENT
-      ───────────────────────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-            Managing a rental property should not require a middleman
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-500">
-            South African letting agents typically charge 8 to 12 percent of monthly rent to do tasks
-            that software handles in seconds. PropTrust puts those tools directly in your hands.
-          </p>
-        </div>
-
-        <div className="mx-auto mt-14 grid max-w-4xl gap-6 sm:grid-cols-3">
-          {PAIN_POINTS.map(p => (
-            <div key={p.heading} className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600">
-                {p.icon}
-              </div>
-              <h3 className="mb-1.5 font-semibold text-slate-900">{p.heading}</h3>
-              <p className="text-sm leading-relaxed text-slate-500">{p.body}</p>
+      {/* ═══════════════════════════════════════════════════════
+          4. STATS BAR
+      ═══════════════════════════════════════════════════════ */}
+      <section className="bg-[#1e40af] px-6 py-12">
+        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-y-10 text-center md:grid-cols-4">
+          {STATS.map(s => (
+            <div key={s.label}>
+              <p className="text-4xl font-extrabold text-white">{s.value}</p>
+              <p className="mt-1.5 text-sm font-medium text-blue-200">{s.label}</p>
             </div>
           ))}
         </div>
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          FEATURES
-      ───────────────────────────────────────────────────────────────────── */}
-      <section id="features" className="bg-slate-50 px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-              Every tool a South African landlord needs
-            </h2>
-            <p className="mt-4 text-base text-slate-500">
-              From the first application to the final payment — all in one place.
-            </p>
-          </div>
+      {/* ═══════════════════════════════════════════════════════
+          5. PRODUCT CARDS
+      ═══════════════════════════════════════════════════════ */}
+      <section className="bg-[#f8fafc] px-6 py-20">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mb-3 text-center text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            Built for every side of the rental market
+          </h2>
+          <p className="mb-12 text-center text-base text-slate-500">
+            Whether you own or rent — PropTrust works for you.
+          </p>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div key={f.title}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-blue-200 hover:shadow-md">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
-                  {f.icon}
-                </div>
-                <h3 className="mb-2 text-[15px] font-bold text-slate-900">{f.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{f.desc}</p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Landlord card */}
+            <div className="flex flex-col rounded-2xl bg-[#0f172a] p-8 text-white shadow-xl">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-700">
+                <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
               </div>
-            ))}
+              <h3 className="mb-3 text-2xl font-extrabold">For Landlords</h3>
+              <p className="mb-6 text-base leading-relaxed text-slate-300">
+                All the tools to manage your properties, screen tenants and collect rent —
+                without paying a single cent to a letting agent.
+              </p>
+              <p className="mb-1 text-2xl font-extrabold text-[#3b82f6]">R35 / property / month</p>
+              <p className="mb-8 text-sm text-slate-400">Plans from R99/month · First 30 days free</p>
+              <div className="mt-auto flex flex-col gap-3">
+                <Link href="/register"
+                  className="rounded-xl bg-white py-3.5 text-center text-base font-bold text-[#0f172a] transition hover:bg-slate-100">
+                  Free Trial
+                </Link>
+                <a href="#landlords"
+                  className="text-center text-sm font-semibold text-[#3b82f6] transition hover:text-blue-400">
+                  Learn more →
+                </a>
+              </div>
+            </div>
+
+            {/* Tenant card */}
+            <div className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-8 shadow-sm">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50">
+                <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="mb-3 text-2xl font-extrabold text-slate-900">For Tenants</h3>
+              <p className="mb-6 text-base leading-relaxed text-slate-600">
+                Build your verified rental profile and get matched with landlords directly.
+                No agent fees. No deposit surprises.
+              </p>
+              <p className="mb-1 text-2xl font-extrabold text-green-600">Always free</p>
+              <p className="mb-8 text-sm text-slate-400">Verified profile · Direct connections</p>
+              <div className="mt-auto flex flex-col gap-3">
+                <Link href="/register"
+                  className="rounded-xl bg-[#0f172a] py-3.5 text-center text-base font-bold text-white transition hover:bg-slate-800">
+                  Create Profile
+                </Link>
+                <a href="#tenants"
+                  className="text-center text-sm font-semibold text-[#1e40af] transition hover:text-blue-700">
+                  Learn more →
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          HOW IT WORKS
-      ───────────────────────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="bg-white px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-14 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-              Up and running in under ten minutes
-            </h2>
-            <p className="mt-4 text-base text-slate-500">
-              No onboarding calls. No contracts. Just create an account and go.
+      {/* ═══════════════════════════════════════════════════════
+          6. FEATURES
+      ═══════════════════════════════════════════════════════ */}
+      <section id="features" className="bg-white px-6 py-20">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mb-3 text-center text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            PropTrust gives you&hellip;
+          </h2>
+          <p className="mb-14 text-center text-base text-slate-500">
+            Everything a South African landlord needs, in one platform.
+          </p>
+
+          {/* Wheel + list: two-column on lg, grid only on mobile */}
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+
+            {/* SVG feature wheel — hidden on mobile */}
+            <div className="hidden justify-center lg:flex">
+              <FeatureWheel />
+            </div>
+
+            {/* Feature list */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              {FEATURE_LIST.map(f => (
+                <div key={f.title} className="flex items-start gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:shadow-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1e40af] text-white">
+                    {f.icon}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">{f.title}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-slate-500">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* ═══════════════════════════════════════════════════════
+          7. WHY PROPTRUST
+      ═══════════════════════════════════════════════════════ */}
+      <section id="landlords" className="bg-[#0f172a] px-6 py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-extrabold text-white md:text-4xl">Why use PropTrust?</h2>
+            <p className="mt-4 text-base text-slate-300">
+              We built this because we were frustrated with the South African rental market too.
             </p>
           </div>
 
-          <div className="grid gap-10 md:grid-cols-3">
-            {HOW_IT_WORKS.map((s, i) => (
-              <div key={i} className="relative flex flex-col items-start">
-                {/* Connector line on desktop */}
-                {i < HOW_IT_WORKS.length - 1 && (
-                  <div className="absolute left-[52px] top-6 hidden h-0.5 w-[calc(100%+40px)] bg-slate-100 md:block" />
+          <div className="grid items-center gap-14 lg:grid-cols-2">
+
+            {/* Phone mockup */}
+            <div className="flex justify-center">
+              <PhoneMockup />
+            </div>
+
+            {/* Reasons */}
+            <div className="space-y-7">
+              {WHY_REASONS.map(r => (
+                <div key={r.title} className="flex items-start gap-4">
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-500">
+                    <IconCheck className="h-3.5 w-3.5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">{r.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-400">{r.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* ═══════════════════════════════════════════════════════
+          8. HOW IT WORKS
+      ═══════════════════════════════════════════════════════ */}
+      <section id="how-it-works" className="bg-[#f8fafc] px-6 py-20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            Get started in minutes
+          </h2>
+
+          {/* Tab toggle */}
+          <div className="mb-12 flex justify-center">
+            <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {(['landlord', 'tenant'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setHwTab(tab)}
+                  className={`rounded-lg px-6 py-2.5 text-sm font-bold transition ${
+                    hwTab === tab
+                      ? 'bg-[#0f172a] text-white shadow'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab === 'landlord' ? 'For Landlords' : 'For Tenants'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {HOW_IT_WORKS[hwTab].map((step, i) => (
+              <div key={i} className="relative flex flex-col items-center text-center">
+                {i < 2 && (
+                  <div className="absolute left-[calc(50%+36px)] top-7 hidden h-0.5 w-[calc(100%-72px)] bg-slate-200 md:block" />
                 )}
-                <div className="relative z-10 mb-5 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-blue-700 bg-white text-lg font-extrabold text-blue-700">
+                <div className="relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#1e40af] bg-white text-lg font-extrabold text-[#1e40af] shadow-sm">
                   {i + 1}
                 </div>
-                <h3 className="mb-2 font-bold text-slate-900">{s.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{s.desc}</p>
+                <h3 className="mb-2 font-bold text-slate-900">{step.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -311,174 +638,112 @@ export default async function HomePage() {
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          FOR LANDLORDS
-      ───────────────────────────────────────────────────────────────────── */}
-      <section id="landlords" className="bg-slate-50 px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div>
-              <span className="mb-4 inline-block rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                For landlords
-              </span>
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                Stop paying 10 percent of your rent to someone else
-              </h2>
-              <p className="mt-5 text-base leading-relaxed text-slate-500">
-                PropTrust replaces your letting agent for a fraction of the cost. Screen applicants properly,
-                collect rent automatically and manage maintenance without a middleman.
-              </p>
-              <ul className="mt-7 space-y-3">
-                {LANDLORD_BULLETS.map(b => (
-                  <li key={b} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-700">
-                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span className="text-sm text-slate-600">{b}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/register"
-                className="mt-8 inline-block rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-800">
-                Create landlord account
-              </Link>
-            </div>
-
-            {/* Feature list panel */}
-            <div className="space-y-3">
-              {LANDLORD_FEATURES.map(f => (
-                <div key={f.title} className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                    {f.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{f.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{f.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* ─────────────────────────────────────────────────────────────────────
-          FOR TENANTS
-      ───────────────────────────────────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════
+          9. TESTIMONIALS
+      ═══════════════════════════════════════════════════════ */}
       <section id="tenants" className="bg-white px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-
-            {/* Feature list panel */}
-            <div className="space-y-3 md:order-first">
-              {TENANT_FEATURES.map(f => (
-                <div key={f.title} className="flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-700">
-                    {f.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{f.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{f.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <span className="mb-4 inline-block rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                For tenants
-              </span>
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                Find a quality rental without paying an agent
-              </h2>
-              <p className="mt-5 text-base leading-relaxed text-slate-500">
-                Build a verified rental profile once and let landlords come to you.
-                PropTrust connects you directly with private landlords who manage their own properties.
-              </p>
-              <ul className="mt-7 space-y-3">
-                {TENANT_BULLETS.map(b => (
-                  <li key={b} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-600">
-                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span className="text-sm text-slate-600">{b}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/register"
-                className="mt-8 inline-block rounded-xl bg-green-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-green-700">
-                Create tenant profile
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* ─────────────────────────────────────────────────────────────────────
-          PRICING
-      ───────────────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="bg-slate-50 px-6 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-              Straightforward pricing
-            </h2>
-            <p className="mt-4 text-base text-slate-500">
-              Start free. Add more as your portfolio grows.
-            </p>
-          </div>
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mb-2 text-center text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            What South African landlords say
+          </h2>
+          <p className="mb-12 text-center text-base text-slate-500">Real feedback from our early users.</p>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {PRICING_TIERS.map((tier, i) => (
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className="flex flex-col rounded-2xl border border-slate-100 bg-[#f8fafc] p-7">
+                <Stars />
+                <p className="mt-4 flex-1 text-sm leading-relaxed text-slate-600">&ldquo;{t.quote}&rdquo;</p>
+                <div className="mt-6 flex items-center gap-3 border-t border-slate-200 pt-5">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${t.avatarBg}`}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                    <p className="text-xs text-slate-400">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex items-center justify-center gap-2">
+            <Stars />
+            <span className="text-sm font-semibold text-slate-700">4.9/5</span>
+            <span className="text-sm text-slate-400">based on early landlord feedback</span>
+          </div>
+        </div>
+      </section>
+
+
+      {/* ═══════════════════════════════════════════════════════
+          10. PRICING
+      ═══════════════════════════════════════════════════════ */}
+      <section id="pricing" className="bg-[#f8fafc] px-6 py-20">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-3 text-center text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            Simple, transparent pricing
+          </h2>
+          <p className="mb-14 text-center text-base text-slate-500">
+            No hidden fees. No agent commissions. Just one honest monthly price.
+          </p>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {PRICING.map((tier, i) => (
               <div key={tier.name}
-                className={`relative rounded-2xl border p-7 ${
+                className={`relative flex flex-col rounded-2xl p-8 ${
                   i === 1
-                    ? 'border-blue-700 bg-blue-700 text-white shadow-xl'
-                    : 'border-slate-200 bg-white'
+                    ? 'bg-[#0f172a] text-white shadow-2xl ring-2 ring-[#1e40af]'
+                    : 'border border-slate-200 bg-white'
                 }`}>
                 {i === 1 && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#1e40af] px-4 py-1 text-xs font-bold text-white">
                     Most popular
                   </span>
                 )}
-                <p className={`text-xs font-semibold uppercase tracking-wider ${i === 1 ? 'text-blue-200' : 'text-slate-400'}`}>
+                <p className={`text-xs font-bold uppercase tracking-wider ${i === 1 ? 'text-blue-300' : 'text-slate-400'}`}>
                   {tier.name}
                 </p>
-                <div className="my-4 flex items-end gap-1">
+                <div className="my-4">
                   <span className={`text-4xl font-extrabold ${i === 1 ? 'text-white' : 'text-slate-900'}`}>
                     {tier.price}
                   </span>
-                  {tier.per && (
-                    <span className={`mb-1 text-sm ${i === 1 ? 'text-blue-200' : 'text-slate-400'}`}>
-                      {tier.per}
+                  {tier.period && (
+                    <span className={`ml-1 text-sm ${i === 1 ? 'text-blue-200' : 'text-slate-400'}`}>
+                      {tier.period}
                     </span>
                   )}
                 </div>
-                <p className={`mb-6 text-sm leading-relaxed ${i === 1 ? 'text-blue-100' : 'text-slate-500'}`}>
-                  {tier.desc}
+                <p className={`mb-6 text-sm ${i === 1 ? 'text-blue-200' : 'text-slate-500'}`}>
+                  {tier.sub}
                 </p>
-                <ul className="mb-7 space-y-2.5">
+                <ul className="mb-8 flex-1 space-y-3">
                   {tier.features.map(f => (
-                    <li key={f} className="flex items-start gap-2.5">
-                      <svg className={`mt-0.5 h-4 w-4 shrink-0 ${i === 1 ? 'text-blue-200' : 'text-blue-700'}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className={`text-sm ${i === 1 ? 'text-blue-50' : 'text-slate-600'}`}>{f}</span>
+                    <li key={f.text} className="flex items-start gap-2.5">
+                      {f.included
+                        ? <span className={`mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full ${i === 1 ? 'bg-green-500' : 'bg-green-500'}`}>
+                            <IconCheck className="h-2.5 w-2.5 text-white" />
+                          </span>
+                        : <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-slate-100">
+                            <IconX />
+                          </span>
+                      }
+                      <span className={`text-sm ${
+                        f.included
+                          ? (i === 1 ? 'text-blue-50' : 'text-slate-700')
+                          : 'text-slate-400 line-through'
+                      }`}>
+                        {f.text}
+                      </span>
                     </li>
                   ))}
                 </ul>
                 <Link href="/register"
-                  className={`block w-full rounded-xl py-3 text-center text-sm font-bold transition ${
+                  className={`block rounded-xl py-3.5 text-center text-sm font-bold transition ${
                     i === 1
-                      ? 'bg-white text-blue-700 hover:bg-blue-50'
-                      : 'bg-blue-700 text-white hover:bg-blue-800'
+                      ? 'bg-white text-[#0f172a] hover:bg-slate-100'
+                      : i === 2
+                      ? 'border-2 border-[#1e40af] text-[#1e40af] hover:bg-blue-50'
+                      : 'border-2 border-[#1e40af] text-[#1e40af] hover:bg-blue-50'
                   }`}>
                   {tier.cta}
                 </Link>
@@ -487,149 +752,93 @@ export default async function HomePage() {
           </div>
 
           <p className="mt-8 text-center text-sm text-slate-400">
-            All plans include unlimited tenant profiles and introduction requests.
-            Prices exclude VAT where applicable.
+            All plans include a 30-day free trial. No credit card required.
           </p>
         </div>
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          TESTIMONIALS
-      ───────────────────────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-              What our early users say
-            </h2>
-            <p className="mt-3 text-sm text-slate-400">
-              Feedback from landlords and tenants in our beta programme.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="flex flex-col rounded-2xl border border-slate-100 bg-slate-50 p-7">
-                {/* Quote mark */}
-                <svg className="mb-4 h-7 w-7 text-blue-200" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                </svg>
-                <p className="flex-1 text-sm leading-relaxed text-slate-600">{t.quote}</p>
-                <div className="mt-6 border-t border-slate-200 pt-5">
-                  <p className="text-sm font-semibold text-slate-900">{t.name}</p>
-                  <p className="text-xs text-slate-400">{t.role} · {t.location}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-      {/* ─────────────────────────────────────────────────────────────────────
-          FINAL CTA
-      ───────────────────────────────────────────────────────────────────── */}
-      <section className="bg-[#0f172a] px-6 py-24 text-center">
+      {/* ═══════════════════════════════════════════════════════
+          11. FINAL CTA
+      ═══════════════════════════════════════════════════════ */}
+      <section className="bg-[#1e40af] px-6 py-24 text-center">
         <div className="mx-auto max-w-2xl">
-          <h2 className="text-3xl font-extrabold text-white md:text-4xl">
-            Ready to manage your properties yourself?
+          <h2 className="text-4xl font-extrabold text-white">
+            Ready to eliminate your rental agent?
           </h2>
-          <p className="mt-5 text-base leading-relaxed text-slate-400">
-            Join South African landlords who have reduced their letting costs and taken back
-            control of their rental portfolios.
+          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-blue-100">
+            Join South African landlords managing their properties directly on PropTrust.
+            Start your free 30-day trial today.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link href="/register"
-              className="rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-blue-700">
-              Get started free
+              className="rounded-full bg-white px-9 py-4 text-base font-extrabold text-[#1e40af] shadow-lg transition hover:bg-blue-50 active:scale-95">
+              Start free trial
             </Link>
-            <a href="#features"
-              className="rounded-xl border border-white/20 px-8 py-4 text-base font-semibold text-white transition hover:border-white/40 hover:bg-white/5">
-              Learn more
-            </a>
+            <Link href="/register"
+              className="rounded-full border-2 border-white/40 px-9 py-4 text-base font-bold text-white transition hover:border-white hover:bg-white/10 active:scale-95">
+              Book a demo
+            </Link>
           </div>
-          <p className="mt-6 text-sm text-slate-500">No credit card required. No lock-in contracts.</p>
+          <p className="mt-6 text-sm text-blue-200">
+            No credit card required · Cancel anytime · South African support
+          </p>
         </div>
       </section>
 
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          FOOTER
-      ───────────────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/10 bg-[#0f172a] px-6 py-14">
-        <div className="mx-auto max-w-6xl">
+      {/* ═══════════════════════════════════════════════════════
+          12. FOOTER
+      ═══════════════════════════════════════════════════════ */}
+      <footer id="contact" className="bg-[#0f172a] px-6 pb-10 pt-16">
+        <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 md:grid-cols-4">
 
             {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
-                  <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                </div>
-                <span className="font-bold text-white">PropTrust</span>
-              </div>
-              <p className="text-sm text-slate-400">
-                Property management software for South African landlords and tenants.
+            <div>
+              <Logo white />
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                South Africa&apos;s trusted property platform.
               </p>
+              <p className="mt-2 text-sm text-slate-500">hello@proptrust.co.za</p>
+              <p className="text-sm text-slate-500">Cape Town, South Africa</p>
+              {/* Social icons */}
+              <div className="mt-4 flex gap-2.5">
+                {['Li', 'Ig', 'Tw'].map(s => (
+                  <a key={s} href="#"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-xs font-bold text-slate-400 transition hover:border-white/30 hover:text-white">
+                    {s}
+                  </a>
+                ))}
+              </div>
             </div>
 
-            {/* Product links */}
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Product</p>
-              <ul className="space-y-2.5">
-                {['Features', 'For landlords', 'For tenants', 'Pricing'].map(l => (
-                  <li key={l}>
-                    <a href={`#${l.toLowerCase().replace(' ', '-')}`}
-                      className="text-sm text-slate-400 transition hover:text-white">
-                      {l}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Account links */}
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
-              <ul className="space-y-2.5">
-                {[
-                  { label: 'Sign in',            href: '/login' },
-                  { label: 'Create account',     href: '/register' },
-                  { label: 'Landlord dashboard', href: '/dashboard' },
-                  { label: 'Tenant profile',     href: '/tenant/profile' },
-                ].map(({ label, href }) => (
-                  <li key={label}>
-                    <Link href={href} className="text-sm text-slate-400 transition hover:text-white">
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal / contact */}
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Company</p>
-              <ul className="space-y-2.5">
-                {['Privacy policy', 'Terms of service', 'Contact us'].map(l => (
-                  <li key={l}>
-                    <a href="#" className="text-sm text-slate-400 transition hover:text-white">{l}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Links */}
+            {FOOTER_COLS.map(col => (
+              <div key={col.title}>
+                <p className="mb-4 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  {col.title}
+                </p>
+                <ul className="space-y-2.5">
+                  {col.links.map(link => (
+                    <li key={link}>
+                      <a href="#"
+                        className="text-sm text-slate-400 transition hover:text-white">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
+          <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-8 sm:flex-row sm:items-center">
             <p className="text-xs text-slate-500">
-              &copy; 2026 PropTrust (Pty) Ltd. Registered in South Africa. proptrust.co.za
+              &copy; 2026 PropTrust (Pty) Ltd · proptrust.co.za
             </p>
-            <p className="text-xs text-slate-600">
-              Not a registered estate agent. PropTrust is a software platform only.
+            <p className="text-xs text-slate-500">
+              POPIA Compliant · Made in South Africa 🇿🇦
             </p>
           </div>
         </div>
@@ -641,267 +850,302 @@ export default async function HomePage() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FEATURE WHEEL — pure SVG, interactive on hover
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WHEEL_SEGMENTS = [
+  { label: 'Risk Scoring',       color: '#1e3a8a' },
+  { label: 'Payments',           color: '#1e40af' },
+  { label: 'Verification',       color: '#1d4ed8' },
+  { label: 'Body Corporate',     color: '#2563eb' },
+  { label: 'Maintenance',        color: '#3b82f6' },
+  { label: 'WhatsApp',           color: '#60a5fa' },
+  { label: 'Marketplace',        color: '#93c5fd' },
+  { label: 'Documents',          color: '#bfdbfe' },
+]
+
+function FeatureWheel() {
+  const [active, setActive] = useState<number | null>(null)
+  const cx = 160, cy = 160, R = 130, r = 48
+  const n = WHEEL_SEGMENTS.length
+
+  function segmentPath(i: number) {
+    const a0 = (i / n) * 2 * Math.PI - Math.PI / 2
+    const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2
+    const gap = 0.04
+    const x0 = cx + R * Math.cos(a0 + gap), y0 = cy + R * Math.sin(a0 + gap)
+    const x1 = cx + R * Math.cos(a1 - gap), y1 = cy + R * Math.sin(a1 - gap)
+    const x2 = cx + r * Math.cos(a1 - gap), y2 = cy + r * Math.sin(a1 - gap)
+    const x3 = cx + r * Math.cos(a0 + gap), y3 = cy + r * Math.sin(a0 + gap)
+    return `M${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${r} ${r} 0 0 0 ${x3} ${y3} Z`
+  }
+
+  function labelPos(i: number) {
+    const a = ((i + 0.5) / n) * 2 * Math.PI - Math.PI / 2
+    const dist = (R + r) / 2
+    return { x: cx + dist * Math.cos(a), y: cy + dist * Math.sin(a) }
+  }
+
+  return (
+    <svg viewBox="0 0 320 320" className="w-full max-w-xs select-none" aria-hidden="true">
+      {WHEEL_SEGMENTS.map((seg, i) => {
+        const pos = labelPos(i)
+        return (
+          <g key={i}
+            onMouseEnter={() => setActive(i)}
+            onMouseLeave={() => setActive(null)}
+            style={{ cursor: 'pointer' }}>
+            <path
+              d={segmentPath(i)}
+              fill={seg.color}
+              opacity={active === null ? 1 : active === i ? 1 : 0.4}
+              style={{ transition: 'opacity .2s' }}
+            />
+            <text
+              x={pos.x} y={pos.y}
+              textAnchor="middle" dominantBaseline="middle"
+              fill={i >= 6 ? '#1e3a8a' : 'white'}
+              fontSize="8"
+              fontWeight="600"
+            >
+              {seg.label}
+            </text>
+          </g>
+        )
+      })}
+      {/* Center circle */}
+      <circle cx={cx} cy={cy} r={r - 4} fill="#0f172a" />
+      <text x={cx} y={cy - 7} textAnchor="middle" fill="white" fontSize="13" fontWeight="800">PT</text>
+      <text x={cx} y={cy + 9} textAnchor="middle" fill="#93c5fd" fontSize="7" fontWeight="600">PropTrust</text>
+    </svg>
+  )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHONE MOCKUP
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PhoneMockup() {
+  return (
+    <div className="relative w-56">
+      {/* Phone frame */}
+      <div className="rounded-[2.5rem] border-4 border-slate-600 bg-slate-800 shadow-2xl">
+        {/* Notch */}
+        <div className="mx-auto mb-1 h-5 w-20 rounded-b-2xl bg-slate-700" />
+        {/* Screen */}
+        <div className="mx-1 mb-1 min-h-[380px] rounded-[1.8rem] bg-slate-900 p-3">
+          {/* Mini dashboard */}
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[9px] font-bold text-slate-300">PropTrust</span>
+            <span className="text-[9px] text-green-400">● Live</span>
+          </div>
+          {/* Properties */}
+          {[
+            { name: 'Unit 4B, Sea Point', badge: 'Paid', badgeCls: 'text-green-400', score: 87 },
+            { name: '3 Church St, Paarl',  badge: 'Due',  badgeCls: 'text-amber-400', score: 64 },
+          ].map((p, i) => (
+            <div key={i} className="mb-2 rounded-xl bg-slate-800 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-semibold text-white">{p.name}</span>
+                <span className={`text-[9px] font-bold ${p.badgeCls}`}>{p.badge}</span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+                <div className={`h-full rounded-full ${p.score > 70 ? 'bg-green-500' : 'bg-amber-400'}`}
+                  style={{ width: `${p.score}%` }} />
+              </div>
+              <span className="mt-0.5 block text-right text-[8px] text-slate-400">{p.score}/100</span>
+            </div>
+          ))}
+          {/* Notification */}
+          <div className="rounded-xl border border-blue-800 bg-blue-900/40 p-2.5">
+            <p className="text-[9px] font-bold text-blue-300">Payment due in 2 days</p>
+            <p className="text-[8px] text-blue-400">Unit 4B · R14,500 · 1 Jul 2026</p>
+          </div>
+        </div>
+        {/* Home bar */}
+        <div className="mx-auto mb-2 h-1 w-16 rounded-full bg-slate-600" />
+      </div>
+    </div>
+  )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PAIN_POINTS = [
+const CITIES = [
+  'Cape Town', 'Stellenbosch', 'Johannesburg', 'Durban',
+  'Pretoria', 'Sandton', 'Paarl', 'George', 'Knysna',
+  'Hermanus', 'Bloemfontein', 'Port Elizabeth', 'East London', 'Kimberley',
+]
+
+const STATS = [
+  { value: '60+',    label: 'Properties managed' },
+  { value: '100%',   label: 'Verified tenants' },
+  { value: 'R0',     label: 'Agent fees' },
+  { value: '14 days', label: 'Avg let time' },
+]
+
+const FEATURE_LIST = [
   {
-    heading: 'Agent commissions add up fast',
-    body:    'At 8 to 10 percent per month, a R12 000 rental costs you over R14 000 a year just in management fees.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    title: 'Risk Scoring',
+    desc:  'Every tenant receives a live risk score based on payment history, income and financial behaviour.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
   },
   {
-    heading: 'Problem tenants are expensive',
-    body:    'Evictions, missed rent and property damage cost far more than a proper screening process upfront.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
+    title: 'Payment Tracking',
+    desc:  'Full payment records per tenant. Automated WhatsApp and email reminders before and after due date.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
   },
   {
-    heading: 'Manual rent collection is time-consuming',
-    body:    'Chasing payments by phone, keeping spreadsheets and sending reminders manually eats hours every month.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    title: 'Tenant Verification',
+    desc:  'SA ID validation, credit check and bank statement analysis before you sign a single document.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+  },
+  {
+    title: 'Body Corporate',
+    desc:  'Upload meeting minutes and get an instant AI summary of action items, levies and flags.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
+  },
+  {
+    title: 'Maintenance Management',
+    desc:  'Track component lifespans, manage contractor quotes and log every job from start to finish.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  },
+  {
+    title: 'Tenant Marketplace',
+    desc:  'Verified tenants matched by budget, area, lease preference and financial profile. No agents involved.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  },
+  {
+    title: 'WhatsApp Integration',
+    desc:  'Automatic WhatsApp reminders for rent due dates, late payments and maintenance updates.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+  },
+  {
+    title: 'Document Storage',
+    desc:  'Leases, inspection reports and body corporate minutes — stored securely and accessible from anywhere.',
+    icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
 ]
 
-const FEATURES = [
+const WHY_REASONS = [
   {
-    title: 'Tenant verification',
-    desc:  'SA ID validation, credit check and bank statement analysis. Review the full picture before signing a lease.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
+    title: 'No rental agents needed',
+    body:  'Save 8–10% monthly commission by managing tenants yourself. PropTrust replaces the entire agent workflow.',
   },
   {
-    title: 'Risk scoring',
-    desc:  'A live risk score for every tenant, calculated from payment history, income regularity and financial behaviour.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
+    title: 'Verified tenants only',
+    body:  'Every tenant is credit-checked, ID-verified and bank-statement-analysed before you sign a lease.',
   },
   {
-    title: 'Rent tracking and reminders',
-    desc:  'Automated WhatsApp and email reminders before and after due date. Full payment history for each tenant.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-      </svg>
-    ),
+    title: 'Built for South Africa',
+    body:  'SA ID validation, rand payments, body corporate tools and WhatsApp integration. Not a US platform retrofitted for SA.',
   },
   {
-    title: 'Maintenance management',
-    desc:  'Track component lifespans, receive contractor quotes and log jobs. Know what needs attention before it fails.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Body corporate intelligence',
-    desc:  'Upload meeting minutes or paste text. PropTrust extracts action items, levies and flags in seconds.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Tenant marketplace',
-    desc:  'Verified tenants matched to your property by budget, area, lease preference and financial profile.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    title: 'Community and services',
+    body:  'Garden services, car washes, pet grooming and security escorts — all bookable through the PropTrust platform.',
   },
 ]
 
-const HOW_IT_WORKS = [
-  {
-    title: 'Create your account',
-    desc:  'Sign up as a landlord, a tenant or both. Takes under two minutes. No documents required to get started.',
-  },
-  {
-    title: 'Add your property or rental profile',
-    desc:  'Landlords list properties with photos and asking rent. Tenants build a verified profile with budget and preferences.',
-  },
-  {
-    title: 'Connect and manage directly',
-    desc:  'Receive applications, run credit checks, collect rent and manage maintenance — all without a third party.',
-  },
-]
-
-const LANDLORD_BULLETS = [
-  'No agent commission on leases or renewals',
-  'SA ID and credit verification on every applicant',
-  'Automated WhatsApp reminders when rent is due',
-  'Full maintenance job log with contractor quotes',
-  'Body corporate document analysis with AI flagging',
-]
-
-const TENANT_BULLETS = [
-  'One verified profile, visible to all PropTrust landlords',
-  'Matched to properties by your actual budget and preferences',
-  'No agent fee on applications or lease signing',
-  'Tenant portal for maintenance requests and payments',
-  'WhatsApp notifications for all updates',
-]
-
-const LANDLORD_FEATURES = [
-  {
-    title: 'Applications portal',
-    detail: 'Share a link with applicants. Receive completed forms with ID number, income and bank statement.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Live payment dashboard',
-    detail: 'See which tenants have paid, who is overdue and how much is outstanding — updated in real time.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Tenant portal access',
-    detail: 'Each tenant gets a shareable portal link for payment history, maintenance requests and check-ins.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-]
-
-const TENANT_FEATURES = [
-  {
-    title: 'Verified rental profile',
-    detail: 'Confirm your SA ID, employment status and budget once. Landlords see your profile without you reapplying each time.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Property matching',
-    detail: 'Listed properties are scored against your budget, preferred area and move-in date so you see relevant listings first.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Maintenance requests',
-    detail: 'Submit maintenance issues from your phone. Track the status from request through to completion.',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
-  },
-]
-
-const PRICING_TIERS = [
-  {
-    name:     'Starter',
-    price:    'Free',
-    per:      null,
-    desc:     'For landlords managing one or two properties who want to get started without commitment.',
-    features: [
-      'Up to 2 properties',
-      'Tenant applications portal',
-      'Basic payment tracking',
-      'Maintenance request log',
-      'Tenant portal access',
-    ],
-    cta: 'Start for free',
-  },
-  {
-    name:     'Portfolio',
-    price:    'R299',
-    per:      '/mo',
-    desc:     'For active landlords who want automated reminders, risk scoring and the full feature set.',
-    features: [
-      'Unlimited properties',
-      'SA ID and credit verification',
-      'Risk scoring per tenant',
-      'WhatsApp and email reminders',
-      'Body corporate intelligence',
-      'Component lifespan tracking',
-      'Tenant marketplace access',
-    ],
-    cta: 'Start free trial',
-  },
-  {
-    name:     'Professional',
-    price:    'R799',
-    per:      '/mo',
-    desc:     'For property managers and large portfolios who need priority support and advanced reporting.',
-    features: [
-      'Everything in Portfolio',
-      'Multiple user accounts',
-      'Priority support',
-      'Advanced payment reports',
-      'Custom lease templates',
-      'API access',
-    ],
-    cta: 'Contact us',
-  },
-]
+const HOW_IT_WORKS = {
+  landlord: [
+    { title: 'Create your account', desc: 'Sign up free in under 2 minutes. No credit card required. Choose landlord, tenant or both.' },
+    { title: 'List your property',  desc: 'Add property details, photos and your rental price. Your listing goes live immediately.' },
+    { title: 'Find verified tenants', desc: 'PropTrust matches you with screened, verified tenants in your area. Review and connect directly.' },
+  ],
+  tenant: [
+    { title: 'Create your profile', desc: 'Sign up free and build your verified rental profile in a few minutes.' },
+    { title: 'Get verified',        desc: 'Upload your SA ID and bank statements. We verify and score your profile for landlords.' },
+    { title: 'Find your home',      desc: 'Browse matched properties and connect directly with landlords — no agent, no fee.' },
+  ],
+}
 
 const TESTIMONIALS = [
   {
-    quote:    'I was sceptical at first, but the risk score flagged something in the bank statement that I would have missed. That alone made it worth it.',
-    name:     'Sarah M.',
-    role:     'Landlord, 3 properties',
-    location: 'Sea Point, Cape Town',
+    quote:     'Finally a platform that does the credit check AND tracks my payments. I fired my rental agent after the first month.',
+    name:      'Sarah M.',
+    role:      'Landlord · Sea Point, Cape Town',
+    initials:  'SM',
+    avatarBg:  'bg-blue-600',
   },
   {
-    quote:    'The WhatsApp reminders mean I never have to chase rent manually anymore. My tenants actually appreciate the heads-up before it is due.',
-    name:     'Johan V.',
-    role:     'Landlord, 5 properties',
-    location: 'Stellenbosch',
+    quote:     'The risk score flagged a problem tenant before I signed. Saved me months of stress and legal fees.',
+    name:      'Johan V.',
+    role:      'Landlord · Stellenbosch',
+    initials:  'JV',
+    avatarBg:  'bg-green-600',
   },
   {
-    quote:    'Finding a rental through PropTrust felt straightforward. The landlord had already seen my profile and credit check before we even spoke.',
-    name:     'Nomsa D.',
-    role:     'Tenant',
-    location: 'Sandton, Johannesburg',
+    quote:     'My tenants love submitting maintenance requests on their phones. No more missed WhatsApps.',
+    name:      'Nomsa D.',
+    role:      'Property Manager · Sandton, Johannesburg',
+    initials:  'ND',
+    avatarBg:  'bg-purple-600',
+  },
+]
+
+type PricingFeature = { text: string; included: boolean }
+type PricingTier = { name: string; price: string; period?: string; sub: string; features: PricingFeature[]; cta: string }
+
+const PRICING: PricingTier[] = [
+  {
+    name: 'Starter', price: 'R99', period: '/ month',
+    sub: 'Up to 3 properties',
+    cta: 'Start free trial',
+    features: [
+      { text: 'Unlimited tenants',        included: true  },
+      { text: 'Risk scoring',             included: true  },
+      { text: 'Payment tracking',         included: true  },
+      { text: 'Email reminders',          included: true  },
+      { text: 'Tenant portal',            included: true  },
+      { text: 'WhatsApp notifications',   included: false },
+      { text: 'Body corporate tools',     included: false },
+      { text: 'Maintenance management',   included: false },
+    ],
+  },
+  {
+    name: 'Professional', price: 'R299', period: '/ month',
+    sub: 'Up to 15 properties',
+    cta: 'Start free trial',
+    features: [
+      { text: 'Everything in Starter',    included: true },
+      { text: 'WhatsApp notifications',   included: true },
+      { text: 'Body corporate tools',     included: true },
+      { text: 'Maintenance management',   included: true },
+      { text: 'Bank statement analysis',  included: true },
+      { text: 'Tenant marketplace',       included: true },
+      { text: 'Priority support',         included: true },
+    ],
+  },
+  {
+    name: 'Enterprise', price: 'R799', period: '/ month',
+    sub: 'Unlimited properties',
+    cta: 'Contact us',
+    features: [
+      { text: 'Everything in Professional', included: true },
+      { text: 'Dedicated account manager',  included: true },
+      { text: 'Custom integrations',        included: true },
+      { text: 'API access',                 included: true },
+      { text: 'White label options',        included: true },
+      { text: 'SA legal document templates', included: true },
+    ],
+  },
+]
+
+const FOOTER_COLS = [
+  {
+    title: 'Product',
+    links: ['Features', 'Pricing', 'For Landlords', 'For Tenants', 'Mobile App', 'API'],
+  },
+  {
+    title: 'Company',
+    links: ['About us', 'Blog', 'Careers', 'Press', 'Contact', 'Privacy Policy', 'Terms of Service'],
+  },
+  {
+    title: 'Resources',
+    links: ['SA Rental Law Guide', 'FAQ', 'Tenant Screening Guide', 'Body Corporate Guide', 'Maintenance Checklist'],
   },
 ]
