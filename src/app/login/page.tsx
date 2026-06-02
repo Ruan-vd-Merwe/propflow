@@ -87,6 +87,13 @@ function LoginForm() {
           </div>
         )}
 
+        {/* Unconfirmed email banner */}
+        {errorParam === 'unconfirmed' && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            Please confirm your email first. Check your inbox or spam folder.
+          </div>
+        )}
+
         {/* Form */}
         <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -16,8 +16,22 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    // Create tenant_profiles row on first confirmation (data was stored in metadata at signup)
-    if (user.user_metadata?.user_type === 'tenant') {
+    const m = user.user_metadata ?? {}
+
+    // Upsert profile so user_type, phone, province, city are always current
+    await supabase.from('profiles').upsert({
+      id:               user.id,
+      full_name:        m.full_name ?? user.email ?? '',
+      email:            user.email ?? '',
+      user_type:        m.user_type ?? null,
+      phone:            m.phone ?? null,
+      province:         m.province ?? null,
+      city:             m.city ?? null,
+      whatsapp_opted_in: m.whatsapp_opted_in ?? true,
+    })
+
+    // Create tenant_profiles row on first confirmation
+    if (m.user_type === 'tenant') {
       const { data: existing } = await supabase
         .from('tenant_profiles')
         .select('id')
@@ -25,23 +39,27 @@ export async function GET(request: Request) {
         .single()
 
       if (!existing) {
-        const m = user.user_metadata
-        await supabase.from('tenant_profiles').insert({
-          user_id:              user.id,
-          sa_id_number:         m.sa_id_number ?? null,
-          current_area:         m.current_area ?? null,
-          current_province:     m.current_province ?? null,
-          looking_in_area:      m.looking_in_area ?? null,
-          looking_in_province:  m.looking_in_province ?? null,
-          budget_min:           m.budget_min ?? null,
-          budget_max:           m.budget_max ?? null,
-          move_in_date:         m.move_in_date ?? null,
-          lease_length_months:  m.lease_length_months ?? null,
-          employment_status:    m.employment_status ?? null,
-          monthly_income:       m.monthly_income ?? null,
-          is_visible:           true,
-          whatsapp_opted_in:    m.whatsapp_opted_in ?? true,
-        })
+        try {
+          await supabase.from('tenant_profiles').insert({
+            user_id:              user.id,
+            sa_id_number:         m.sa_id_number ?? null,
+            current_area:         m.current_area ?? null,
+            current_province:     m.current_province ?? null,
+            looking_in_area:      m.looking_in_area ?? null,
+            looking_in_province:  m.looking_in_province ?? null,
+            budget_min:           m.budget_min ?? null,
+            budget_max:           m.budget_max ?? null,
+            move_in_date:         m.move_in_date ?? null,
+            lease_length_months:  m.lease_length_months ?? null,
+            employment_status:    m.employment_status ?? null,
+            monthly_income:       m.monthly_income ?? null,
+            is_visible:           true,
+            whatsapp_opted_in:    m.whatsapp_opted_in ?? true,
+          })
+        } catch (e) {
+          console.error('tenant_profiles insert failed:', e)
+          // continue — don't block the redirect
+        }
       }
     }
 
