@@ -8,9 +8,7 @@ const FROM = 'PropTrust <onboarding@resend.dev>'
 export async function POST(request: Request) {
   const rawBody = await request.text()
 
-  // Log the Authorization header so we can capture Supabase's exact signing format
-  // and implement proper verification in a follow-up.
-  console.log('[send-email hook] auth header:', request.headers.get('authorization')?.slice(0, 60))
+  console.log('[send-email hook] raw body:', rawBody.slice(0, 500))
 
   let payload: { user: { email: string }; email_data: Record<string, string> }
   try {
@@ -18,6 +16,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
+
+  console.log('[send-email hook] user.email:', payload?.user?.email)
+  console.log('[send-email hook] action type:', payload?.email_data?.email_action_type)
 
   const { user, email_data } = payload
   const { token_hash, redirect_to, email_action_type } = email_data
