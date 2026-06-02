@@ -76,7 +76,9 @@ export async function POST(request: Request) {
   })
 
   if (error) {
-    console.error('[send-email hook] Resend error:', error)
+    console.error('[send-email hook] Resend error name:', error.name)
+    console.error('[send-email hook] Resend error message:', error.message)
+    console.error('[send-email hook] to:', user.email, 'type:', email_action_type)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
