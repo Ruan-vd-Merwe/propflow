@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { calculateMatchScore, matchColour } from '@/lib/matching'
 import { EditPreferencesPanel } from './EditPreferencesPanel'
@@ -224,7 +225,7 @@ export default async function TenantProfilePage({
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {scoredProperties.map(({ property: p, score }) => (
-                <div key={p.id} className="card overflow-hidden">
+                <Link key={p.id} href={`/browse/${p.id}`} className="card overflow-hidden transition hover:shadow-md">
                   {p.photos?.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.photos[0]} alt={p.name} className="h-40 w-full object-cover" />
@@ -260,8 +261,9 @@ export default async function TenantProfilePage({
                         )}
                       </div>
                     </div>
+                    <p className="mt-3 text-xs font-medium text-blue-600">View score breakdown →</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
