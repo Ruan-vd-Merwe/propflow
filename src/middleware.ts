@@ -39,9 +39,17 @@ export async function middleware(request: NextRequest) {
     pathname === '/register' ||
     pathname === '/forgot-password' ||
     pathname === '/auth/reset-password' ||
-    pathname.startsWith('/apply/') ||
-    pathname.startsWith('/checkin/') ||
-    pathname.startsWith('/api/') ||
+    // Marketing pages
+    pathname === '/features'           ||
+    pathname === '/pricing'            ||
+    pathname === '/contact'            ||
+    pathname === '/about'              ||
+    pathname.startsWith('/solutions/') ||
+    pathname.startsWith('/resources/') ||
+    // App public routes
+    pathname.startsWith('/apply/')     ||
+    pathname.startsWith('/checkin/')   ||
+    pathname.startsWith('/api/')       ||
     (pathname.startsWith('/tenant/') && pathname !== '/tenant/profile')
 
   // Protect all non-public routes
