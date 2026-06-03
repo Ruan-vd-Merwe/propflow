@@ -239,7 +239,7 @@ export function NavBar() {
       */}
       <div
         className={`overflow-hidden border-t border-slate-100 bg-white transition-[max-height] duration-300 ease-in-out sm:hidden ${
-          menuOpen ? 'max-h-[520px]' : 'max-h-0'
+          menuOpen ? 'max-h-screen' : 'max-h-0'
         }`}
       >
         <ul className="divide-y divide-slate-100">
