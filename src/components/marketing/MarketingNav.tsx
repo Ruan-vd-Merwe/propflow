@@ -220,7 +220,7 @@ export default function MarketingNav() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 top-[57px] z-40 flex flex-col overflow-y-auto bg-white lg:hidden">
+        <div className="fixed inset-0 top-16 z-50 flex flex-col overflow-y-auto bg-white lg:hidden">
           <div className="flex-1 px-6 py-4">
             {NAV.map(section => (
               <div key={section.label} className="border-b border-slate-100 last:border-0">
