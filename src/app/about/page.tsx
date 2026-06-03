@@ -13,7 +13,7 @@ const VALUES = [
   },
   {
     title: 'Fair access for tenants',
-    body:  'Tenants carry significant risk in the rental process. PropTrust gives them a structured way to present themselves and build a reliable rental record — without paying for the privilege.',
+    body:  'Tenants carry significant risk in the rental process. PropTrust gives them a structured way to present themselves and build a reliable rental record, without paying for the privilege.',
   },
   {
     title: 'Less admin, better decisions',
@@ -25,7 +25,7 @@ const TIMELINE = [
   {
     year:  '2023',
     title: 'The problem became clear',
-    body:  'Our founders spent years dealing with the friction of the South African rental market — unreliable screening, fragmented communication, and a dependence on agents that added cost without adding clarity.',
+    body:  'Our founders spent years dealing with the friction of the South African rental market, unreliable screening, fragmented communication, and a dependence on agents that added cost without adding clarity.',
   },
   {
     year:  '2024',
@@ -78,7 +78,7 @@ export default function AboutPage() {
                 For too long, the rental process has been built around intermediaries. Agents charge significant commissions for tasks that technology can handle reliably. Tenants have no easy way to build or share a verified rental record. Landlords have no structured place to manage everything.
               </p>
               <p className="text-base leading-relaxed text-slate-500">
-                PropTrust puts the tools directly in the hands of landlords and tenants. Not to replace every professional relationship — but to give both sides more control, more clarity and a better record of what has happened.
+                PropTrust puts the tools directly in the hands of landlords and tenants. Not to replace every professional relationship, but to give both sides more control, more clarity and a better record of what has happened.
               </p>
             </div>
 

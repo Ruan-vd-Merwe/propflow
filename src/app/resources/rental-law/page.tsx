@@ -81,7 +81,7 @@ const SECTIONS = [
       },
       {
         heading: 'Fair wear and tear',
-        body: 'Normal deterioration from reasonable use — such as faded paint or worn carpets over several years — is considered fair wear and tear and cannot be deducted from the deposit. Damage resulting from negligence or misuse can be deducted.',
+        body: 'Normal deterioration from reasonable use, such as faded paint or worn carpets over several years, is considered fair wear and tear and cannot be deducted from the deposit. Damage resulting from negligence or misuse can be deducted.',
       },
     ],
   },
@@ -139,7 +139,7 @@ export default function RentalLawPage() {
               SA Rental Law Guide
             </h1>
             <p className="text-lg leading-relaxed text-slate-300">
-              A practical overview of the key laws that govern residential rental agreements in South Africa — written for landlords and tenants, not lawyers.
+              A practical overview of the key laws that govern residential rental agreements in South Africa, written for landlords and tenants, not lawyers.
             </p>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function RentalLawPage() {
         <div className="mx-auto max-w-xl">
           <h2 className="mb-5 text-3xl font-extrabold text-white">Manage rentals with structure</h2>
           <p className="mb-10 text-blue-100">
-            PropTrust helps you stay organised and keep records that matter — from screening to lease-end.
+            PropTrust helps you stay organised and keep records that matter, from screening to lease-end.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/register"

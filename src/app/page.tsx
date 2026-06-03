@@ -135,7 +135,7 @@ export default function HomePage() {
 
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-300">
               PropTrust helps South African landlords screen tenants, track rent, manage maintenance
-              and keep documents organised — all from one simple platform.
+              and keep documents organised, all from one simple platform.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

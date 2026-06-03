@@ -12,7 +12,7 @@ const FEATURES = [
     id:    'screening',
     title: 'Tenant Screening',
     short: 'Review applicant details before signing a lease.',
-    body:  'PropTrust guides tenants through a structured submission flow — ID, bank statements, income details and references. As a landlord, you receive a clear summary without needing to chase documents manually. Review the information, ask follow-up questions and make a more informed decision before any lease is signed.',
+    body:  'PropTrust guides tenants through a structured submission flow, ID, bank statements, income details and references. As a landlord, you receive a clear summary without needing to chase documents manually. Review the information, ask follow-up questions and make a more informed decision before any lease is signed.',
     perks: ['SA ID validation', 'Bank statement review', 'Structured reference workflow', 'Clear applicant summary'],
     icon:  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
   },
@@ -20,7 +20,7 @@ const FEATURES = [
     id:    'rent',
     title: 'Rent Tracking',
     short: 'See what has been paid, what is due and what needs follow-up.',
-    body:  'Keep a clear payment record for every tenant. Mark payments received, view outstanding amounts and trigger reminders — all from one place. PropTrust tracks payment history so you have a reliable record available at any time, without relying on a spreadsheet or separate banking app.',
+    body:  'Keep a clear payment record for every tenant. Mark payments received, view outstanding amounts and trigger reminders, all from one place. PropTrust tracks payment history so you have a reliable record available at any time, without relying on a spreadsheet or separate banking app.',
     perks: ['Per-tenant payment history', 'Due date tracking', 'Automated email reminders', 'WhatsApp reminders (Professional+)'],
     icon:  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
   },
@@ -44,7 +44,7 @@ const FEATURES = [
     id:    'documents',
     title: 'Document Storage',
     short: 'Keep leases, IDs and property documents easy to find.',
-    body:  'Upload and organise leases, inspection reports, tenant IDs, body corporate notices and any other property documents. Documents are stored per property and per tenant so you can find what you need quickly — from any device.',
+    body:  'Upload and organise leases, inspection reports, tenant IDs, body corporate notices and any other property documents. Documents are stored per property and per tenant so you can find what you need quickly, from any device.',
     perks: ['Per-tenant document folders', 'Per-property storage', 'Secure access', 'Any file type'],
     icon:  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
@@ -52,7 +52,7 @@ const FEATURES = [
     id:    'whatsapp',
     title: 'WhatsApp Notifications',
     short: 'Send practical reminders through a channel people already use.',
-    body:  'In South Africa, WhatsApp is the default communication channel. PropTrust uses WhatsApp to send rent reminders, maintenance updates and important notices directly to your tenants — so the message actually gets read.',
+    body:  'In South Africa, WhatsApp is the default communication channel. PropTrust uses WhatsApp to send rent reminders, maintenance updates and important notices directly to your tenants, so the message actually gets read.',
     perks: ['Rent due reminders', 'Late payment follow-ups', 'Maintenance status updates', 'Available on Professional+ plans'],
     icon:  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
   },
@@ -180,7 +180,7 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid items-start gap-16 lg:grid-cols-2">
 
-            {/* Wheel — desktop only */}
+            {/* Wheel, desktop only */}
             <div className="hidden justify-center lg:flex">
               <FeatureWheel active={activeFeature} setActive={setActiveFeature} />
             </div>

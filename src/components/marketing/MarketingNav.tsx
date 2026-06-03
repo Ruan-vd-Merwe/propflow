@@ -103,6 +103,11 @@ function DesktopDropdown({ label, items }: { label: string; items: NavLink[] }) 
   function onLeave() {
     leaveTimer.current = setTimeout(() => setOpen(false), 80)
   }
+  // Close immediately on click so no timer fires mid-navigation
+  function onItemClick() {
+    clearTimeout(leaveTimer.current)
+    setOpen(false)
+  }
 
   return (
     <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
@@ -117,7 +122,7 @@ function DesktopDropdown({ label, items }: { label: string; items: NavLink[] }) 
             <Link
               key={item.label}
               href={item.href}
-              onClick={() => setOpen(false)}
+              onClick={onItemClick}
               className="flex flex-col px-4 py-3 transition hover:bg-slate-50 first:rounded-t-xl last:rounded-b-xl"
             >
               <span className="text-sm font-semibold text-slate-900">{item.label}</span>

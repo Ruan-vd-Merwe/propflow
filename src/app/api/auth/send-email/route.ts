@@ -1,6 +1,5 @@
 import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
-
 // Lazy init — avoids module-level throw when env var is absent at build time
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 

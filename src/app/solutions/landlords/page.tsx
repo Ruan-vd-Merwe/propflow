@@ -13,12 +13,12 @@ function Check() {
 const BENEFITS = [
   {
     title: 'Save on agent commission',
-    body:  'A typical rental agent charges 8–10% of monthly rent. PropTrust gives you the tools to manage the rental process yourself — at a fixed, transparent monthly subscription.',
+    body:  'A typical rental agent charges 8–10% of monthly rent. PropTrust gives you the tools to manage the rental process yourself, at a fixed, transparent monthly subscription.',
     perks: ['No percentage-based fees', 'Flat monthly subscription', 'Cancel anytime'],
   },
   {
     title: 'Screen tenants properly',
-    body:  'Review structured tenant applications including ID verification, bank statement analysis and income confirmation — before you sign any lease.',
+    body:  'Review structured tenant applications including ID verification, bank statement analysis and income confirmation, before you sign any lease.',
     perks: ['SA ID validation', 'Bank statement review', 'Income confirmation', 'Reference workflow'],
   },
   {
@@ -36,7 +36,7 @@ const BENEFITS = [
 const STEPS = [
   { title: 'Create your account',            body: 'Sign up and set up your landlord profile. It takes a few minutes and no credit card is required.' },
   { title: 'Add your property',              body: 'Capture property details, rental amount and lease information. Invite existing tenants or wait for new applications.' },
-  { title: 'Manage tenants with confidence', body: 'Screen applicants, track rent, handle maintenance requests and keep documents organised — all from one dashboard.' },
+  { title: 'Manage tenants with confidence', body: 'Screen applicants, track rent, handle maintenance requests and keep documents organised, all from one dashboard.' },
 ]
 
 const FEATURES = [
@@ -63,7 +63,7 @@ export default function LandlordsPage() {
               <span className="text-[#3b82f6]">without a rental agent</span>
             </h1>
             <p className="mb-10 text-lg leading-relaxed text-slate-300">
-              PropTrust gives you the tools to screen tenants, track rent, manage maintenance and keep documents organised — without handing control to an agent.
+              PropTrust gives you the tools to screen tenants, track rent, manage maintenance and keep documents organised, without handing control to an agent.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/register" className="rounded-full bg-[#3b82f6] px-7 py-3.5 text-base font-bold text-white transition hover:bg-blue-500">

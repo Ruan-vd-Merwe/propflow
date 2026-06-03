@@ -207,7 +207,7 @@ export default function PricingPage() {
 
                   {annual && (
                     <p className={`mb-2 text-xs ${tier.featured ? 'text-blue-300' : 'text-green-600'}`}>
-                      Billed R{tier.annual}/year — 2 months free
+                      Billed R{tier.annual}/year, 2 months free
                     </p>
                   )}
 

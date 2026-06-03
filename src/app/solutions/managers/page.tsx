@@ -23,7 +23,7 @@ const BENEFITS = [
   },
   {
     title: 'Body corporate administration',
-    body:  'Handle levy tracking, meeting minutes and shared-property notices for sectional title units in your portfolio — all from one place.',
+    body:  'Handle levy tracking, meeting minutes and shared-property notices for sectional title units in your portfolio, all from one place.',
     perks: ['Levy tracking', 'Notice storage', 'Meeting minute uploads'],
   },
   {
@@ -54,7 +54,7 @@ export default function ManagersPage() {
               <span className="text-[#3b82f6]">management business</span>
             </h1>
             <p className="mb-10 text-lg leading-relaxed text-slate-300">
-              PropTrust gives property managers a structured platform for screening, rent tracking, maintenance and body corporate administration — across any portfolio size.
+              PropTrust gives property managers a structured platform for screening, rent tracking, maintenance and body corporate administration, across any portfolio size.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/register" className="rounded-full bg-[#3b82f6] px-7 py-3.5 text-base font-bold text-white transition hover:bg-blue-500">

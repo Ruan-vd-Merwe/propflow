@@ -18,7 +18,7 @@ const BENEFITS = [
   },
   {
     title: 'Direct landlord connections',
-    body:  'Connect directly with landlords who are looking for tenants like you. No middleman, no inflated fees — just a clear application process.',
+    body:  'Connect directly with landlords who are looking for tenants like you. No middleman, no inflated fees, just a clear application process.',
     perks: ['No agent dependency', 'Direct messaging', 'Transparent process'],
   },
   {
@@ -28,7 +28,7 @@ const BENEFITS = [
   },
   {
     title: 'A verified profile that stands out',
-    body:  'Landlords receive many applications. A verified PropTrust profile — with confirmed ID, income and references — helps you stand out as a reliable applicant.',
+    body:  'Landlords receive many applications. A verified PropTrust profile, with confirmed ID, income and references, helps you stand out as a reliable applicant.',
     perks: ['SA ID verification', 'Income confirmation', 'Reference workflow'],
   },
 ]
@@ -36,7 +36,7 @@ const BENEFITS = [
 const STEPS = [
   { title: 'Create your profile',   body: 'Sign up for free and build a secure rental profile that helps landlords understand who you are.' },
   { title: 'Complete verification', body: 'Upload your SA ID and bank statements. Completing verification creates a stronger application.' },
-  { title: 'Connect directly',      body: 'Browse matched properties and connect with landlords directly — without unnecessary friction or agent fees.' },
+  { title: 'Connect directly',      body: 'Browse matched properties and connect with landlords directly, without unnecessary friction or agent fees.' },
 ]
 
 export default function TenantsPage() {
@@ -54,7 +54,7 @@ export default function TenantsPage() {
               <span className="text-[#3b82f6]">and apply with confidence</span>
             </h1>
             <p className="mb-10 text-lg leading-relaxed text-slate-300">
-              Build a verified rental profile, connect directly with landlords and make a stronger application — all for free.
+              Build a verified rental profile, connect directly with landlords and make a stronger application, all for free.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/register" className="rounded-full bg-[#3b82f6] px-7 py-3.5 text-base font-bold text-white transition hover:bg-blue-500">

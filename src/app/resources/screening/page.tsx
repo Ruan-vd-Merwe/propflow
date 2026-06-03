@@ -41,7 +41,7 @@ const STEPS = [
   },
   {
     title: 'Review bank statements',
-    body:  'Three months of bank statements provide a realistic picture of how an applicant manages money — more reliable than a payslip alone. Look for consistent income deposits, evidence of regular expense management, and whether the applicant has the income to cover rent comfortably.',
+    body:  'Three months of bank statements provide a realistic picture of how an applicant manages money, more reliable than a payslip alone. Look for consistent income deposits, evidence of regular expense management, and whether the applicant has the income to cover rent comfortably.',
     items: [
       'Look for consistent monthly income deposits',
       'Note any large unexplained deposits (potential red flag)',
@@ -61,7 +61,7 @@ const STEPS = [
   },
   {
     title: 'Check rental references',
-    body:  'Speaking to a previous landlord directly is one of the most valuable steps in tenant screening. Ask specific questions — not just whether the tenant was good, but whether they paid on time, how they handled maintenance issues and whether the landlord would rent to them again.',
+    body:  'Speaking to a previous landlord directly is one of the most valuable steps in tenant screening. Ask specific questions, not just whether the tenant was good, but whether they paid on time, how they handled maintenance issues and whether the landlord would rent to them again.',
     items: [
       'Request contact details for previous landlords',
       'Ask whether rent was paid on time and consistently',
@@ -71,7 +71,7 @@ const STEPS = [
   },
   {
     title: 'Make a documented decision',
-    body:  'Keep a record of the information you reviewed and the basis for your decision — whether you accept or decline an applicant. This protects you in the event of a dispute and helps you apply criteria consistently across all applications.',
+    body:  'Keep a record of the information you reviewed and the basis for your decision, whether you accept or decline an applicant. This protects you in the event of a dispute and helps you apply criteria consistently across all applications.',
     items: [
       'Record the documents you reviewed',
       'Note the basis for your decision',
@@ -106,7 +106,7 @@ export default function ScreeningGuidePage() {
               Tenant Screening Guide
             </h1>
             <p className="text-lg leading-relaxed text-slate-300">
-              A practical, step-by-step guide to reviewing tenant applications before you sign a lease — written for South African landlords managing their own properties.
+              A practical, step-by-step guide to reviewing tenant applications before you sign a lease, written for South African landlords managing their own properties.
             </p>
           </div>
         </div>
@@ -121,10 +121,10 @@ export default function ScreeningGuidePage() {
                 Why tenant screening matters
               </h2>
               <p className="mb-5 text-base leading-relaxed text-slate-500">
-                A single problematic tenancy can result in months of unpaid rent, property damage and a difficult eviction process. South African eviction law is tenant-protective, which means the cost of placing the wrong tenant can be significant — both financially and in time.
+                A single problematic tenancy can result in months of unpaid rent, property damage and a difficult eviction process. South African eviction law is tenant-protective, which means the cost of placing the wrong tenant can be significant, both financially and in time.
               </p>
               <p className="text-base leading-relaxed text-slate-500">
-                A structured screening process does not eliminate risk entirely, but it significantly reduces it. It also gives you a documented basis for your decisions — which matters if a dispute arises later.
+                A structured screening process does not eliminate risk entirely, but it significantly reduces it. It also gives you a documented basis for your decisions, which matters if a dispute arises later.
               </p>
             </div>
 
@@ -183,7 +183,7 @@ export default function ScreeningGuidePage() {
             Red flags to watch for
           </h2>
           <p className="mb-12 max-w-xl text-base text-slate-500">
-            None of these are automatic disqualifiers — context always matters. But each is worth investigating further before making a decision.
+            None of these are automatic disqualifiers, context always matters. But each is worth investigating further before making a decision.
           </p>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -210,7 +210,7 @@ export default function ScreeningGuidePage() {
           </div>
           <h2 className="mb-4 text-2xl font-extrabold">How PropTrust handles screening</h2>
           <p className="mb-6 text-base leading-relaxed text-slate-300">
-            PropTrust guides tenants through a structured submission process. They upload their ID, bank statements and references through their portal. You receive a clear summary — with ID validation, bank statement analysis and income assessment — so you can review the application without chasing documents manually.
+            PropTrust guides tenants through a structured submission process. They upload their ID, bank statements and references through their portal. You receive a clear summary, with ID validation, bank statement analysis and income assessment, so you can review the application without chasing documents manually.
           </p>
           <ul className="mb-8 space-y-3">
             {[
@@ -256,7 +256,7 @@ export default function ScreeningGuidePage() {
       <section className="bg-[#1e40af] px-6 py-24 text-center">
         <div className="mx-auto max-w-xl">
           <h2 className="mb-5 text-3xl font-extrabold text-white">Screen tenants with PropTrust</h2>
-          <p className="mb-10 text-blue-100">Structured applications, ID validation and bank statement review — all in one place.</p>
+          <p className="mb-10 text-blue-100">Structured applications, ID validation and bank statement review, all in one place.</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/register"
               className="rounded-full bg-white px-8 py-4 text-base font-extrabold text-[#1e40af] transition hover:bg-blue-50">

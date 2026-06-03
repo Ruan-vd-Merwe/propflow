@@ -6,7 +6,7 @@ const COMING_SOON_ARTICLES = [
   {
     category: 'Landlord guides',
     title:    'How to set a rental price in Cape Town and Johannesburg in 2026',
-    summary:  'A practical guide to pricing your rental competitively — what data to look at, what platforms to compare and how to account for vacancy risk.',
+    summary:  'A practical guide to pricing your rental competitively, what data to look at, what platforms to compare and how to account for vacancy risk.',
     readTime: '7 min read',
   },
   {
