@@ -28,11 +28,13 @@ const COLS = [
   {
     title: 'Resources',
     links: [
-      { label: 'SA Rental Law Guide',    href: '/resources/rental-law' },
-      { label: 'FAQ',                    href: '/resources/faq'        },
-      { label: 'Tenant Screening Guide', href: '/resources/screening'  },
-      { label: 'Body Corporate Guide',   href: '#'                     },
-      { label: 'Maintenance Checklist',  href: '#'                     },
+      { label: 'SA Rental Law Guide',    href: '/resources/rental-law'    },
+      { label: 'FAQ',                    href: '/resources/faq'           },
+      { label: 'Tenant Screening Guide', href: '/resources/screening'     },
+      { label: 'How Scoring Works',      href: '/how-scoring-works'       },
+      { label: 'Suburb Investment Scores', href: '/areas'                 },
+      { label: 'Body Corporate Guide',   href: '#'                        },
+      { label: 'Maintenance Checklist',  href: '#'                        },
     ],
   },
 ]

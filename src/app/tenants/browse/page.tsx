@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { NavBar } from '@/components/NavBar'
 import { calculateMatchScore, displayName } from '@/lib/matching'
 import { BrowseFilters } from './BrowseClient'
+import { approval_insight } from '@/lib/scoring/engine'
 import type { TenantProfile, PropertyListing, MatchScore } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +48,12 @@ const BUDGET_MAX = 50_000
 
 // ─── Tenant card ──────────────────────────────────────────────────────────────
 
+function approvalBadgeCls(pct: number) {
+  if (pct >= 75) return 'bg-green-100 text-green-700'
+  if (pct >= 50) return 'bg-amber-100 text-amber-700'
+  return 'bg-red-100 text-red-700'
+}
+
 function TenantCard({
   name,
   tp,
@@ -60,6 +67,23 @@ function TenantCard({
 }) {
   const badgeCls = score ? matchBadgeCls(score.total) : 'bg-slate-100 text-slate-600'
   const barCls   = score ? matchBarCls(score.total)   : 'bg-slate-300'
+
+  // Compute approval probability using the engine's approval_insight
+  const avgRent = tp.budget_max ? tp.budget_max / 100 : 0
+  const approvalIns = approval_insight(
+    {
+      monthly_income: (tp.monthly_income ?? 0) / 100,
+      rental_budget: avgRent,
+      total_living_budget: avgRent * 1.4,
+      preferred_suburbs: [],
+      desired_bedrooms: 1,
+      move_in_month: tp.move_in_date ? new Date(tp.move_in_date).getMonth() + 1 : 6,
+      employment_type: tp.employment_status ?? 'employed',
+    },
+    { rent: avgRent, applications_count: 3 },
+  )
+  const approvalPct = Math.round(approvalIns.score * 100)
+  const approvalCls = approvalBadgeCls(approvalPct)
 
   return (
     <div className="card flex flex-col gap-4 p-5 transition hover:shadow-md">
@@ -90,6 +114,14 @@ function TenantCard({
         )}
       </div>
 
+      {/* Approval probability badge */}
+      <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+        <span className="text-xs text-slate-500">Approval probability</span>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${approvalCls}`}>
+          {approvalPct}%
+        </span>
+      </div>
+
       {/* Details grid */}
       <dl className="grid grid-cols-2 gap-2">
         <div className="rounded-lg bg-slate-50 px-3 py-2">
@@ -118,6 +150,30 @@ function TenantCard({
           </dd>
         </div>
       </dl>
+
+      {/* Score breakdown from approval insight */}
+      <details className="group rounded-lg border border-slate-100">
+        <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-slate-500 group-open:border-b group-open:border-slate-100">
+          Score breakdown ↓
+        </summary>
+        <div className="px-3 py-2 text-xs text-slate-600">
+          <p>{approvalIns.message}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-slate-400">Income ratio:</span>
+            <span className="font-medium">
+              {tp.monthly_income && tp.budget_max
+                ? `${Math.round((tp.budget_max / tp.monthly_income) * 100)}%`
+                : '—'}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-slate-400">Employment:</span>
+            <span className="font-medium capitalize">
+              {EMPLOYMENT_LABELS[tp.employment_status ?? ''] ?? '—'}
+            </span>
+          </div>
+        </div>
+      </details>
 
       {/* Match bar (only when property selected) */}
       {score !== null && (

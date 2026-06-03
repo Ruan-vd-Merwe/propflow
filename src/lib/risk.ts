@@ -1,4 +1,15 @@
-import type { Payment, RiskScore } from './types'
+import type { Payment, RiskScore, TenantProfile as DbTenantProfile } from './types'
+import {
+  score_tenant_property,
+  type TenantProfile as EngineTenantProfile,
+  type PropertyData,
+  type InsightResult,
+} from './scoring/engine'
+
+export type EnrichedRiskScore = RiskScore & {
+  insights: InsightResult[]
+  engineScore?: number
+}
 
 /**
  * Calculate risk score for a tenant based on their payment history.
@@ -85,5 +96,79 @@ export function calculateRiskScore(payments: Payment[]): RiskScore {
     colour,
     label,
     breakdown: { missed, late, veryLate, streak: streakBonuses },
+  }
+}
+
+/**
+ * Returns an enriched risk score that incorporates the full scoring engine
+ * when a tenant profile and property data are available, falling back to the
+ * payment-history score otherwise.
+ */
+export function getEnrichedRiskScore(
+  payments: Payment[],
+  tenantProfile?: DbTenantProfile | null,
+  propertyData?: {
+    missed_payments?: number
+    late_payments?: number
+    streak?: number
+    rent?: number
+  } | null,
+): EnrichedRiskScore {
+  const base = calculateRiskScore(payments)
+
+  if (!tenantProfile || !propertyData) {
+    return { ...base, insights: [] }
+  }
+
+  const avgRent = propertyData.rent ?? (tenantProfile.budget_max ?? 0) / 100
+
+  // Map the DB TenantProfile to the engine's TenantProfile shape
+  const engineProfile: EngineTenantProfile = {
+    monthly_income: (tenantProfile.monthly_income ?? 0) / 100,
+    rental_budget: avgRent,
+    total_living_budget: avgRent * 1.4,
+    preferred_suburbs: tenantProfile.looking_in_area ? [tenantProfile.looking_in_area] : [],
+    desired_bedrooms: 1,
+    move_in_month: tenantProfile.move_in_date
+      ? new Date(tenantProfile.move_in_date).getMonth() + 1
+      : 6,
+    employment_type: tenantProfile.employment_status ?? undefined,
+  }
+
+  const engineProperty: PropertyData = {
+    rent: propertyData.rent,
+    crime_index: Math.min(100, (propertyData.missed_payments ?? 0) * 20),
+    landlord_communication_score: Math.max(
+      0,
+      10 - (propertyData.late_payments ?? 0) * 2,
+    ),
+    maintenance_score: Math.min(10, (propertyData.streak ?? 0) * 2),
+    deposit_return_score: 5,
+  }
+
+  const result = score_tenant_property(engineProfile, engineProperty)
+
+  const insights: InsightResult[] = Object.values(result.insights).filter(
+    (v): v is InsightResult => v !== undefined,
+  )
+
+  let colour: RiskScore['colour']
+  const engineScore = result.score
+  if (engineScore >= 80) colour = 'green'
+  else if (engineScore >= 50) colour = 'amber'
+  else colour = 'red'
+
+  return {
+    score: engineScore,
+    colour,
+    label:
+      colour === 'green'
+        ? 'Low Risk'
+        : colour === 'amber'
+          ? 'Medium Risk'
+          : 'High Risk',
+    breakdown: base.breakdown,
+    insights,
+    engineScore,
   }
 }
