@@ -27,9 +27,10 @@ export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit pref
   const router   = useRouter()
   const supabase = createClient()
 
-  const [open,    setOpen]    = useState(false)
-  const [saving,  setSaving]  = useState(false)
-  const [toast,   setToast]   = useState(false)
+  const [open,      setOpen]      = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [toast,     setToast]     = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // ── Form state — initialised from profile ─────────────────────────────────
   const [area,     setArea]     = useState(tenantProfile.looking_in_area     ?? '')
@@ -60,9 +61,12 @@ export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit pref
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
+
     const { error } = await supabase
       .from('tenant_profiles')
-      .update({
+      .upsert({
+        user_id:              userId,
         looking_in_area:      area     || null,
         looking_in_province:  province || null,
         budget_min:           budgetMin * 100,
@@ -73,11 +77,14 @@ export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit pref
         monthly_income:       income ? parseInt(income) * 100 : null,
         is_visible:           visible,
         updated_at:           new Date().toISOString(),
-      })
-      .eq('user_id', userId)
+      }, { onConflict: 'user_id' })
 
     setSaving(false)
-    if (error) { console.error(error); return }
+
+    if (error) {
+      setSaveError(error.message)
+      return
+    }
 
     setOpen(false)
     setToast(true)
@@ -298,22 +305,29 @@ export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit pref
         </div>
 
         {/* Footer actions */}
-        <div className="border-t border-slate-100 px-5 py-4 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={handleSave}
-            className="flex-[2] rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save preferences'}
-          </button>
+        <div className="border-t border-slate-100 px-5 py-4">
+          {saveError && (
+            <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {saveError}
+            </p>
+          )}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSave}
+              className="flex-[2] rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save preferences'}
+            </button>
+          </div>
         </div>
       </div>
     </>

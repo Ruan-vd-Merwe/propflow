@@ -337,6 +337,16 @@ export default function RegisterPage() {
                 <input type="tel" className="input-field" placeholder="e.g. 082 555 1234"
                   value={phone} onChange={e => setPhone(e.target.value)} />
               </div>
+              {isTenant && !isLandlord && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    SA ID number <span className="text-slate-400">(13 digits)</span>
+                  </label>
+                  <input className="input-field font-mono" placeholder="0000000000000"
+                    maxLength={13} value={saId}
+                    onChange={e => setSaId(e.target.value.replace(/\D/g, ''))} />
+                </div>
+              )}
             </div>
             {error && <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</div>}
             <div className="mt-6 flex gap-3">
@@ -430,14 +440,6 @@ export default function RegisterPage() {
             <h2 className="mb-1 text-lg font-bold text-slate-900">Rental preferences</h2>
             <p className="mb-5 text-sm text-slate-500">Tell us what you are looking for</p>
             <div className="space-y-5">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  SA ID number <span className="text-slate-400">(13 digits)</span>
-                </label>
-                <input className="input-field font-mono" placeholder="0000000000000"
-                  maxLength={13} value={saId}
-                  onChange={e => setSaId(e.target.value.replace(/\D/g, ''))} />
-              </div>
               <div>
                 <p className="mb-2 text-sm font-semibold text-slate-700">Where do you currently live?</p>
                 <div className="grid grid-cols-2 gap-3">
