@@ -61,6 +61,16 @@ export default async function TenantPortalPage({
 
   const queries: TenantQuery[] = (queriesRaw ?? []) as TenantQuery[]
 
+  // Fetch latest active lease for this tenant
+  const { data: leaseRaw } = await supabase
+    .from('lease_agreements')
+    .select('id, lease_start, lease_end, monthly_rent, deposit_amount, payment_due_day, notice_period_days, pet_allowed, subletting_allowed, special_conditions, status, landlord_signed_at, tenant_signed_at')
+    .eq('tenant_id', tenant.id)
+    .in('status', ['sent', 'signed'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   // Fetch service categories + providers for tenant's province
   const { data: cats }  = await supabase.from('service_categories').select('*').order('sort_order')
   const { data: provs } = await supabase
@@ -137,6 +147,7 @@ export default async function TenantPortalPage({
           serviceCategories={serviceCategories}
           serviceProviders={serviceProviders}
           nextPayment={nextPayment ?? null}
+          initialLease={leaseRaw ?? null}
         />
       </div>
     </div>

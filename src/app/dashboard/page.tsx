@@ -113,6 +113,17 @@ export default async function DashboardPage({
   const bcFlags = (bcFlagsRaw ?? []) as Pick<BodyCorpFlag,
     'id' | 'property_id' | 'severity' | 'title' | 'requires_owner_action' | 'resolved'>[]
 
+  // ── Lease / Xpello stats ─────────────────────────────────────────────────────
+  const { data: leasesRaw } = await supabase
+    .from('lease_agreements')
+    .select('id, xpello_enrolled')
+    .eq('landlord_id', user.id)
+    .in('status', ['sent', 'signed'])
+
+  const leaseList       = leasesRaw ?? []
+  const xpelloEnrolled  = leaseList.filter((l) => l.xpello_enrolled).length
+  const xpelloUnenrolled = leaseList.filter((l) => !l.xpello_enrolled).length
+
   // ── Computed stats ────────────────────────────────────────────────────────
   const paymentsByTenant = new Map<string, Payment[]>()
   for (const p of paymentList) {
@@ -501,6 +512,44 @@ export default async function DashboardPage({
                 </Link>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Xpello legal protection widget ───────────────────────────────── */}
+        {leaseList.length > 0 && (
+          <div className={`mb-8 rounded-2xl border p-5 ${xpelloUnenrolled > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${xpelloUnenrolled > 0 ? 'bg-amber-100' : 'bg-emerald-100'}`}>
+                  <svg className={`h-5 w-5 ${xpelloUnenrolled > 0 ? 'text-amber-600' : 'text-emerald-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className={`font-semibold ${xpelloUnenrolled > 0 ? 'text-amber-900' : 'text-emerald-900'}`}>
+                    {xpelloUnenrolled > 0
+                      ? `${xpelloUnenrolled} lease${xpelloUnenrolled > 1 ? 's are' : ' is'} not legally protected`
+                      : `All ${xpelloEnrolled} lease${xpelloEnrolled > 1 ? 's are' : ' is'} protected by Xpello`}
+                  </p>
+                  <p className={`text-sm ${xpelloUnenrolled > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    {xpelloUnenrolled > 0
+                      ? 'Enroll with Xpello from R250/month per lease'
+                      : `${xpelloEnrolled} lease${xpelloEnrolled > 1 ? 's' : ''} covered · Xpello eviction management active`}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/leases"
+                className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  xpelloUnenrolled > 0
+                    ? 'bg-amber-600 text-white hover:bg-amber-700'
+                    : 'border border-emerald-300 text-emerald-800 hover:bg-emerald-100'
+                }`}
+              >
+                {xpelloUnenrolled > 0 ? 'View leases →' : 'Manage leases →'}
+              </Link>
+            </div>
           </div>
         )}
 

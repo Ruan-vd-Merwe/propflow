@@ -44,12 +44,29 @@ type ServiceProvider = {
 const TABS = [
   { id: 'home',        label: 'Home',        icon: '🏠' },
   { id: 'payments',    label: 'Payments',    icon: '💳' },
+  { id: 'lease',       label: 'Lease',       icon: '📄' },
   { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
   { id: 'services',    label: 'Services',    icon: '⭐' },
   { id: 'queries',     label: 'Queries',     icon: '💬' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
+
+type LeaseInfo = {
+  id: string
+  lease_start: string
+  lease_end: string | null
+  monthly_rent: number
+  deposit_amount: number | null
+  payment_due_day: number
+  notice_period_days: number
+  pet_allowed: boolean
+  subletting_allowed: boolean
+  special_conditions: string | null
+  status: string
+  landlord_signed_at: string | null
+  tenant_signed_at: string | null
+}
 
 const MAINTENANCE_CATEGORIES = [
   { value: 'plumbing',      label: '🚿 Plumbing' },
@@ -107,6 +124,7 @@ export function TenantPortal({
   serviceCategories,
   serviceProviders,
   nextPayment,
+  initialLease,
 }: {
   token: string
   tenant: TenantInfo
@@ -117,9 +135,11 @@ export function TenantPortal({
   serviceCategories: ServiceCategory[]
   serviceProviders: ServiceProvider[]
   nextPayment: Payment | null
+  initialLease: LeaseInfo | null
 }) {
   const [activeTab, setActiveTab] = useState<TabId>('home')
   const [queries,   setQueries]   = useState<TenantQuery[]>(initialQueries)
+  const [lease,     setLease]     = useState<LeaseInfo | null>(initialLease)
   const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(null)
 
   return (
@@ -156,6 +176,17 @@ export function TenantPortal({
         <PaymentsTab
           payments={initialPayments}
           token={token}
+        />
+      )}
+      {activeTab === 'lease' && (
+        <LeaseTab
+          lease={lease}
+          token={token}
+          tenantName={tenant.full_name}
+          landlordName={landlord.full_name}
+          propertyName={property.name}
+          propertyAddress={property.address}
+          onSigned={(updated) => setLease(updated)}
         />
       )}
       {activeTab === 'maintenance' && (
@@ -959,6 +990,189 @@ function QueriesTab({
           )
         })
       )}
+    </div>
+  )
+}
+
+// ─── LEASE TAB ────────────────────────────────────────────────────────────────
+
+function LeaseTab({
+  lease,
+  token,
+  tenantName,
+  landlordName,
+  propertyName,
+  propertyAddress,
+  onSigned,
+}: {
+  lease: LeaseInfo | null
+  token: string
+  tenantName: string
+  landlordName: string
+  propertyName: string
+  propertyAddress: string
+  onSigned: (l: LeaseInfo) => void
+}) {
+  const [signing,  setSigning]  = useState(false)
+  const [signed,   setSigned]   = useState(!!lease?.tenant_signed_at)
+  const [signErr,  setSignErr]  = useState<string | null>(null)
+
+  if (!lease) {
+    return (
+      <Card className="border border-slate-100 p-8 text-center">
+        <p className="text-2xl">📄</p>
+        <p className="mt-3 font-semibold text-slate-700">No lease document available</p>
+        <p className="mt-1 text-sm text-slate-400">Your landlord hasn&apos;t generated a lease yet.</p>
+      </Card>
+    )
+  }
+
+  async function signLease() {
+    if (!lease) return
+    setSigning(true)
+    setSignErr(null)
+    try {
+      const res = await fetch('/api/tenant/sign-lease', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ token, lease_id: lease.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setSignErr(json.error ?? 'Failed to sign'); return }
+      setSigned(true)
+      onSigned(json.lease as LeaseInfo)
+    } finally {
+      setSigning(false)
+    }
+  }
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  function fmtRand(cents: number) {
+    return `R${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+  }
+  function ordinal(n: number) {
+    if (n === 1) return '1st'
+    if (n === 2) return '2nd'
+    if (n === 3) return '3rd'
+    return `${n}th`
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-white/70">Lease agreement</p>
+        <button
+          onClick={() => window.print()}
+          className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/20"
+        >
+          Print / PDF
+        </button>
+      </div>
+
+      <Card className="border border-slate-100 p-5">
+        <div className="border-b border-slate-100 pb-4 text-center">
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-800">Residential Lease Agreement</p>
+          <p className="mt-1 text-xs text-slate-400">Entered into between:</p>
+        </div>
+
+        <div className="mt-4 space-y-4 text-sm">
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Landlord</p>
+            <p className="font-medium text-slate-900">{landlordName}</p>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Tenant</p>
+            <p className="font-medium text-slate-900">{tenantName}</p>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Property</p>
+            <p className="font-medium text-slate-900">{propertyName}</p>
+            <p className="text-slate-500">{propertyAddress}</p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Lease Terms</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-xs text-slate-400">Start date</p>
+                <p className="font-medium text-slate-900">{fmtDate(lease.lease_start)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">End date</p>
+                <p className="font-medium text-slate-900">{lease.lease_end ? fmtDate(lease.lease_end) : 'Month-to-month'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Monthly rent</p>
+                <p className="font-medium text-slate-900">{fmtRand(lease.monthly_rent)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Deposit</p>
+                <p className="font-medium text-slate-900">{lease.deposit_amount ? fmtRand(lease.deposit_amount) : '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Payment due</p>
+                <p className="font-medium text-slate-900">{ordinal(lease.payment_due_day)} of month</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Notice period</p>
+                <p className="font-medium text-slate-900">{lease.notice_period_days} days</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Tenant Obligations</p>
+            <ol className="space-y-1 text-xs leading-relaxed text-slate-600">
+              <li>1. Pay rent on or before the due date each month.</li>
+              <li>2. Maintain the property in good and clean condition.</li>
+              <li>3. Not make alterations without written landlord consent.</li>
+              <li>4. Not sublet without written landlord consent.</li>
+              <li>5. Comply with all body corporate rules where applicable.</li>
+              <li>6. Give {lease.notice_period_days} days written notice of intention to vacate.</li>
+            </ol>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Landlord Obligations</p>
+            <ol className="space-y-1 text-xs leading-relaxed text-slate-600">
+              <li>1. Maintain the property in a habitable condition.</li>
+              <li>2. Not enter without reasonable notice except in emergency.</li>
+              <li>3. Return the deposit within 21 days of vacating subject to inspection.</li>
+            </ol>
+          </div>
+
+          {lease.special_conditions && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Special Conditions</p>
+              <p className="text-xs text-slate-600">{lease.special_conditions}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Acceptance */}
+        <div className="mt-6 border-t border-slate-100 pt-4">
+          {signed || lease.tenant_signed_at ? (
+            <div className="rounded-xl bg-emerald-50 px-4 py-3 text-center">
+              <p className="text-sm font-semibold text-emerald-700">
+                ✓ You accepted this lease on {fmtDate(lease.tenant_signed_at ?? new Date().toISOString())}
+              </p>
+            </div>
+          ) : (
+            <>
+              {signErr && <p className="mb-2 text-xs text-red-600">{signErr}</p>}
+              <button
+                disabled={signing}
+                onClick={signLease}
+                className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 active:scale-95"
+              >
+                {signing ? 'Signing…' : 'I have read and accept this lease'}
+              </button>
+            </>
+          )}
+        </div>
+      </Card>
     </div>
   )
 }

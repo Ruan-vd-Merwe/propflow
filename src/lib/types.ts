@@ -301,6 +301,32 @@ export type CheckinResponse = {
 }
 
 
+// ─── Leases ──────────────────────────────────────────────────────────────────
+
+export type LeaseStatus = 'draft' | 'sent' | 'signed' | 'expired'
+
+export type LeaseAgreement = {
+  id: string
+  property_id: string
+  tenant_id: string
+  landlord_id: string
+  lease_start: string       // YYYY-MM-DD
+  lease_end: string | null  // YYYY-MM-DD or null for month-to-month
+  monthly_rent: number      // cents
+  deposit_amount: number | null  // cents
+  payment_due_day: number
+  notice_period_days: number
+  pet_allowed: boolean
+  subletting_allowed: boolean
+  special_conditions: string | null
+  status: LeaseStatus
+  landlord_signed_at: string | null
+  tenant_signed_at: string | null
+  xpello_enrolled: boolean
+  xpello_enrolled_at: string | null
+  created_at: string
+}
+
 // ─── Intelligence features ────────────────────────────────────────────────────
 
 export type ComponentTypeKey =

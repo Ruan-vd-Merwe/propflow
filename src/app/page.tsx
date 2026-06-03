@@ -293,6 +293,89 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── LEGAL PROTECTION ──────────────────────────────────── */}
+      <section className="bg-[#0f172a] px-6 py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            {/* Left column */}
+            <div>
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-700">
+                <svg className="h-9 w-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h2 className="mb-4 text-3xl font-extrabold leading-tight tracking-tight text-white md:text-4xl">
+                Your lease. Your protection.
+              </h2>
+              <p className="mb-6 text-lg leading-relaxed text-slate-300">
+                Every PropTrust lease comes with optional legal protection through our partnership
+                with Xpello — South Africa&apos;s leading eviction management service.
+              </p>
+              <div className="mb-8 grid grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-red-900/40 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-red-400">Typical eviction cost</p>
+                  <p className="mt-1 text-2xl font-extrabold text-white">R40,000+</p>
+                </div>
+                <div className="rounded-2xl bg-emerald-900/40 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">With Xpello protection</p>
+                  <p className="mt-1 text-2xl font-extrabold text-white">R250/month</p>
+                </div>
+              </div>
+              <Link
+                href="/leases"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-95"
+              >
+                Learn about legal protection
+              </Link>
+            </div>
+
+            {/* Right column — 3 protection cards */}
+            <div className="grid gap-4">
+              {[
+                {
+                  icon: (
+                    <svg className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  ),
+                  title: 'Lease Generator',
+                  desc:  'Create a legally compliant SA residential lease agreement in minutes.',
+                },
+                {
+                  icon: (
+                    <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  ),
+                  title: 'Xpello Protection',
+                  desc:  'Enroll your lease for eviction management from R250/month.',
+                },
+                {
+                  icon: (
+                    <svg className="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  ),
+                  title: '25 Attorneys Nationwide',
+                  desc:  'Access Xpello\'s panel of specialist attorneys when you need them.',
+                },
+              ].map((card) => (
+                <div key={card.title} className="flex items-start gap-4 rounded-2xl bg-white/5 p-6 transition hover:bg-white/10">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                    {card.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white">{card.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-400">{card.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FEEDBACK ──────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-24">
         <div className="mx-auto max-w-7xl">
