@@ -202,6 +202,29 @@ export default async function TenantProfilePage({
               <Stat label="Monthly income" value={`${fmt(tenantProfile.monthly_income)} net`} />
             )}
           </div>
+
+          {/* Search preferences link */}
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <Link
+              href="/tenant/preferences"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Edit search preferences
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+            {((tenantProfile as Record<string, unknown>).lifestyle_interests as string[] | null)?.length ? (
+              <span className="ml-3 text-xs text-slate-400">
+                {((tenantProfile as Record<string, unknown>).lifestyle_interests as string[]).length +
+                  (((tenantProfile as Record<string, unknown>).property_interests as string[] | null)?.length ?? 0) +
+                  (((tenantProfile as Record<string, unknown>).area_interests as string[] | null)?.length ?? 0)} preference{' '}
+                tags saved
+              </span>
+            ) : (
+              <span className="ml-3 text-xs text-amber-600">No preferences set — add some to improve your match scores</span>
+            )}
+          </div>
         </div>
 
         {/* ── Matched properties ────────────────────────────────────────── */}

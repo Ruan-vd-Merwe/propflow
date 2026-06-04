@@ -10,18 +10,32 @@ export function mapTenantProfile(
     preferred_suburbs: tenantProfile.looking_in_area
       ? [String(tenantProfile.looking_in_area)]
       : [],
-    desired_bedrooms: undefined,
+    desired_bedrooms: tenantProfile.desired_bedrooms != null
+      ? Number(tenantProfile.desired_bedrooms)
+      : undefined,
     move_in_month: tenantProfile.move_in_date
       ? new Date(String(tenantProfile.move_in_date)).getMonth() + 1
       : undefined,
-    work_locations: [],
-    lifestyle_interests: [],
-    property_interests: [],
-    area_interests: [],
-    must_haves: [],
-    dealbreakers: [],
-    has_car: true,
-    has_pets: false,
+    work_locations: tenantProfile.work_location
+      ? [String(tenantProfile.work_location)]
+      : [],
+    lifestyle_interests: Array.isArray(tenantProfile.lifestyle_interests)
+      ? (tenantProfile.lifestyle_interests as string[])
+      : [],
+    property_interests: Array.isArray(tenantProfile.property_interests)
+      ? (tenantProfile.property_interests as string[])
+      : [],
+    area_interests: Array.isArray(tenantProfile.area_interests)
+      ? (tenantProfile.area_interests as string[])
+      : [],
+    must_haves: Array.isArray(tenantProfile.must_haves)
+      ? (tenantProfile.must_haves as string[])
+      : [],
+    dealbreakers: Array.isArray(tenantProfile.dealbreakers)
+      ? (tenantProfile.dealbreakers as string[])
+      : [],
+    has_car: tenantProfile.has_car !== false,
+    has_pets: Boolean(tenantProfile.has_pets),
   }
 }
 
