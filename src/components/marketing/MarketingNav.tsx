@@ -13,17 +13,64 @@ const NAV: NavSection[] = [
   { type: "link", label: "Area Match", href: "/area-match" },
   {
     type: "dropdown",
-    label: "Solutions",
+    label: "Sell / Rent Out",
     items: [
       {
-        label: "For Tenants",
-        href: "/solutions/tenants",
-        desc: "Find a home that fits your life",
+        label: "Seller Listing Assistant",
+        href: "/sell/listing-assistant",
+        desc: "Pricing, photos, viewings and enquiries",
+      },
+      {
+        label: "Verified Property Pack",
+        href: "/sell/property-pack",
+        desc: "Build a complete disclosure package",
+      },
+      {
+        label: "Savings Calculator",
+        href: "/sell/savings-calculator",
+        desc: "See how much you save vs. an agent",
       },
       {
         label: "For Landlords",
         href: "/solutions/landlords",
         desc: "Manage properties without a rental agent",
+      },
+    ],
+  },
+  {
+    type: "dropdown",
+    label: "Buy / Rent",
+    items: [
+      {
+        label: "Buyer Due Diligence",
+        href: "/buy/due-diligence",
+        desc: "Checklists, calculators and red flags",
+      },
+      {
+        label: "Offer-to-Purchase Guide",
+        href: "/buy/offer-to-purchase",
+        desc: "Prepare your OTP for your conveyancer",
+      },
+      {
+        label: "Communication Centre",
+        href: "/enquiry",
+        desc: "Ask questions, request docs, submit interest",
+      },
+      {
+        label: "For Tenants",
+        href: "/solutions/tenants",
+        desc: "Find a home that fits your life",
+      },
+    ],
+  },
+  {
+    type: "dropdown",
+    label: "Solutions",
+    items: [
+      {
+        label: "Professionals Marketplace",
+        href: "/professionals",
+        desc: "Conveyancers, inspectors, valuers and more",
       },
       {
         label: "How Scoring Works",
@@ -41,15 +88,38 @@ const NAV: NavSection[] = [
 ];
 
 const MOBILE_NAV_LINKS = [
-  { label: "Features", href: "/features" },
   { label: "Browse Properties", href: "/browse" },
   { label: "Area Match", href: "/area-match" },
+  { label: "Seller Assistant", href: "/sell/listing-assistant" },
+  { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
+  { label: "Professionals", href: "/professionals" },
+  { label: "Savings Calculator", href: "/sell/savings-calculator" },
+  { label: "Features", href: "/features" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Resources", href: "/resources" },
   { label: "Contact", href: "/contact" },
 ];
 
 const SOLUTIONS_ITEMS: NavLink[] = [
+  {
+    label: "Seller Listing Assistant",
+    href: "/sell/listing-assistant",
+    desc: "Pricing, photos, viewings and enquiries",
+  },
+  {
+    label: "Buyer Due Diligence",
+    href: "/buy/due-diligence",
+    desc: "Checklists, calculators and red flags",
+  },
+  {
+    label: "Professionals Marketplace",
+    href: "/professionals",
+    desc: "Conveyancers, inspectors, valuers and more",
+  },
+  {
+    label: "Savings Calculator",
+    href: "/sell/savings-calculator",
+    desc: "See how much you save vs. an agent",
+  },
   {
     label: "For Tenants",
     href: "/solutions/tenants",
@@ -60,12 +130,6 @@ const SOLUTIONS_ITEMS: NavLink[] = [
     href: "/solutions/landlords",
     desc: "Manage properties without a rental agent",
   },
-  {
-    label: "How Scoring Works",
-    href: "/how-scoring-works",
-    desc: "How we match properties to tenants",
-  },
-  { label: "All Features", href: "/features" },
 ];
 
 // ── Icons ─────────────────────────────────────────────────────────────────────

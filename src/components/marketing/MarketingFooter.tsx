@@ -3,22 +3,31 @@ import { NavLogo } from "./MarketingNav";
 
 const COLS = [
   {
-    title: "Product",
+    title: "Sell Privately",
     links: [
-      { label: "Area Match", href: "/area-match" },
-      { label: "Browse properties", href: "/browse" },
-      { label: "For Tenants", href: "/solutions/tenants" },
+      { label: "Seller Listing Assistant", href: "/sell/listing-assistant" },
+      { label: "Verified Property Pack", href: "/sell/property-pack" },
+      { label: "Savings Calculator", href: "/sell/savings-calculator" },
       { label: "For Landlords", href: "/solutions/landlords" },
-      { label: "Features", href: "/features" },
-      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
-    title: "Company",
+    title: "Buy Privately",
     links: [
-      { label: "About us", href: "/about" },
-      { label: "Blog", href: "/resources/blog" },
-      { label: "Contact", href: "/contact" },
+      { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
+      { label: "Offer-to-Purchase Guide", href: "/buy/offer-to-purchase" },
+      { label: "Communication Centre", href: "/enquiry" },
+      { label: "For Tenants", href: "/solutions/tenants" },
+    ],
+  },
+  {
+    title: "Browse",
+    links: [
+      { label: "Browse properties", href: "/browse" },
+      { label: "Area Match", href: "/area-match" },
+      { label: "Professionals", href: "/professionals" },
+      { label: "Features", href: "/features" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
@@ -26,9 +35,9 @@ const COLS = [
     links: [
       { label: "SA Rental Law Guide", href: "/resources/rental-law" },
       { label: "FAQ", href: "/resources/faq" },
-      { label: "Tenant Screening Guide", href: "/resources/screening" },
       { label: "How Scoring Works", href: "/how-scoring-works" },
-      { label: "Suburb Investment Scores", href: "/areas" },
+      { label: "About us", href: "/about" },
+      { label: "Contact", href: "/contact" },
     ],
   },
 ];
@@ -37,13 +46,12 @@ export default function MarketingFooter() {
   return (
     <footer id="contact" className="bg-[#0f172a] px-6 pb-10 pt-16">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-5">
           {/* Brand col */}
           <div>
             <NavLogo white />
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              PropTrust helps tenants find a home that fits their life and helps
-              landlords manage their properties without a rental agent.
+              Sell or rent privately, but safely — with verified documents, guided due diligence, and professional handover. No estate agent required.
             </p>
             <div className="mt-5 space-y-1">
               <p className="text-sm text-slate-500">hello@proptrust.co.za</p>
