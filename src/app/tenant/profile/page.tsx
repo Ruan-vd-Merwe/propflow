@@ -206,12 +206,17 @@ export default async function TenantProfilePage({
 
         {/* ── Matched properties ────────────────────────────────────────── */}
         <section className="mb-8">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">
-            Matched properties
-            <span className="ml-2 text-sm font-normal text-slate-500">
-              {scoredProperties.length} listing{scoredProperties.length !== 1 ? 's' : ''} match your search
-            </span>
-          </h2>
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-900">
+              Matched properties
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                {scoredProperties.length} listing{scoredProperties.length !== 1 ? 's' : ''} match your search
+              </span>
+            </h2>
+            <Link href="/how-scoring-works" className="shrink-0 text-xs text-slate-400 hover:text-slate-700 hover:underline">
+              How scoring works
+            </Link>
+          </div>
 
           {scoredProperties.length === 0 ? (
             <div className="card p-8 text-center">

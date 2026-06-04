@@ -118,10 +118,10 @@ function TenantMatchCard({
 
       {/* Score breakdown */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-        <span title="Budget match">💰 {match.budget}/30</span>
-        <span title="Area match">📍 {match.area}/25</span>
-        <span title="Affordability">📊 {match.income}/25</span>
-        <span title="Move-in date match">📅 {match.date}/20</span>
+        <span title="Budget match">Budget {match.budget}/30</span>
+        <span title="Area match">Area {match.area}/25</span>
+        <span title="Affordability">Income {match.income}/25</span>
+        <span title="Move-in date match">Date {match.date}/20</span>
       </div>
 
       {/* CTA */}
@@ -314,7 +314,7 @@ export default async function PropertyPage({
             href={`/properties/${params.id}/components`}
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
           >
-            🔧 Maintenance Tracker
+            Maintenance Tracker
           </Link>
         </div>
 
@@ -345,7 +345,7 @@ export default async function PropertyPage({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            ✨ Recommended Tenants
+            Recommended Tenants
           </Link>
         </div>
 

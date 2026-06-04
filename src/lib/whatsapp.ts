@@ -123,7 +123,7 @@ export function sendTenantPaidNotification(opts: {
 }) {
   return sendWhatsApp(
     opts.landlordPhone,
-    `📬 *${opts.tenantName}* says they have paid rent of *${fmtRand(opts.amount)}* for *${opts.property}*. Please verify and mark as paid in PropTrust.`
+    `*${opts.tenantName}* says they have paid rent of *${fmtRand(opts.amount)}* for *${opts.property}*. Please verify and mark as paid in PropTrust.`
   )
 }
 

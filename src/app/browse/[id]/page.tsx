@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { NavBar } from '@/components/NavBar'
-import { PropertyScoreCard } from '@/components/PropertyScoreCard'
-import { score_tenant_property } from '@/lib/scoring/engine'
-import type { PropertyListing, TenantProfile } from '@/lib/types'
-import Link from 'next/link'
+import { ScoreBreakdown } from '@/components/ScoreBreakdown'
+import { tenant_interest_match_model } from '@/lib/scoring/interest-engine'
+import { mapTenantProfile, mapProperty } from '@/lib/scoring/mappers'
+import type { PropertyListing } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,9 +42,9 @@ export default async function BrowsePropertyPage({
   if (!raw) notFound()
   const property = raw as PropertyListing
 
-  // Load tenant profile if logged in
+  // Compute score server-side if tenant profile exists
   let scoreResult = null
-  let tenantProfile: TenantProfile | null = null
+  let hasTenantProfile = false
 
   if (user) {
     const { data: tp } = await supabase
@@ -52,41 +53,11 @@ export default async function BrowsePropertyPage({
       .eq('user_id', user.id)
       .single()
 
-    tenantProfile = (tp as TenantProfile | null) ?? null
-
-    if (tenantProfile) {
-      const profile = {
-        monthly_income: (tenantProfile.monthly_income || 0) / 100,
-        rental_budget: (tenantProfile.budget_max || 0) / 100,
-        total_living_budget: ((tenantProfile.budget_max || 0) / 100) * 1.4,
-        preferred_suburbs: tenantProfile.looking_in_area
-          ? [tenantProfile.looking_in_area]
-          : [],
-        desired_bedrooms: 1,
-        move_in_month: tenantProfile.move_in_date
-          ? new Date(tenantProfile.move_in_date).getMonth() + 1
-          : 6,
-        employment_type: tenantProfile.employment_status ?? undefined,
-        has_car: true,
-        has_pets: false,
-        lifestyle_tags: [],
-        must_haves: [],
-        dealbreakers: [],
-        work_locations: [],
-      }
-
-      const propertyData = {
-        property_id: property.id,
-        suburb: property.suburb ?? undefined,
-        rent: (property.asking_rent || 0) / 100,
-        bedrooms: property.bedrooms ?? undefined,
-        pets_allowed: false,
-        suburb_avg_rent: (property.asking_rent || 0) / 100,
-        area_tags: property.suburb ? [property.suburb.toLowerCase()] : [],
-        property_tags: [property.property_type || 'apartment'],
-      }
-
-      scoreResult = score_tenant_property(profile, propertyData)
+    if (tp) {
+      hasTenantProfile = true
+      const profile = mapTenantProfile(tp as Record<string, unknown>)
+      const propertyData = mapProperty(raw as Record<string, unknown>)
+      scoreResult = tenant_interest_match_model(profile, propertyData)
     }
   }
 
@@ -97,17 +68,17 @@ export default async function BrowsePropertyPage({
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-          <Link href="/tenant/profile" className="hover:text-slate-900">
-            My profile
+          <Link href="/browse" className="hover:text-slate-900">
+            Browse
           </Link>
           <span>/</span>
-          <span className="text-slate-900">Property</span>
+          <span className="text-slate-900">{property.name}</span>
         </nav>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           {/* Left: listing details */}
           <div className="space-y-5">
-            {/* Photos placeholder */}
+            {/* Photo */}
             {property.photos?.length > 0 ? (
               <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-200">
                 <Image
@@ -135,7 +106,7 @@ export default async function BrowsePropertyPage({
               </div>
             )}
 
-            {/* Title */}
+            {/* Title + rent */}
             <div>
               <div className="flex items-start justify-between gap-3">
                 <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
@@ -157,13 +128,10 @@ export default async function BrowsePropertyPage({
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'Type', value: property.property_type ?? '—' },
-                { label: 'Bedrooms', value: property.bedrooms ? `${property.bedrooms} bed` : '—' },
-                {
-                  label: 'Available',
-                  value: property.available_from ? fmtDate(property.available_from) : '—',
-                },
-                { label: 'Province', value: property.province ?? '—' },
+                { label: 'Type',      value: property.property_type ?? '—' },
+                { label: 'Bedrooms',  value: property.bedrooms ? `${property.bedrooms} bed` : '—' },
+                { label: 'Available', value: property.available_from ? fmtDate(property.available_from) : '—' },
+                { label: 'Province',  value: property.province ?? '—' },
               ].map((d) => (
                 <div key={d.label} className="rounded-xl bg-white px-4 py-3 shadow-sm">
                   <p className="text-xs text-slate-400">{d.label}</p>
@@ -182,6 +150,16 @@ export default async function BrowsePropertyPage({
               </div>
             )}
 
+            {/* Score section — main placement for mobile / before apply */}
+            <div className="lg:hidden">
+              <ScoreSection
+                scoreResult={scoreResult}
+                user={user}
+                hasTenantProfile={hasTenantProfile}
+                propertyId={property.id}
+              />
+            </div>
+
             {/* Apply CTA */}
             <Link
               href={`/apply?property_id=${property.id}`}
@@ -191,48 +169,89 @@ export default async function BrowsePropertyPage({
             </Link>
           </div>
 
-          {/* Right: score card */}
-          <div>
-            {scoreResult ? (
-              <PropertyScoreCard
-                score={scoreResult.score}
-                confidence={scoreResult.confidence}
-                insights={scoreResult.insights}
-                top_reasons={scoreResult.top_reasons}
-                warnings={scoreResult.warnings}
-              />
-            ) : user && !tenantProfile ? (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-800">
-                <p className="font-semibold">Complete your tenant profile</p>
-                <p className="mt-1 text-blue-700">
-                  Add your budget and preferences to see a personalised match score for
-                  this property.
-                </p>
-                <Link
-                  href="/tenant/profile"
-                  className="mt-3 inline-block rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800"
-                >
-                  Complete profile
-                </Link>
-              </div>
-            ) : !user ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-700">
-                <p className="font-semibold">See your match score</p>
-                <p className="mt-1 text-slate-500">
-                  Sign in with your tenant profile to get a personalised fit score for
-                  this property.
-                </p>
-                <Link
-                  href="/login"
-                  className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700"
-                >
-                  Sign in
-                </Link>
-              </div>
-            ) : null}
+          {/* Right: score (desktop) */}
+          <div className="hidden lg:block">
+            <ScoreSection
+              scoreResult={scoreResult}
+              user={user}
+              hasTenantProfile={hasTenantProfile}
+              propertyId={property.id}
+            />
           </div>
         </div>
       </main>
+    </div>
+  )
+}
+
+// ─── Score section component ──────────────────────────────────────────────────
+
+function ScoreSection({
+  scoreResult,
+  user,
+  hasTenantProfile,
+  propertyId,
+}: {
+  scoreResult: Awaited<ReturnType<typeof tenant_interest_match_model>> | null
+  user: { id: string } | null
+  hasTenantProfile: boolean
+  propertyId: string
+}) {
+  void propertyId
+
+  if (scoreResult) {
+    return (
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-slate-700">
+          How this property matches your profile
+        </h2>
+        <ScoreBreakdown
+          score={scoreResult.score}
+          confidence={scoreResult.confidence}
+          match_reasons={scoreResult.match_reasons}
+          warnings={scoreResult.warnings}
+          insights={scoreResult.insights}
+        />
+        <p className="mt-2 text-right text-xs text-slate-400">
+          <Link href="/how-scoring-works" className="hover:text-slate-700 hover:underline">
+            How scoring works
+          </Link>
+        </p>
+      </div>
+    )
+  }
+
+  if (user && !hasTenantProfile) {
+    return (
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+        <p className="text-sm font-semibold text-blue-900">Complete your tenant profile</p>
+        <p className="mt-1 text-sm text-blue-700">
+          Add your budget and preferences to see a personalised match score for this property.
+        </p>
+        <Link
+          href="/tenant/profile"
+          className="mt-3 inline-block rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800"
+        >
+          Complete profile
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <p className="text-sm font-semibold text-slate-900">
+        Sign in to see your personal match score
+      </p>
+      <p className="mt-1 text-sm text-slate-500">
+        Sign in with your tenant profile to get a personalised fit score for this property.
+      </p>
+      <Link
+        href="/login"
+        className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700"
+      >
+        Sign in
+      </Link>
     </div>
   )
 }

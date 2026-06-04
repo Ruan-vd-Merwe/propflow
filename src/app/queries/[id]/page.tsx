@@ -7,9 +7,9 @@ import { QueryDetail } from './QueryDetail'
 export const dynamic = 'force-dynamic'
 
 const CATEGORY_CONFIG = {
-  emergency:   { label: 'Emergency',   icon: '🚨', colour: 'text-red-700',   bg: 'bg-red-50' },
-  maintenance: { label: 'Maintenance', icon: '🔧', colour: 'text-amber-700', bg: 'bg-amber-50' },
-  general:     { label: 'General',     icon: '💬', colour: 'text-slate-700', bg: 'bg-slate-50' },
+  emergency:   { label: 'Emergency',   icon: '!', colour: 'text-red-700',   bg: 'bg-red-50' },
+  maintenance: { label: 'Maintenance', icon: 'M', colour: 'text-amber-700', bg: 'bg-amber-50' },
+  general:     { label: 'General',     icon: 'G', colour: 'text-slate-700', bg: 'bg-slate-50' },
 }
 
 function formatDate(d: string) {

@@ -92,7 +92,7 @@ function SendToTenantButton({
       onClick={send}
       className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
     >
-      {copied ? '✓ Link copied!' : loading ? 'Copying…' : '📋 Copy tenant link'}
+      {copied ? 'Link copied!' : loading ? 'Copying…' : 'Copy tenant link'}
     </button>
   )
 }
@@ -175,7 +175,7 @@ export function SignatureSection({
               onClick={copyTenantLink}
               className="mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
             >
-              {copied ? '✓ Portal link copied!' : '📋 Send to tenant'}
+              {copied ? 'Portal link copied!' : 'Send to tenant'}
             </button>
           )}
         </div>

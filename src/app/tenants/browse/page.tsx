@@ -182,10 +182,10 @@ function TenantCard({
             <div className={`h-full rounded-full ${barCls}`} style={{ width: `${score.total}%` }} />
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
-            <span title="Budget"> {score.budget}/30</span>
-            <span title="Area"> {score.area}/25</span>
-            <span title="Affordability"> {score.income}/25</span>
-            <span title="Move-in"> {score.date}/20</span>
+            <span>Budget {score.budget}/30</span>
+            <span>Area {score.area}/25</span>
+            <span>Match {score.income}/25</span>
+            <span>Date {score.date}/20</span>
           </div>
         </>
       )}

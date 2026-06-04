@@ -40,7 +40,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
             <table role="presentation" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="width:28px;height:28px;background:${accentColor};border-radius:6px;text-align:center;vertical-align:middle;">
-                  <span style="color:#ffffff;font-size:15px;line-height:28px;display:block;">🏠</span>
+                  <span style="color:#ffffff;font-size:15px;line-height:28px;display:block;">P</span>
                 </td>
                 <td style="padding-left:10px;vertical-align:middle;">
                   <span style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.3px;">PropTrust</span>
@@ -395,7 +395,7 @@ export function introductionToTenantEmail(d: IntroductionEmailData): { subject: 
   const subject = `A landlord is interested in your profile on PropTrust`
   const content = `
     <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
-      You have a new introduction request 🎉
+      You have a new introduction request
     </h2>
     <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
       Hi ${d.tenantDisplayName},

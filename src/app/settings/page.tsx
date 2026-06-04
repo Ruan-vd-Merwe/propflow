@@ -141,7 +141,7 @@ export default function SettingsPage() {
           <div className="flex flex-wrap gap-3">
             {profile.is_landlord && (
               <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                <span className="text-xl">🏠</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-200 text-xs font-bold text-blue-700">LL</span>
                 <div>
                   <p className="text-sm font-bold text-blue-900">Landlord</p>
                   <p className="text-xs text-blue-600">Manage properties &amp; tenants</p>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
             )}
             {profile.is_tenant && (
               <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <span className="text-xl">🔍</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-200 text-xs font-bold text-green-700">T</span>
                 <div>
                   <p className="text-sm font-bold text-green-900">Tenant</p>
                   <p className="text-xs text-green-600">Find &amp; rent properties</p>

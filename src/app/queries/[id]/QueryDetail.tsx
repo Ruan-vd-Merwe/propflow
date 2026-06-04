@@ -4,9 +4,9 @@ import { useState } from 'react'
 import type { QueryStatus } from '@/lib/types'
 
 const STATUS_OPTS: { value: QueryStatus; label: string; icon: string; colour: string }[] = [
-  { value: 'open',        label: 'Open',        icon: '⏳', colour: 'border-amber-400 bg-amber-50 text-amber-800' },
-  { value: 'in_progress', label: 'In Progress',  icon: '🔄', colour: 'border-blue-400 bg-blue-50 text-blue-800' },
-  { value: 'resolved',    label: 'Resolved',     icon: '✅', colour: 'border-emerald-400 bg-emerald-50 text-emerald-800' },
+  { value: 'open',        label: 'Open',        icon: '–', colour: 'border-amber-400 bg-amber-50 text-amber-800' },
+  { value: 'in_progress', label: 'In Progress',  icon: '›', colour: 'border-blue-400 bg-blue-50 text-blue-800' },
+  { value: 'resolved',    label: 'Resolved',     icon: 'v', colour: 'border-emerald-400 bg-emerald-50 text-emerald-800' },
 ]
 
 export function QueryDetail({

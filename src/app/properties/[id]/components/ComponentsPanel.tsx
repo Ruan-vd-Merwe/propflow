@@ -202,7 +202,7 @@ export function ComponentsPanel({ propertyId, initialComponents }: Props) {
 
         {components.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-2xl">🔧</p>
+            <p className="text-2xl font-bold text-slate-300">M</p>
             <p className="mt-2 font-semibold text-slate-700">No components tracked yet</p>
             <p className="mt-1 text-sm text-slate-400">
               Add geysers, roof, electrics, and other items to track their lifespan.

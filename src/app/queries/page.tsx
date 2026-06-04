@@ -13,9 +13,9 @@ function formatDate(d: string) {
 }
 
 const CATEGORY_CONFIG: Record<QueryCategory, { label: string; icon: string; badge: string }> = {
-  emergency:   { label: 'Emergency',   icon: '🚨', badge: 'bg-red-100 text-red-700' },
-  maintenance: { label: 'Maintenance', icon: '🔧', badge: 'bg-amber-100 text-amber-700' },
-  general:     { label: 'General',     icon: '💬', badge: 'bg-slate-100 text-slate-600' },
+  emergency:   { label: 'Emergency',   icon: '!',  badge: 'bg-red-100 text-red-700' },
+  maintenance: { label: 'Maintenance', icon: 'M',  badge: 'bg-amber-100 text-amber-700' },
+  general:     { label: 'General',     icon: 'G',  badge: 'bg-slate-100 text-slate-600' },
 }
 
 const STATUS_CONFIG: Record<QueryStatus, { label: string; badge: string; dot: string }> = {
@@ -79,7 +79,7 @@ export default async function QueriesPage() {
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {emergency > 0 && (
             <div className="card col-span-2 flex items-center gap-3 border-red-200 bg-red-50 p-4 sm:col-span-1">
-              <span className="text-2xl">🚨</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-200 text-sm font-bold text-red-700">!</span>
               <div>
                 <p className="text-2xl font-bold text-red-700">{emergency}</p>
                 <p className="text-xs font-medium uppercase tracking-wider text-red-500">Emergency</p>

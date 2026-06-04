@@ -11,10 +11,10 @@ const PROVINCES = [
 ]
 
 const PROPERTY_TYPES = [
-  { value: 'apartment',  label: 'Apartment', icon: '🏢' },
-  { value: 'house',      label: 'House',     icon: '🏠' },
-  { value: 'townhouse',  label: 'Townhouse', icon: '🏘️' },
-  { value: 'room',       label: 'Room',      icon: '🛏️' },
+  { value: 'apartment',  label: 'Apartment', icon: 'APT' },
+  { value: 'house',      label: 'House',     icon: 'HSE' },
+  { value: 'townhouse',  label: 'Townhouse', icon: 'TWN' },
+  { value: 'room',       label: 'Room',      icon: 'RM'  },
 ]
 
 type OnboardStep = 'property' | 'tenants' | 'done'

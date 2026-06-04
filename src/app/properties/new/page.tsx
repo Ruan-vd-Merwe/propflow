@@ -11,10 +11,10 @@ const PROVINCES = [
 ]
 
 const PROPERTY_TYPES = [
-  { value: 'apartment',  label: 'Apartment', icon: '🏢' },
-  { value: 'house',      label: 'House',     icon: '🏠' },
-  { value: 'townhouse',  label: 'Townhouse', icon: '🏘️' },
-  { value: 'room',       label: 'Room',      icon: '🛏️' },
+  { value: 'apartment',  label: 'Apartment', icon: 'APT' },
+  { value: 'house',      label: 'House',     icon: 'HSE' },
+  { value: 'townhouse',  label: 'Townhouse', icon: 'TWN' },
+  { value: 'room',       label: 'Room',      icon: 'RM'  },
 ]
 
 const BEDROOMS   = [0, 1, 2, 3, 4, 5]
@@ -329,12 +329,12 @@ export default function NewPropertyPage() {
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-slate-300">
                   <input type="checkbox" checked={petFriendly} onChange={e => setPetFriendly(e.target.checked)}
                     className="h-4 w-4 accent-blue-700" />
-                  <span className="text-sm font-medium text-slate-700">🐾 Pet friendly</span>
+                  <span className="text-sm font-medium text-slate-700">Pet friendly</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-slate-300">
                   <input type="checkbox" checked={parking} onChange={e => setParking(e.target.checked)}
                     className="h-4 w-4 accent-blue-700" />
-                  <span className="text-sm font-medium text-slate-700">🚗 Parking</span>
+                  <span className="text-sm font-medium text-slate-700">Parking</span>
                 </label>
               </div>
 
