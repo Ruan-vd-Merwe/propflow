@@ -17,6 +17,9 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
 
+    // Supabase dashboard → Authentication → URL Configuration:
+    // Site URL = https://proptrust.co.za
+    // Redirect URLs must include https://proptrust.co.za/**
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
       {

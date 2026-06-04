@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
-    pathname === "/auth/reset-password" ||
+    pathname.startsWith("/auth/") || // /auth/callback (email confirm) and /auth/reset-password
     // Marketing pages
     pathname === "/features" ||
     pathname === "/pricing" ||
