@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
@@ -436,8 +437,88 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Newsletter signup */}
+      <NewsletterSignup />
+
       <MarketingFooter />
     </div>
+  )
+}
+
+// ── Newsletter signup component ───────────────────────────────────────────────
+
+function NewsletterSignup() {
+  const [email,   setEmail]   = React.useState('')
+  const [status,  setStatus]  = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [message, setMessage] = React.useState('')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email) return
+    setStatus('loading')
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setStatus('success')
+        setMessage('You are subscribed. Check your inbox for a welcome email.')
+      } else {
+        setStatus('error')
+        setMessage(data.error ?? 'Something went wrong. Please try again.')
+      }
+    } catch {
+      setStatus('error')
+      setMessage('Something went wrong. Please try again.')
+    }
+  }
+
+  return (
+    <section className="bg-[#0f172a] px-6 py-16">
+      <div className="mx-auto max-w-xl text-center">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          Stay informed on the SA property market
+        </h2>
+        <p className="mt-3 text-slate-400">
+          Get weekly insights on rental trends, price movements and area developments delivered to your inbox.
+        </p>
+
+        {status === 'success' ? (
+          <div className="mt-8 rounded-xl border border-green-500/30 bg-green-500/10 px-6 py-4">
+            <p className="text-sm font-medium text-green-400">{message}</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-8 flex gap-2">
+            <input
+              type="email"
+              required
+              placeholder="your@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="flex-1 rounded-xl border-0 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+            >
+              {status === 'loading' ? 'Subscribing…' : 'Subscribe free'}
+            </button>
+          </form>
+        )}
+
+        {status === 'error' && (
+          <p className="mt-3 text-xs text-red-400">{message}</p>
+        )}
+
+        <p className="mt-4 text-xs text-slate-500">
+          No spam. Unsubscribe anytime. South African property news only.
+        </p>
+      </div>
+    </section>
   )
 }
 

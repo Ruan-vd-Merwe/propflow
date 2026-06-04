@@ -109,6 +109,7 @@ const LANDLORD_LINKS = [
   { href: '/services',         label: 'Services',       Icon: IconShoppingBag },
   { href: '/body-corporate',   label: 'Body Corporate', Icon: IconBuilding },
   { href: '/maintenance-jobs', label: 'Maintenance',    Icon: IconWrench },
+  { href: '/admin/news',       label: 'News Admin',     Icon: IconChat },
 ]
 
 const TENANT_LINKS = [
