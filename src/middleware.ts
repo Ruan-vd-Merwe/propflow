@@ -44,6 +44,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/pricing" ||
     pathname === "/contact" ||
     pathname === "/about" ||
+    pathname === "/area-match" ||
+    pathname === "/areas" ||
+    pathname === "/how-scoring-works" ||
+    pathname === "/unsubscribe" ||
     pathname.startsWith("/solutions/") ||
     pathname.startsWith("/resources/") ||
     // App public routes

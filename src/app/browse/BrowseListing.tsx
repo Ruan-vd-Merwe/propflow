@@ -283,10 +283,25 @@ function PropertyCard({
           </p>
         )}
 
-        {isPersonalised && result?.match_reasons?.[0] && (
-          <p className="mt-2 line-clamp-1 text-[11px] text-green-700">
-            {result.match_reasons[0]}
-          </p>
+        {isPersonalised && result?.match_reasons && result.match_reasons.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {result.match_reasons.slice(0, 3).map((r) => (
+              <li key={r} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-green-700">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        )}
+        {isPersonalised && result?.warnings && result.warnings.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {result.warnings.slice(0, 2).map((w) => (
+              <li key={w} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-700">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                {w}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
@@ -300,10 +315,10 @@ function PropertyCard({
         </Link>
         {showApply && (
           <Link
-            href={`/apply?property_id=${p.id}`}
+            href={`/apply/${p.id}`}
             className="flex-1 rounded-lg bg-blue-700 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
           >
-            Apply now
+            Apply with profile
           </Link>
         )}
       </div>

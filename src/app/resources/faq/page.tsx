@@ -30,7 +30,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: "Can I use PropTrust on my phone?",
-        a: "Yes. PropTrust is mobile-responsive and works on any smartphone or tablet browser. A dedicated mobile app is in development.",
+        a: "Yes. PropTrust is mobile-responsive and works on any smartphone or tablet browser.",
       },
     ],
   },

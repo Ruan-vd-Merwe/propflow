@@ -9,71 +9,35 @@ type NavSection =
   | { type: "link"; label: string; href: string };
 
 const NAV: NavSection[] = [
+  { type: "link", label: "Browse", href: "/browse" },
+  { type: "link", label: "Area Match", href: "/area-match" },
   {
     type: "dropdown",
     label: "Solutions",
     items: [
       {
-        label: "For Landlords",
-        href: "/solutions/landlords",
-        desc: "Manage properties and tenants directly",
-      },
-      {
         label: "For Tenants",
         href: "/solutions/tenants",
-        desc: "Build a verified rental profile",
+        desc: "Find a home that fits your life",
       },
       {
-        label: "For Property Managers",
-        href: "/solutions/managers",
-        desc: "Tools for growing portfolios",
+        label: "For Landlords",
+        href: "/solutions/landlords",
+        desc: "Manage properties without a rental agent",
       },
       {
-        label: "Tenant Screening",
-        href: "/features#screening-detail",
-        desc: "Review applicants before you sign",
+        label: "How Scoring Works",
+        href: "/how-scoring-works",
+        desc: "How we match properties to tenants",
+      },
+      {
+        label: "All Features",
+        href: "/features",
+        desc: "Every tool in one place",
       },
     ],
   },
-  {
-    type: "dropdown",
-    label: "Features",
-    items: [
-      { label: "All Features", href: "/features" },
-      { label: "Tenant Screening", href: "/features#screening-detail" },
-      { label: "Rent Tracking", href: "/features#rent-detail" },
-      { label: "Maintenance", href: "/features#maintenance-detail" },
-      { label: "Dashboard", href: "/features#dashboard-detail" },
-      { label: "WhatsApp Alerts", href: "/features#whatsapp-detail" },
-      { label: "Tenant Marketplace", href: "/features#marketplace-detail" },
-      { label: "Body Corporate", href: "/features#bodycorp-detail" },
-    ],
-  },
-  { type: "link", label: "Browse Properties", href: "/browse" },
   { type: "link", label: "Pricing", href: "/pricing" },
-  {
-    type: "dropdown",
-    label: "Resources",
-    items: [
-      {
-        label: "SA Rental Law Guide",
-        href: "/resources/rental-law",
-        desc: "Know your rights and obligations",
-      },
-      {
-        label: "Tenant Screening Guide",
-        href: "/resources/screening",
-        desc: "How to review applicants properly",
-      },
-      {
-        label: "FAQ",
-        href: "/resources/faq",
-        desc: "Common questions answered",
-      },
-      { label: "Blog", href: "/resources/blog", desc: "Coming soon" },
-    ],
-  },
-  { type: "link", label: "Contact", href: "/contact" },
 ];
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -295,10 +259,10 @@ export default function MarketingNav() {
             Login
           </Link>
           <Link
-            href="/register"
+            href="/area-match"
             className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
           >
-            Get Started
+            Find my area
           </Link>
           <button
             onClick={() => setMobileOpen((o) => !o)}
@@ -371,11 +335,11 @@ export default function MarketingNav() {
                 Login
               </Link>
               <Link
-                href="/register"
+                href="/area-match"
                 onClick={closeMobile}
                 className="rounded-xl bg-[#1e40af] px-4 py-3 text-center text-base font-bold text-white"
               >
-                Get Started Free
+                Find my area
               </Link>
             </div>
           </div>

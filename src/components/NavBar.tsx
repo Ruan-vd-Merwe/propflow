@@ -171,6 +171,24 @@ function IconShield({ className }: { className?: string }) {
   );
 }
 
+function IconSparkles({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+      />
+    </svg>
+  );
+}
+
 function IconSignOut({ className }: { className?: string }) {
   return (
     <svg
@@ -205,7 +223,8 @@ const LANDLORD_LINKS = [
 
 const TENANT_LINKS = [
   { href: "/browse", label: "Browse", Icon: IconSearch },
-  { href: "/dashboard?tab=tenant", label: "My Search", Icon: IconHouse },
+  { href: "/property-match", label: "My Matches", Icon: IconSparkles },
+  { href: "/area-match", label: "Area Match", Icon: IconHouse },
   { href: "/tenant/profile", label: "My Profile", Icon: IconPeople },
 ];
 

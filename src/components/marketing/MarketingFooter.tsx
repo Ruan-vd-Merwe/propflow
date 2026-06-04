@@ -5,12 +5,12 @@ const COLS = [
   {
     title: "Product",
     links: [
+      { label: "Area Match", href: "/area-match" },
+      { label: "Browse properties", href: "/browse" },
+      { label: "For Tenants", href: "/solutions/tenants" },
+      { label: "For Landlords", href: "/solutions/landlords" },
       { label: "Features", href: "/features" },
       { label: "Pricing", href: "/pricing" },
-      { label: "For Landlords", href: "/solutions/landlords" },
-      { label: "For Tenants", href: "/solutions/tenants" },
-      { label: "Mobile App", href: "#" },
-      { label: "API", href: "#" },
     ],
   },
   {
@@ -18,11 +18,7 @@ const COLS = [
     links: [
       { label: "About us", href: "/about" },
       { label: "Blog", href: "/resources/blog" },
-      { label: "Careers", href: "#" },
-      { label: "Press", href: "#" },
       { label: "Contact", href: "/contact" },
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
     ],
   },
   {
@@ -33,8 +29,6 @@ const COLS = [
       { label: "Tenant Screening Guide", href: "/resources/screening" },
       { label: "How Scoring Works", href: "/how-scoring-works" },
       { label: "Suburb Investment Scores", href: "/areas" },
-      { label: "Body Corporate Guide", href: "#" },
-      { label: "Maintenance Checklist", href: "#" },
     ],
   },
 ];
@@ -48,28 +42,12 @@ export default function MarketingFooter() {
           <div>
             <NavLogo white />
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              South Africa&apos;s property management platform for landlords,
-              tenants and property teams.
+              PropTrust helps tenants find a home that fits their life and helps
+              landlords manage their properties without a rental agent.
             </p>
-            <div className="mt-4 space-y-1">
+            <div className="mt-5 space-y-1">
               <p className="text-sm text-slate-500">hello@proptrust.co.za</p>
               <p className="text-sm text-slate-500">Cape Town, South Africa</p>
-            </div>
-            <div className="mt-5 flex gap-2.5">
-              {[
-                { label: "LinkedIn", abbr: "in" },
-                { label: "Instagram", abbr: "Ig" },
-                { label: "X", abbr: "X" },
-              ].map((s) => (
-                <a
-                  key={s.label}
-                  href="#"
-                  aria-label={s.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-xs font-bold text-slate-500 transition hover:border-white/25 hover:text-slate-300"
-                >
-                  {s.abbr}
-                </a>
-              ))}
             </div>
           </div>
 

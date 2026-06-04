@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // ── Mock rss-parser before importing fetcher ──────────────────────────────────
 vi.mock("rss-parser", () => {
@@ -26,7 +26,6 @@ vi.mock("rss-parser", () => {
 });
 
 // ── Mock service client ───────────────────────────────────────────────────────
-const mockUpsertedArticles: unknown[] = [];
 const mockSupabase = {
   from: vi.fn().mockReturnThis(),
   select: vi.fn().mockReturnThis(),

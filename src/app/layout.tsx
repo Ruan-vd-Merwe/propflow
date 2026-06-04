@@ -9,9 +9,9 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PropTrust — Property Management for South Africa",
+  title: "PropTrust — Find a home that fits your life",
   description:
-    "PropTrust helps South African landlords screen tenants, track rent and manage properties without relying on rental agents.",
+    "PropTrust helps South African tenants choose the right area, discover properties that match their lifestyle, and apply with one trusted rental profile.",
 };
 
 export default function RootLayout({
