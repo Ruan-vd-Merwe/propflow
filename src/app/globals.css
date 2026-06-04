@@ -78,3 +78,6 @@
 .animate-paid      { animation: paidFade 5s ease-in-out infinite; }
 .animate-match     { animation: matchFade 5s ease-in-out infinite; }
 .animate-pulse-green { animation: pulseGreen 2s ease-in-out infinite; }
+
+/* Anchor scroll offset for sticky navbar */
+[id] { scroll-margin-top: 80px; }
