@@ -26,6 +26,39 @@ const LEASE_OPTS = [
   { value: '24',  label: '24 months' },
 ]
 
+const FEATURE_TAGS = [
+  { value: 'pool',               label: 'Pool'            },
+  { value: 'garden',             label: 'Garden'          },
+  { value: 'balcony',            label: 'Balcony'         },
+  { value: 'braai_area',         label: 'Braai area'      },
+  { value: 'solar',              label: 'Solar / backup'  },
+  { value: 'storage',            label: 'Storage room'    },
+  { value: 'building_security',  label: 'Building security'},
+  { value: 'air_conditioning',   label: 'Air conditioning'},
+  { value: 'dishwasher',         label: 'Dishwasher'      },
+]
+
+const AREA_TAGS = [
+  { value: 'good_schools',       label: 'Good schools'    },
+  { value: 'retail_access',      label: 'Close to shops'  },
+  { value: 'public_transport',   label: 'Public transport'},
+  { value: 'green_space',        label: 'Parks nearby'    },
+  { value: 'nightlife',          label: 'Nightlife'       },
+  { value: 'coffee_culture',     label: 'Coffee shops'    },
+  { value: 'beach_access',       label: 'Near the beach'  },
+  { value: 'quiet_suburb',       label: 'Quiet suburb'    },
+  { value: 'walkable',           label: 'Walkable area'   },
+]
+
+const LIFESTYLE_TAGS = [
+  { value: 'remote_work',        label: 'Remote work vibes'  },
+  { value: 'outdoor_lifestyle',  label: 'Outdoor lifestyle'  },
+  { value: 'social_life',        label: 'Active social scene'},
+  { value: 'gym_access',         label: 'Gym nearby'         },
+  { value: 'restaurants',        label: 'Restaurant scene'   },
+  { value: 'dog_walking',        label: 'Dog walking routes' },
+]
+
 type Step = 1 | 2 | 3
 
 function StepBar({ current }: { current: Step }) {
@@ -78,12 +111,17 @@ export default function NewPropertyPage() {
   const [postalCode,   setPostalCode]   = useState('')
 
   // Step 2
-  const [rent,          setRent]          = useState('')
-  const [availableFrom, setAvailableFrom] = useState('')
-  const [leaseLength,   setLeaseLength]   = useState('')
-  const [petFriendly,   setPetFriendly]   = useState(false)
-  const [parking,       setParking]       = useState(false)
-  const [description,   setDescription]  = useState('')
+  const [rent,             setRent]             = useState('')
+  const [availableFrom,    setAvailableFrom]    = useState('')
+  const [leaseLength,      setLeaseLength]      = useState('')
+  const [floorSize,        setFloorSize]        = useState('')
+  const [petsAllowed,      setPetsAllowed]      = useState(false)
+  const [parkingAvailable, setParkingAvailable] = useState(false)
+  const [fibreAvailable,   setFibreAvailable]   = useState(false)
+  const [propertyTags,     setPropertyTags]     = useState<string[]>([])
+  const [areaTags,         setAreaTags]         = useState<string[]>([])
+  const [lifestyleTags,    setLifestyleTags]    = useState<string[]>([])
+  const [description,      setDescription]      = useState('')
 
   // Step 3
   const [photos,       setPhotos]       = useState<File[]>([])
@@ -111,16 +149,23 @@ export default function NewPropertyPage() {
       .insert({
         owner_id:      user.id,
         name:          name.trim(),
-        address:       `${address.trim()}${suburb ? ', ' + suburb : ''}${postalCode ? ', ' + postalCode : ''}`,
-        suburb:        suburb || null,
-        province:      province || null,
-        property_type: propertyType || null,
-        bedrooms:      bedrooms ?? null,
-        asking_rent:   rent ? Math.round(parseFloat(rent) * 100) : null,
-        available_from: availableFrom || null,
-        description:   description || null,
-        is_listed:     true,
-        photos:        [],
+        address:          `${address.trim()}${suburb ? ', ' + suburb : ''}${postalCode ? ', ' + postalCode : ''}`,
+        suburb:           suburb || null,
+        province:         province || null,
+        property_type:    propertyType || null,
+        bedrooms:         bedrooms ?? null,
+        asking_rent:      rent ? Math.round(parseFloat(rent) * 100) : null,
+        available_from:   availableFrom || null,
+        description:      description || null,
+        floor_size_m2:    floorSize ? parseInt(floorSize) : null,
+        pets_allowed:     petsAllowed,
+        parking_available: parkingAvailable,
+        fibre_available:  fibreAvailable,
+        property_tags:    propertyTags,
+        area_tags:        areaTags,
+        lifestyle_tags:   lifestyleTags,
+        is_listed:        true,
+        photos:           [],
       })
       .select()
       .single()
@@ -325,17 +370,98 @@ export default function NewPropertyPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-slate-300">
-                  <input type="checkbox" checked={petFriendly} onChange={e => setPetFriendly(e.target.checked)}
-                    className="h-4 w-4 accent-blue-700" />
-                  <span className="text-sm font-medium text-slate-700">Pet friendly</span>
+              {/* Floor size */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Floor size <span className="font-normal text-slate-400">(optional)</span>
                 </label>
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-slate-300">
-                  <input type="checkbox" checked={parking} onChange={e => setParking(e.target.checked)}
-                    className="h-4 w-4 accent-blue-700" />
-                  <span className="text-sm font-medium text-slate-700">Parking</span>
+                <div className="relative">
+                  <input type="number" className="input-field pr-10" placeholder="e.g. 65" min={0}
+                    value={floorSize} onChange={e => setFloorSize(e.target.value)} />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">m²</span>
+                </div>
+              </div>
+
+              {/* Key features */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Key features</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'pets', label: 'Pet friendly',   checked: petsAllowed,      set: setPetsAllowed      },
+                    { value: 'park', label: 'Parking',        checked: parkingAvailable, set: setParkingAvailable },
+                    { value: 'fibr', label: 'Fibre internet', checked: fibreAvailable,   set: setFibreAvailable   },
+                  ].map(f => (
+                    <label key={f.value} className={`flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                      f.checked ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                    }`}>
+                      <input type="checkbox" className="sr-only" checked={f.checked} onChange={e => f.set(e.target.checked)} />
+                      {f.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional property features */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Additional features <span className="font-normal text-slate-400">(optional)</span>
                 </label>
+                <div className="flex flex-wrap gap-2">
+                  {FEATURE_TAGS.map(t => {
+                    const on = propertyTags.includes(t.value)
+                    return (
+                      <button key={t.value} type="button"
+                        onClick={() => setPropertyTags(prev => on ? prev.filter(v => v !== t.value) : [...prev, t.value])}
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                          on ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                        }`}>
+                        {t.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Area tags */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Area highlights <span className="font-normal text-slate-400">(optional — helps matching)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {AREA_TAGS.map(t => {
+                    const on = areaTags.includes(t.value)
+                    return (
+                      <button key={t.value} type="button"
+                        onClick={() => setAreaTags(prev => on ? prev.filter(v => v !== t.value) : [...prev, t.value])}
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                          on ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                        }`}>
+                        {t.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Lifestyle tags */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Lifestyle vibe <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {LIFESTYLE_TAGS.map(t => {
+                    const on = lifestyleTags.includes(t.value)
+                    return (
+                      <button key={t.value} type="button"
+                        onClick={() => setLifestyleTags(prev => on ? prev.filter(v => v !== t.value) : [...prev, t.value])}
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                          on ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                        }`}>
+                        {t.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div>

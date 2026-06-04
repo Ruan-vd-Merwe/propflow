@@ -41,28 +41,43 @@ export function mapTenantProfile(
 
 export function mapProperty(property: Record<string, unknown>): PropertyData {
   const rent = Number(property.asking_rent || 0) / 100
+
+  const petsAllowed    = Boolean(property.pets_allowed)
+  const parkingAvail   = Boolean(property.parking_available)
+  const fibreAvail     = Boolean(property.fibre_available)
+
+  const baseTags: string[] = [
+    property.property_type ? String(property.property_type) : '',
+    petsAllowed   ? 'pets_allowed'      : '',
+    parkingAvail  ? 'parking'           : '',
+    fibreAvail    ? 'fibre_available'   : '',
+  ].filter(Boolean)
+
+  const storedTags = Array.isArray(property.property_tags)
+    ? (property.property_tags as string[])
+    : []
+
+  const areaTags = Array.isArray(property.area_tags)
+    ? (property.area_tags as string[])
+    : []
+
+  const lifestyleTags = Array.isArray(property.lifestyle_tags)
+    ? (property.lifestyle_tags as string[])
+    : []
+
   return {
     property_id: String(property.id || ''),
     title: String(property.name || ''),
     suburb: property.suburb ? String(property.suburb) : undefined,
     rent,
-    bedrooms: Number(property.bedrooms || 1),
-    property_tags: [
-      property.property_type as string,
-      property.pet_friendly ? 'pets_allowed' : '',
-      property.parking ? 'parking' : '',
-    ].filter(Boolean),
-    area_tags: [
-      property.suburb
-        ? String(property.suburb).toLowerCase().replace(/\s+/g, '_')
-        : '',
-      property.province
-        ? String(property.province).toLowerCase().replace(/\s+/g, '_')
-        : '',
-    ].filter(Boolean),
-    lifestyle_tags: [],
-    pets_allowed: Boolean(property.pet_friendly),
-    parking_available: Boolean(property.parking),
+    bedrooms: property.bedrooms != null ? Number(property.bedrooms) : undefined,
+    floor_size_m2: property.floor_size_m2 != null ? Number(property.floor_size_m2) : undefined,
+    property_tags: Array.from(new Set([...baseTags, ...storedTags])),
+    area_tags: areaTags,
+    lifestyle_tags: lifestyleTags,
+    pets_allowed: petsAllowed,
+    parking_available: parkingAvail,
+    fibre_available: fibreAvail,
     suburb_avg_rent: rent,
     estimated_electricity: 1200,
     estimated_water: 300,
