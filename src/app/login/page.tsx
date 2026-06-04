@@ -89,6 +89,14 @@ function LoginForm() {
           <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
         </div>
 
+        {/* From register banner */}
+        {searchParams.get("from") === "register" && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <p className="font-semibold">Welcome back.</p>
+            <p className="mt-0.5">Sign in to your existing account.</p>
+          </div>
+        )}
+
         {/* Expired link banner */}
         {errorParam === "expired" && (
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -198,15 +206,15 @@ function LoginForm() {
           </form>
         </div>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
-          Don&apos;t have an account?{" "}
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm">
+          <span className="text-slate-600">Don&apos;t have an account?</span>{" "}
           <Link
             href="/register"
-            className="font-semibold text-slate-900 hover:underline"
+            className="font-bold text-blue-700 hover:underline"
           >
-            Sign up
+            Sign up free
           </Link>
-        </p>
+        </div>
 
         <p className="mt-4 text-center text-xs text-slate-400">
           PropTrust · South Africa&apos;s trusted property platform

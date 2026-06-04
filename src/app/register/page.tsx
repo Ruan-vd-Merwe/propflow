@@ -284,6 +284,15 @@ export default function RegisterPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
         <div className="w-full max-w-lg">
           <Logo />
+          <div className="mb-4 text-right text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </div>
           <p className="mb-2 text-center text-base font-semibold text-slate-700">
             What are you signing up as?
           </p>
@@ -630,6 +639,15 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     );
@@ -795,6 +813,15 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     );
@@ -913,6 +940,15 @@ export default function RegisterPage() {
               </button>
             </div>
           </div>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     );

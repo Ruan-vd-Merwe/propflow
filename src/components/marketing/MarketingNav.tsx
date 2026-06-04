@@ -254,7 +254,7 @@ export default function MarketingNav() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/login"
-            className="hidden rounded-lg border-[1.5px] border-[#0f172a] px-4 py-2 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:block"
+            className="rounded-lg border-[1.5px] border-[#0f172a] px-3 py-2 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:px-4"
           >
             Login
           </Link>
