@@ -24,6 +24,7 @@ In the **Supabase SQL Editor**, paste and run `supabase/schema.sql`.
 ### 3. Create the test user
 
 In the Supabase dashboard → **Authentication → Users → Add User**:
+
 - Email: `test@proptrust.co.za`
 - Password: `password123`
 
@@ -67,12 +68,12 @@ Add the two env vars in **Vercel → Project → Settings → Environment Variab
 
 ## Pages
 
-| Route | Description |
-|-------|-------------|
-| `/login` | Email + password login |
-| `/dashboard` | All properties, summary stats, tenant risk overview |
-| `/properties/[id]` | Tenants in a property, sorted by risk |
-| `/tenants/[id]` | Tenant profile, payment history, risk breakdown |
+| Route              | Description                                         |
+| ------------------ | --------------------------------------------------- |
+| `/login`           | Email + password login                              |
+| `/dashboard`       | All properties, summary stats, tenant risk overview |
+| `/properties/[id]` | Tenants in a property, sorted by risk               |
+| `/tenants/[id]`    | Tenant profile, payment history, risk breakdown     |
 
 ---
 
@@ -80,12 +81,12 @@ Add the two env vars in **Vercel → Project → Settings → Environment Variab
 
 Starts at **100**. Adjustments:
 
-| Event | Points |
-|-------|--------|
-| Missed payment | −20 |
-| Late payment | −8 |
-| >14 days late | additional −5 |
-| 3 consecutive on-time payments | +10 |
+| Event                          | Points        |
+| ------------------------------ | ------------- |
+| Missed payment                 | −20           |
+| Late payment                   | −8            |
+| >14 days late                  | additional −5 |
+| 3 consecutive on-time payments | +10           |
 
 🟢 80–100 Low Risk · 🟡 50–79 Medium Risk · 🔴 0–49 High Risk
 
@@ -93,8 +94,8 @@ Starts at **100**. Adjustments:
 
 ## Seed Tenants
 
-| Tenant | History | Expected Score |
-|--------|---------|---------------|
-| Sarah Dlamini | 6 on-time payments | ~100 (green) |
-| James Fortuin | 2 missed, 1 late, 3 on-time | ~52 (amber) |
-| Andre Visser | 4 missed, 2 on-time | ~20 (red) |
+| Tenant        | History                     | Expected Score |
+| ------------- | --------------------------- | -------------- |
+| Sarah Dlamini | 6 on-time payments          | ~100 (green)   |
+| James Fortuin | 2 missed, 1 late, 3 on-time | ~52 (amber)    |
+| Andre Visser  | 4 missed, 2 on-time         | ~20 (red)      |

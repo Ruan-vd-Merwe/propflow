@@ -1,59 +1,87 @@
-import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { NavBar } from '@/components/NavBar'
-import { ApplicationStatusBadge } from '@/components/ApplicationStatusBadge'
-import { CreditScoreMeter } from '@/components/CreditScoreMeter'
-import { ReferenceCheckPanel } from './ReferenceCheckPanel'
-import type { TenantApplication, BankStatementAnalysis, IdVerification } from '@/lib/types'
+import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { NavBar } from "@/components/NavBar";
+import { ApplicationStatusBadge } from "@/components/ApplicationStatusBadge";
+import { CreditScoreMeter } from "@/components/CreditScoreMeter";
+import { ReferenceCheckPanel } from "./ReferenceCheckPanel";
+import type {
+  TenantApplication,
+  BankStatementAnalysis,
+  IdVerification,
+} from "@/lib/types";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 function formatRand(cents: number | null) {
-  if (!cents) return '—'
-  return `R ${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+  if (!cents) return "—";
+  return `R ${(cents / 100).toLocaleString("en-ZA", { minimumFractionDigits: 0 })}`;
 }
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(d).toLocaleDateString("en-ZA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 // ─── Fraud flag descriptions ──────────────────────────────────────────────────
-const FRAUD_LABEL: Record<string, { label: string; severity: 'high' | 'medium' }> = {
-  DOB_MISMATCH:            { label: 'Date of birth in ID does not match stated age', severity: 'high' },
-  DUPLICATE_ID_IN_SYSTEM:  { label: 'This ID number already exists on another application', severity: 'high' },
-  FILENAME_BANK_MISMATCH:  { label: 'Bank statement filename suggests a different bank', severity: 'medium' },
-  IRREGULAR_INCOME:        { label: 'Income deposits present in fewer than 10 of 12 months', severity: 'medium' },
-  LARGE_CASH_DEPOSIT:      { label: 'Large unexplained cash deposit(s) over R20 000 detected', severity: 'medium' },
-}
+const FRAUD_LABEL: Record<
+  string,
+  { label: string; severity: "high" | "medium" }
+> = {
+  DOB_MISMATCH: {
+    label: "Date of birth in ID does not match stated age",
+    severity: "high",
+  },
+  DUPLICATE_ID_IN_SYSTEM: {
+    label: "This ID number already exists on another application",
+    severity: "high",
+  },
+  FILENAME_BANK_MISMATCH: {
+    label: "Bank statement filename suggests a different bank",
+    severity: "medium",
+  },
+  IRREGULAR_INCOME: {
+    label: "Income deposits present in fewer than 10 of 12 months",
+    severity: "medium",
+  },
+  LARGE_CASH_DEPOSIT: {
+    label: "Large unexplained cash deposit(s) over R20 000 detected",
+    severity: "medium",
+  },
+};
 
 export default async function ApplicationDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string };
 }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const { data: app } = await supabase
-    .from('tenant_applications')
-    .select('*, properties!inner(name, address, owner_id)')
-    .eq('id', params.id)
-    .single()
+    .from("tenant_applications")
+    .select("*, properties!inner(name, address, owner_id)")
+    .eq("id", params.id)
+    .single();
 
-  if (!app) notFound()
+  if (!app) notFound();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const property = app.properties as any
-  if (property.owner_id !== user.id) notFound()
+  const property = app.properties as any;
+  if (property.owner_id !== user.id) notFound();
 
   const application = app as TenantApplication & {
-    properties: { name: string; address: string }
-  }
+    properties: { name: string; address: string };
+  };
 
-  const idVerif   = application.id_verification   as IdVerification
-  const bankData  = application.bank_statement_analysis as BankStatementAnalysis
-  const fraudFlags = application.fraud_flags ?? []
+  const idVerif = application.id_verification as IdVerification;
+  const bankData = application.bank_statement_analysis as BankStatementAnalysis;
+  const fraudFlags = application.fraud_flags ?? [];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -62,9 +90,13 @@ export default async function ApplicationDetailPage({
       <main className="mx-auto max-w-5xl px-6 py-8">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-          <Link href="/dashboard" className="hover:text-slate-900">Dashboard</Link>
+          <Link href="/dashboard" className="hover:text-slate-900">
+            Dashboard
+          </Link>
           <span>/</span>
-          <Link href="/applications" className="hover:text-slate-900">Applications</Link>
+          <Link href="/applications" className="hover:text-slate-900">
+            Applications
+          </Link>
           <span>/</span>
           <span className="text-slate-900">{application.full_name}</span>
         </nav>
@@ -74,12 +106,20 @@ export default async function ApplicationDetailPage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-200 text-lg font-bold text-slate-600">
-                {application.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                {application.full_name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{application.full_name}</h1>
+                <h1 className="text-xl font-bold text-slate-900">
+                  {application.full_name}
+                </h1>
                 <p className="text-sm text-slate-500">{application.email}</p>
-                {application.phone && <p className="text-sm text-slate-500">{application.phone}</p>}
+                {application.phone && (
+                  <p className="text-sm text-slate-500">{application.phone}</p>
+                )}
                 <p className="mt-0.5 text-xs text-slate-400">
                   Applied {formatDate(application.created_at)} · {property.name}
                 </p>
@@ -90,7 +130,9 @@ export default async function ApplicationDetailPage({
               {application.credit_score != null && (
                 <div className="text-right">
                   <p className="text-xs text-slate-400">Credit score</p>
-                  <p className="text-2xl font-bold text-slate-900">{application.credit_score}</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {application.credit_score}
+                  </p>
                 </div>
               )}
             </div>
@@ -101,11 +143,12 @@ export default async function ApplicationDetailPage({
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Left col (wider) */}
           <div className="space-y-5 lg:col-span-2">
-
             {/* ── Credit Score ──────────────────────────────────────────────── */}
             {application.credit_score != null && (
               <div className="card p-6">
-                <h2 className="mb-4 font-semibold text-slate-900">Combined Credit Score</h2>
+                <h2 className="mb-4 font-semibold text-slate-900">
+                  Combined Credit Score
+                </h2>
                 <CreditScoreMeter
                   score={application.credit_score}
                   breakdown={application.credit_score_breakdown}
@@ -119,30 +162,39 @@ export default async function ApplicationDetailPage({
                 <h2 className="mb-3 font-semibold text-slate-900">
                   ⚠ Fraud Detection Flags
                   <span className="ml-2 text-sm font-normal text-slate-400">
-                    {fraudFlags.length} flag{fraudFlags.length > 1 ? 's' : ''}
+                    {fraudFlags.length} flag{fraudFlags.length > 1 ? "s" : ""}
                   </span>
                 </h2>
                 <div className="space-y-2">
                   {fraudFlags.map((flag: string) => {
-                    const info = FRAUD_LABEL[flag] ?? { label: flag, severity: 'medium' }
+                    const info = FRAUD_LABEL[flag] ?? {
+                      label: flag,
+                      severity: "medium",
+                    };
                     return (
                       <div
                         key={flag}
                         className={`flex items-start gap-3 rounded-lg p-3 ${
-                          info.severity === 'high' ? 'bg-red-50' : 'bg-amber-50'
+                          info.severity === "high" ? "bg-red-50" : "bg-amber-50"
                         }`}
                       >
-                        <span className={`mt-0.5 text-sm ${info.severity === 'high' ? 'text-red-500' : 'text-amber-500'}`}>
-                          {info.severity === 'high' ? '🚨' : '⚠️'}
+                        <span
+                          className={`mt-0.5 text-sm ${info.severity === "high" ? "text-red-500" : "text-amber-500"}`}
+                        >
+                          {info.severity === "high" ? "🚨" : "⚠️"}
                         </span>
                         <div>
-                          <p className={`text-sm font-medium ${info.severity === 'high' ? 'text-red-800' : 'text-amber-800'}`}>
+                          <p
+                            className={`text-sm font-medium ${info.severity === "high" ? "text-red-800" : "text-amber-800"}`}
+                          >
                             {info.label}
                           </p>
-                          <p className="text-xs text-slate-500 font-mono mt-0.5">{flag}</p>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">
+                            {flag}
+                          </p>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -162,13 +214,25 @@ export default async function ApplicationDetailPage({
 
                 {/* Summary grid */}
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <BankStat label="Avg income/mo"  value={formatRand(bankData.avgMonthlyIncome)} />
-                  <BankStat label="Avg expenses/mo" value={formatRand(bankData.avgMonthlyExpenses)} />
-                  <BankStat label="Avg balance"     value={formatRand(bankData.avgMonthlyBalance)} />
+                  <BankStat
+                    label="Avg income/mo"
+                    value={formatRand(bankData.avgMonthlyIncome)}
+                  />
+                  <BankStat
+                    label="Avg expenses/mo"
+                    value={formatRand(bankData.avgMonthlyExpenses)}
+                  />
+                  <BankStat
+                    label="Avg balance"
+                    value={formatRand(bankData.avgMonthlyBalance)}
+                  />
                   <BankStat
                     label="Salary months"
                     value={`${bankData.salaryMonths} / ${bankData.totalMonthsAnalyzed}`}
-                    alert={bankData.salaryMonths < bankData.totalMonthsAnalyzed * 0.83}
+                    alert={
+                      bankData.salaryMonths <
+                      bankData.totalMonthsAnalyzed * 0.83
+                    }
                   />
                 </div>
 
@@ -180,9 +244,16 @@ export default async function ApplicationDetailPage({
                     </p>
                     <div className="space-y-1">
                       {bankData.bouncedDos.map((tx, i) => (
-                        <div key={i} className="flex justify-between rounded bg-red-50 px-3 py-2 text-sm">
-                          <span className="text-slate-700">{tx.date} · {tx.description}</span>
-                          <span className="font-medium text-red-700">{formatRand(Math.abs(tx.amount))}</span>
+                        <div
+                          key={i}
+                          className="flex justify-between rounded bg-red-50 px-3 py-2 text-sm"
+                        >
+                          <span className="text-slate-700">
+                            {tx.date} · {tx.description}
+                          </span>
+                          <span className="font-medium text-red-700">
+                            {formatRand(Math.abs(tx.amount))}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -193,13 +264,21 @@ export default async function ApplicationDetailPage({
                 {bankData.gamblingTransactions?.length > 0 && (
                   <div className="mb-3">
                     <p className="mb-2 text-sm font-medium text-amber-700">
-                      Gambling Transactions ({bankData.gamblingTransactions.length})
+                      Gambling Transactions (
+                      {bankData.gamblingTransactions.length})
                     </p>
                     <div className="space-y-1">
                       {bankData.gamblingTransactions.map((tx, i) => (
-                        <div key={i} className="flex justify-between rounded bg-amber-50 px-3 py-2 text-sm">
-                          <span className="text-slate-700">{tx.date} · {tx.description}</span>
-                          <span className="font-medium text-amber-700">{formatRand(Math.abs(tx.amount))}</span>
+                        <div
+                          key={i}
+                          className="flex justify-between rounded bg-amber-50 px-3 py-2 text-sm"
+                        >
+                          <span className="text-slate-700">
+                            {tx.date} · {tx.description}
+                          </span>
+                          <span className="font-medium text-amber-700">
+                            {formatRand(Math.abs(tx.amount))}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -210,13 +289,21 @@ export default async function ApplicationDetailPage({
                 {bankData.rentalPayments?.length > 0 && (
                   <div className="mb-3">
                     <p className="mb-2 text-sm font-medium text-slate-700">
-                      Rental Payments to Previous Landlords ({bankData.rentalPayments.length})
+                      Rental Payments to Previous Landlords (
+                      {bankData.rentalPayments.length})
                     </p>
                     <div className="space-y-1">
                       {bankData.rentalPayments.map((tx, i) => (
-                        <div key={i} className="flex justify-between rounded bg-slate-50 px-3 py-2 text-sm">
-                          <span className="text-slate-700">{tx.date} · {tx.description}</span>
-                          <span className="font-medium text-slate-700">{formatRand(Math.abs(tx.amount))}</span>
+                        <div
+                          key={i}
+                          className="flex justify-between rounded bg-slate-50 px-3 py-2 text-sm"
+                        >
+                          <span className="text-slate-700">
+                            {tx.date} · {tx.description}
+                          </span>
+                          <span className="font-medium text-slate-700">
+                            {formatRand(Math.abs(tx.amount))}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -226,7 +313,9 @@ export default async function ApplicationDetailPage({
                 {/* Monthly breakdown table */}
                 {bankData.monthlyBreakdowns?.length > 0 && (
                   <div>
-                    <p className="mb-2 text-sm font-medium text-slate-700">Monthly Breakdown</p>
+                    <p className="mb-2 text-sm font-medium text-slate-700">
+                      Monthly Breakdown
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -241,10 +330,18 @@ export default async function ApplicationDetailPage({
                         <tbody className="divide-y divide-slate-50">
                           {bankData.monthlyBreakdowns.map((m, i) => (
                             <tr key={i}>
-                              <td className="py-1.5 text-slate-700">{m.month}</td>
-                              <td className="py-1.5 text-right font-medium text-emerald-700">{formatRand(m.income)}</td>
-                              <td className="py-1.5 text-right text-red-600">{formatRand(m.expenses)}</td>
-                              <td className="py-1.5 text-right text-slate-700">{formatRand(m.closingBalance)}</td>
+                              <td className="py-1.5 text-slate-700">
+                                {m.month}
+                              </td>
+                              <td className="py-1.5 text-right font-medium text-emerald-700">
+                                {formatRand(m.income)}
+                              </td>
+                              <td className="py-1.5 text-right text-red-600">
+                                {formatRand(m.expenses)}
+                              </td>
+                              <td className="py-1.5 text-right text-slate-700">
+                                {formatRand(m.closingBalance)}
+                              </td>
                               <td className="py-1.5 text-center">
                                 {m.hasSalary ? (
                                   <span className="text-emerald-600">✓</span>
@@ -271,32 +368,56 @@ export default async function ApplicationDetailPage({
 
           {/* Right col (sidebar) */}
           <div className="space-y-5">
-
             {/* ── ID Verification ──────────────────────────────────────────── */}
             <div className="card p-5">
-              <h2 className="mb-3 font-semibold text-slate-900">SA ID Verification</h2>
+              <h2 className="mb-3 font-semibold text-slate-900">
+                SA ID Verification
+              </h2>
 
               {application.id_number ? (
                 <div>
-                  <p className="mb-3 font-mono text-sm text-slate-600">{application.id_number}</p>
+                  <p className="mb-3 font-mono text-sm text-slate-600">
+                    {application.id_number}
+                  </p>
 
-                  <div className={`mb-3 rounded-lg p-3 text-sm ${
-                    idVerif.valid ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                  }`}>
+                  <div
+                    className={`mb-3 rounded-lg p-3 text-sm ${
+                      idVerif.valid
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
                     {idVerif.valid
-                      ? '✓ ID number is valid'
-                      : `✗ ${idVerif.errors[0] ?? 'Invalid ID'}`}
+                      ? "✓ ID number is valid"
+                      : `✗ ${idVerif.errors[0] ?? "Invalid ID"}`}
                   </div>
 
                   <dl className="space-y-2 text-sm">
-                    <IdRow label="Checksum"   value={idVerif.checksumValid ? '✓ Pass' : '✗ Fail'}
-                      alert={!idVerif.checksumValid} />
-                    {idVerif.dob && <IdRow label="Date of birth" value={idVerif.dob} />}
-                    {idVerif.ageInYears != null && <IdRow label="Age" value={`${idVerif.ageInYears} years`} />}
-                    {idVerif.gender && <IdRow label="Gender" value={idVerif.gender} />}
+                    <IdRow
+                      label="Checksum"
+                      value={idVerif.checksumValid ? "✓ Pass" : "✗ Fail"}
+                      alert={!idVerif.checksumValid}
+                    />
+                    {idVerif.dob && (
+                      <IdRow label="Date of birth" value={idVerif.dob} />
+                    )}
+                    {idVerif.ageInYears != null && (
+                      <IdRow
+                        label="Age"
+                        value={`${idVerif.ageInYears} years`}
+                      />
+                    )}
+                    {idVerif.gender && (
+                      <IdRow label="Gender" value={idVerif.gender} />
+                    )}
                     {idVerif.citizenType && (
-                      <IdRow label="Citizenship"
-                        value={idVerif.citizenType === 'citizen' ? 'SA Citizen' : 'Permanent Resident'}
+                      <IdRow
+                        label="Citizenship"
+                        value={
+                          idVerif.citizenType === "citizen"
+                            ? "SA Citizen"
+                            : "Permanent Resident"
+                        }
                       />
                     )}
                   </dl>
@@ -308,15 +429,21 @@ export default async function ApplicationDetailPage({
 
             {/* ── Salary to Rent Ratio ─────────────────────────────────────── */}
             <div className="card p-5">
-              <h2 className="mb-3 font-semibold text-slate-900">Salary-to-Rent Ratio</h2>
+              <h2 className="mb-3 font-semibold text-slate-900">
+                Salary-to-Rent Ratio
+              </h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Monthly income</span>
-                  <span className="font-semibold">{formatRand(application.monthly_income_cents)}</span>
+                  <span className="font-semibold">
+                    {formatRand(application.monthly_income_cents)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Requested rent</span>
-                  <span className="font-semibold">{formatRand(application.requested_rent_cents)}</span>
+                  <span className="font-semibold">
+                    {formatRand(application.requested_rent_cents)}
+                  </span>
                 </div>
                 {application.ratio_percent != null && (
                   <>
@@ -324,12 +451,18 @@ export default async function ApplicationDetailPage({
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Ratio</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">{Number(application.ratio_percent).toFixed(1)}%</span>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          application.ratio_flag === 'green' ? 'bg-emerald-100 text-emerald-700' :
-                          application.ratio_flag === 'amber' ? 'bg-amber-100 text-amber-700' :
-                                                               'bg-red-100 text-red-700'
-                        }`}>
+                        <span className="font-semibold">
+                          {Number(application.ratio_percent).toFixed(1)}%
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            application.ratio_flag === "green"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : application.ratio_flag === "amber"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {application.ratio_flag?.toUpperCase()}
                         </span>
                       </div>
@@ -337,14 +470,19 @@ export default async function ApplicationDetailPage({
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={`h-full rounded-full ${
-                          application.ratio_flag === 'green' ? 'bg-emerald-500' :
-                          application.ratio_flag === 'amber' ? 'bg-amber-500' : 'bg-red-500'
+                          application.ratio_flag === "green"
+                            ? "bg-emerald-500"
+                            : application.ratio_flag === "amber"
+                              ? "bg-amber-500"
+                              : "bg-red-500"
                         }`}
-                        style={{ width: `${Math.min(100, Number(application.ratio_percent))}%` }}
+                        style={{
+                          width: `${Math.min(100, Number(application.ratio_percent))}%`,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-slate-400">
-                      Guideline: {'<'}25% green · 25–33% amber · {'>'}33% red
+                      Guideline: {"<"}25% green · 25–33% amber · {">"}33% red
                     </p>
                   </>
                 )}
@@ -352,7 +490,10 @@ export default async function ApplicationDetailPage({
             </div>
 
             {/* ── Actions ──────────────────────────────────────────────────── */}
-            <ActionPanel applicationId={application.id} currentStatus={application.status} />
+            <ActionPanel
+              applicationId={application.id}
+              currentStatus={application.status}
+            />
           </div>
         </div>
 
@@ -365,48 +506,74 @@ export default async function ApplicationDetailPage({
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 // ── Small helper components ───────────────────────────────────────────────────
 
 function BankStat({
-  label, value, alert = false,
-}: { label: string; value: string; alert?: boolean }) {
+  label,
+  value,
+  alert = false,
+}: {
+  label: string;
+  value: string;
+  alert?: boolean;
+}) {
   return (
-    <div className={`rounded-lg p-3 ${alert ? 'bg-amber-50' : 'bg-slate-50'}`}>
+    <div className={`rounded-lg p-3 ${alert ? "bg-amber-50" : "bg-slate-50"}`}>
       <p className="text-xs text-slate-400">{label}</p>
-      <p className={`font-semibold ${alert ? 'text-amber-700' : 'text-slate-800'}`}>{value}</p>
+      <p
+        className={`font-semibold ${alert ? "text-amber-700" : "text-slate-800"}`}
+      >
+        {value}
+      </p>
     </div>
-  )
+  );
 }
 
-function IdRow({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
+function IdRow({
+  label,
+  value,
+  alert = false,
+}: {
+  label: string;
+  value: string;
+  alert?: boolean;
+}) {
   return (
     <div className="flex justify-between">
       <span className="text-slate-500">{label}</span>
-      <span className={`font-medium ${alert ? 'text-red-600' : 'text-slate-800'}`}>{value}</span>
+      <span
+        className={`font-medium ${alert ? "text-red-600" : "text-slate-800"}`}
+      >
+        {value}
+      </span>
     </div>
-  )
+  );
 }
 
 function ActionPanel({
   applicationId,
   currentStatus,
 }: {
-  applicationId: string
-  currentStatus: string
+  applicationId: string;
+  currentStatus: string;
 }) {
   return (
     <div className="card p-5">
       <h2 className="mb-3 font-semibold text-slate-900">Decision</h2>
       <p className="mb-3 text-xs text-slate-400">
-        Current: <ApplicationStatusBadge status={currentStatus as 'pending' | 'approved' | 'rejected'} size="sm" />
+        Current:{" "}
+        <ApplicationStatusBadge
+          status={currentStatus as "pending" | "approved" | "rejected"}
+          size="sm"
+        />
       </p>
       <StatusForm applicationId={applicationId} currentStatus={currentStatus} />
     </div>
-  )
+  );
 }
 
 // Client-side status form (tiny inline component)
-import { StatusForm } from './ReferenceCheckPanel'
+import { StatusForm } from "./ReferenceCheckPanel";

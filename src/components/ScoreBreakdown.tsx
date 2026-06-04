@@ -1,51 +1,54 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 
 export interface ScoreBreakdownProps {
-  score: number
-  confidence: number
-  match_reasons: string[]
-  warnings: string[]
-  insights: Record<string, {
-    score: number
-    message: string
-  }>
+  score: number;
+  confidence: number;
+  match_reasons: string[];
+  warnings: string[];
+  insights: Record<
+    string,
+    {
+      score: number;
+      message: string;
+    }
+  >;
 }
 
 const DIMENSIONS = [
-  { key: 'affordability',  label: 'Affordability'  },
-  { key: 'property_fit',   label: 'Property Fit'   },
-  { key: 'area_fit',       label: 'Area Fit'        },
-  { key: 'lifestyle_fit',  label: 'Lifestyle Fit'  },
-  { key: 'commute',        label: 'Commute'         },
-  { key: 'deal_quality',   label: 'Deal Quality'    },
-  { key: 'safety',         label: 'Safety'          },
-  { key: 'approval',       label: 'Approval'        },
-]
+  { key: "affordability", label: "Affordability" },
+  { key: "property_fit", label: "Property Fit" },
+  { key: "area_fit", label: "Area Fit" },
+  { key: "lifestyle_fit", label: "Lifestyle Fit" },
+  { key: "commute", label: "Commute" },
+  { key: "deal_quality", label: "Deal Quality" },
+  { key: "safety", label: "Safety" },
+  { key: "approval", label: "Approval" },
+];
 
 function scoreCircleColor(score: number): string {
-  if (score >= 75) return 'bg-[#16a34a]'
-  if (score >= 45) return 'bg-[#d97706]'
-  return 'bg-[#dc2626]'
+  if (score >= 75) return "bg-[#16a34a]";
+  if (score >= 45) return "bg-[#d97706]";
+  return "bg-[#dc2626]";
 }
 
 function scoreLabelColor(score: number): string {
-  if (score >= 75) return 'text-[#16a34a]'
-  if (score >= 45) return 'text-[#d97706]'
-  return 'text-[#dc2626]'
+  if (score >= 75) return "text-[#16a34a]";
+  if (score >= 45) return "text-[#d97706]";
+  return "text-[#dc2626]";
 }
 
 function barColor(score: number): string {
-  if (score >= 0.75) return 'bg-[#16a34a]'
-  if (score >= 0.45) return 'bg-[#d97706]'
-  return 'bg-[#dc2626]'
+  if (score >= 0.75) return "bg-[#16a34a]";
+  if (score >= 0.45) return "bg-[#d97706]";
+  return "bg-[#dc2626]";
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -53,7 +56,7 @@ function ChevronIcon({ open }: { open: boolean }) {
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 export function ScoreBreakdown({
@@ -63,11 +66,11 @@ export function ScoreBreakdown({
   warnings,
   insights,
 }: ScoreBreakdownProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
 
-  const circleColor = scoreCircleColor(score)
-  const labelColor  = scoreLabelColor(score)
-  const confidencePct = Math.round(confidence * 100)
+  const circleColor = scoreCircleColor(score);
+  const labelColor = scoreLabelColor(score);
+  const confidencePct = Math.round(confidence * 100);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -80,17 +83,25 @@ export function ScoreBreakdown({
           >
             <div className="text-center leading-none text-white">
               <span className="block text-xl font-extrabold">{score}</span>
-              <span className="block text-[10px] font-semibold opacity-80">/100</span>
+              <span className="block text-[10px] font-semibold opacity-80">
+                /100
+              </span>
             </div>
           </div>
-          <span className={`text-xs font-semibold ${labelColor}`}>Match score</span>
+          <span className={`text-xs font-semibold ${labelColor}`}>
+            Match score
+          </span>
         </div>
 
         {/* Confidence */}
         <div className="flex-1 pt-1">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Score confidence</span>
-            <span className="text-xs font-semibold text-slate-700">{confidencePct}%</span>
+            <span className="text-xs font-medium text-slate-500">
+              Score confidence
+            </span>
+            <span className="text-xs font-semibold text-slate-700">
+              {confidencePct}%
+            </span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
@@ -105,8 +116,8 @@ export function ScoreBreakdown({
           {/* Quick summary dots */}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
             {DIMENSIONS.slice(0, 4).map(({ key, label }) => {
-              const ins = insights[key]
-              if (!ins) return null
+              const ins = insights[key];
+              if (!ins) return null;
               return (
                 <div key={key} className="flex items-center gap-1.5">
                   <span
@@ -114,7 +125,7 @@ export function ScoreBreakdown({
                   />
                   <span className="text-xs text-slate-500">{label}</span>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -161,7 +172,7 @@ export function ScoreBreakdown({
           className="flex w-full items-center justify-between px-5 py-3 text-left transition hover:bg-slate-50"
         >
           <span className="text-xs font-semibold text-slate-500">
-            {expanded ? 'Hide breakdown' : 'Show breakdown'}
+            {expanded ? "Hide breakdown" : "Show breakdown"}
           </span>
           <ChevronIcon open={expanded} />
         </button>
@@ -170,16 +181,19 @@ export function ScoreBreakdown({
           <div className="border-t border-slate-100 px-5 pb-5 pt-3">
             <div className="space-y-4">
               {DIMENSIONS.map(({ key, label }) => {
-                const ins = insights[key]
-                const s = ins?.score ?? 0
-                const pct = Math.round(s * 100)
+                const ins = insights[key];
+                const s = ins?.score ?? 0;
+                const pct = Math.round(s * 100);
                 return (
                   <div key={key}>
                     <div className="mb-1 flex items-center gap-3">
                       <span className="w-28 shrink-0 text-xs font-medium text-slate-600">
                         {label}
                       </span>
-                      <div className="flex-1 overflow-hidden rounded-full bg-slate-100" style={{ height: 6 }}>
+                      <div
+                        className="flex-1 overflow-hidden rounded-full bg-slate-100"
+                        style={{ height: 6 }}
+                      >
                         <div
                           className={`h-full rounded-full ${barColor(s)} transition-all`}
                           style={{ width: `${pct}%` }}
@@ -195,12 +209,12 @@ export function ScoreBreakdown({
                       </p>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,49 +1,49 @@
-'use client'
+"use client";
 
-import type { InsightResult } from '@/lib/scoring/engine'
+import type { InsightResult } from "@/lib/scoring/engine";
 
 export interface PropertyScoreCardProps {
-  score: number
-  confidence: number
+  score: number;
+  confidence: number;
   insights: {
-    financial?: InsightResult
-    deal?: InsightResult
-    safety?: InsightResult
-    lifestyle?: InsightResult
-    commute?: InsightResult
-    approval?: InsightResult
-    landlord?: InsightResult
-  }
-  top_reasons: string[]
-  warnings: string[]
+    financial?: InsightResult;
+    deal?: InsightResult;
+    safety?: InsightResult;
+    lifestyle?: InsightResult;
+    commute?: InsightResult;
+    approval?: InsightResult;
+    landlord?: InsightResult;
+  };
+  top_reasons: string[];
+  warnings: string[];
 }
 
 function scoreBadgeColor(score: number) {
-  if (score >= 80) return 'bg-green-500'
-  if (score >= 50) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (score >= 80) return "bg-green-500";
+  if (score >= 50) return "bg-amber-500";
+  return "bg-red-500";
 }
 
 function scoreTextColor(score: number) {
-  if (score >= 80) return 'text-green-700'
-  if (score >= 50) return 'text-amber-600'
-  return 'text-red-600'
+  if (score >= 80) return "text-green-700";
+  if (score >= 50) return "text-amber-600";
+  return "text-red-600";
 }
 
 function barColor(score: number) {
-  if (score >= 0.7) return 'bg-green-500'
-  if (score >= 0.4) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (score >= 0.7) return "bg-green-500";
+  if (score >= 0.4) return "bg-amber-500";
+  return "bg-red-500";
 }
 
 const DIMENSIONS = [
-  { key: 'financial' as const, label: 'Financial fit' },
-  { key: 'deal' as const, label: 'Deal value' },
-  { key: 'safety' as const, label: 'Safety' },
-  { key: 'lifestyle' as const, label: 'Lifestyle match' },
-  { key: 'approval' as const, label: 'Approval chance' },
-  { key: 'landlord' as const, label: 'Landlord score' },
-]
+  { key: "financial" as const, label: "Financial fit" },
+  { key: "deal" as const, label: "Deal value" },
+  { key: "safety" as const, label: "Safety" },
+  { key: "lifestyle" as const, label: "Lifestyle match" },
+  { key: "approval" as const, label: "Approval chance" },
+  { key: "landlord" as const, label: "Landlord score" },
+];
 
 export function PropertyScoreCard({
   score,
@@ -52,15 +52,17 @@ export function PropertyScoreCard({
   top_reasons,
   warnings,
 }: PropertyScoreCardProps) {
-  const badgeColor = scoreBadgeColor(score)
-  const textColor = scoreTextColor(score)
+  const badgeColor = scoreBadgeColor(score);
+  const textColor = scoreTextColor(score);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       {/* Header row */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Property match score</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            Property match score
+          </h3>
           <p className="mt-0.5 text-sm text-slate-500">
             How well this property fits your profile
           </p>
@@ -72,13 +74,17 @@ export function PropertyScoreCard({
             className={`flex h-16 w-16 items-center justify-center rounded-full ${badgeColor} text-white shadow-md`}
           >
             <div className="text-center">
-              <span className="block text-xl font-extrabold leading-none">{score}</span>
+              <span className="block text-xl font-extrabold leading-none">
+                {score}
+              </span>
               <span className="block text-[10px] font-semibold leading-none opacity-80">
                 /100
               </span>
             </div>
           </div>
-          <span className={`mt-1 text-xs font-semibold ${textColor}`}>Match</span>
+          <span className={`mt-1 text-xs font-semibold ${textColor}`}>
+            Match
+          </span>
         </div>
       </div>
 
@@ -114,7 +120,11 @@ export function PropertyScoreCard({
                   stroke="currentColor"
                   strokeWidth={2.5}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 <span className="text-sm text-slate-700">{reason}</span>
               </li>
@@ -159,14 +169,16 @@ export function PropertyScoreCard({
         </p>
         <div className="space-y-3">
           {DIMENSIONS.map(({ key, label }) => {
-            const insight = insights[key]
-            if (!insight) return null
-            const pct = Math.round(insight.score * 100)
-            const color = barColor(insight.score)
+            const insight = insights[key];
+            if (!insight) return null;
+            const pct = Math.round(insight.score * 100);
+            const color = barColor(insight.score);
             return (
               <div key={key}>
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-700">{label}</span>
+                  <span className="text-xs font-medium text-slate-700">
+                    {label}
+                  </span>
                   <span className="text-xs text-slate-400">{pct}%</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -175,12 +187,14 @@ export function PropertyScoreCard({
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="mt-0.5 text-[11px] text-slate-400">{insight.message}</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  {insight.message}
+                </p>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </div>
-  )
+  );
 }

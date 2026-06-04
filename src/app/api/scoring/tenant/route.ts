@@ -1,27 +1,31 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 import {
   score_tenant_property,
   rank_tenant_properties,
-} from '@/lib/scoring/engine'
+} from "@/lib/scoring/engine";
 
 export async function POST(request: Request) {
-  const supabase = createClient()
+  const supabase = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { property_ids } = await request.json()
+  const { property_ids } = await request.json();
 
   const { data: tp } = await supabase
-    .from('tenant_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
+    .from("tenant_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
 
   if (!tp)
-    return NextResponse.json({ error: 'No tenant profile found' }, { status: 404 })
+    return NextResponse.json(
+      { error: "No tenant profile found" },
+      { status: 404 },
+    );
 
   const tenantProfile = {
     monthly_income: (tp.monthly_income || 0) / 100,
@@ -39,15 +43,15 @@ export async function POST(request: Request) {
     must_haves: [],
     dealbreakers: [],
     work_locations: [],
-  }
+  };
 
   const { data: properties } = await supabase
-    .from('properties')
-    .select('*')
-    .in('id', property_ids || [])
-    .eq('is_listed', true)
+    .from("properties")
+    .select("*")
+    .in("id", property_ids || [])
+    .eq("is_listed", true);
 
-  if (!properties?.length) return NextResponse.json({ results: [] })
+  if (!properties?.length) return NextResponse.json({ results: [] });
 
   const propertyData = properties.map((p) => ({
     property_id: p.id,
@@ -57,14 +61,14 @@ export async function POST(request: Request) {
     pets_allowed: p.pet_friendly || false,
     suburb_avg_rent: (p.asking_rent || 0) / 100,
     area_tags: p.suburb ? [p.suburb.toLowerCase()] : [],
-    property_tags: [p.property_type || 'apartment'],
-  }))
+    property_tags: [p.property_type || "apartment"],
+  }));
 
   // If multiple properties, rank them; otherwise score single
   const results =
     propertyData.length === 1
       ? [score_tenant_property(tenantProfile, propertyData[0])]
-      : rank_tenant_properties(propertyData, tenantProfile)
+      : rank_tenant_properties(propertyData, tenantProfile);
 
-  return NextResponse.json({ results })
+  return NextResponse.json({ results });
 }

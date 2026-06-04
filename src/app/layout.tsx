@@ -10,7 +10,8 @@ const geistSans = localFont({
 
 export const metadata: Metadata = {
   title: "PropTrust — Property Management for South Africa",
-  description: "PropTrust helps South African landlords screen tenants, track rent and manage properties without relying on rental agents.",
+  description:
+    "PropTrust helps South African landlords screen tenants, track rent and manage properties without relying on rental agents.",
 };
 
 export default function RootLayout({
@@ -20,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans`}>
-        {children}
-      </body>
+      <body className={`${geistSans.variable} font-sans`}>{children}</body>
     </html>
   );
 }

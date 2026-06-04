@@ -1,21 +1,25 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { NavBar } from '@/components/NavBar'
-import { ApplicationStatusBadge } from '@/components/ApplicationStatusBadge'
-import { CreditScoreMeter } from '@/components/CreditScoreMeter'
-import { CopyLinkButton } from '@/components/CopyLinkButton'
-import { creditScoreColour } from '@/lib/credit-score'
-import type { TenantApplication, Property } from '@/lib/types'
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { NavBar } from "@/components/NavBar";
+import { ApplicationStatusBadge } from "@/components/ApplicationStatusBadge";
+import { CreditScoreMeter } from "@/components/CreditScoreMeter";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { creditScoreColour } from "@/lib/credit-score";
+import type { TenantApplication, Property } from "@/lib/types";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
-const BASE_URL = 'https://proptrust.co.za'
+const BASE_URL = "https://proptrust.co.za";
 
-function SharePanel({ properties }: { properties: Pick<Property, 'id' | 'name'>[] }) {
-  const [selected, setSelected] = [properties[0], () => {}]
-  const prop = properties[0]
-  const url  = `${BASE_URL}/apply/${prop.id}`
+function SharePanel({
+  properties,
+}: {
+  properties: Pick<Property, "id" | "name">[];
+}) {
+  const [selected, setSelected] = [properties[0], () => {}];
+  const prop = properties[0];
+  const url = `${BASE_URL}/apply/${prop.id}`;
 
   if (properties.length === 1) {
     return (
@@ -24,11 +28,13 @@ function SharePanel({ properties }: { properties: Pick<Property, 'id' | 'name'>[
           Share apply link
         </p>
         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <p className="min-w-0 flex-1 truncate font-mono text-xs text-blue-700">{url}</p>
+          <p className="min-w-0 flex-1 truncate font-mono text-xs text-blue-700">
+            {url}
+          </p>
           <CopyLinkButton url={url} />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -38,64 +44,76 @@ function SharePanel({ properties }: { properties: Pick<Property, 'id' | 'name'>[
       </p>
       <div className="space-y-2">
         {properties.map((p) => {
-          const pUrl = `${BASE_URL}/apply/${p.id}`
+          const pUrl = `${BASE_URL}/apply/${p.id}`;
           return (
-            <div key={p.id} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-              <p className="mb-1.5 text-xs font-semibold text-slate-700">{p.name}</p>
+            <div
+              key={p.id}
+              className="rounded-lg border border-slate-100 bg-slate-50 p-3"
+            >
+              <p className="mb-1.5 text-xs font-semibold text-slate-700">
+                {p.name}
+              </p>
               <div className="flex items-center gap-2">
-                <p className="min-w-0 flex-1 truncate font-mono text-xs text-blue-700">{pUrl}</p>
+                <p className="min-w-0 flex-1 truncate font-mono text-xs text-blue-700">
+                  {pUrl}
+                </p>
                 <CopyLinkButton url={pUrl} />
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
-  void selected; void setSelected
+  );
+  void selected;
+  void setSelected;
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  })
+  return new Date(d).toLocaleDateString("en-ZA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatRand(cents: number | null) {
-  if (!cents) return '—'
-  return `R ${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+  if (!cents) return "—";
+  return `R ${(cents / 100).toLocaleString("en-ZA", { minimumFractionDigits: 0 })}`;
 }
 
 export default async function ApplicationsPage() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   // Get this landlord's properties
   const { data: properties } = await supabase
-    .from('properties')
-    .select('id, name')
-    .eq('owner_id', user.id)
+    .from("properties")
+    .select("id, name")
+    .eq("owner_id", user.id);
 
-  const propertyList: Pick<Property, 'id' | 'name'>[] = properties ?? []
-  const propertyIds = propertyList.map((p) => p.id)
-  const propertyMap = new Map(propertyList.map((p) => [p.id, p.name]))
+  const propertyList: Pick<Property, "id" | "name">[] = properties ?? [];
+  const propertyIds = propertyList.map((p) => p.id);
+  const propertyMap = new Map(propertyList.map((p) => [p.id, p.name]));
 
   // Fetch all applications for these properties
   const { data: apps } = propertyIds.length
     ? await supabase
-        .from('tenant_applications')
-        .select('*')
-        .in('property_id', propertyIds)
-        .order('created_at', { ascending: false })
-    : { data: [] }
+        .from("tenant_applications")
+        .select("*")
+        .in("property_id", propertyIds)
+        .order("created_at", { ascending: false })
+    : { data: [] };
 
-  const applications = (apps ?? []) as TenantApplication[]
+  const applications = (apps ?? []) as TenantApplication[];
 
   // Stats
-  const pending  = applications.filter((a) => a.status === 'pending').length
-  const approved = applications.filter((a) => a.status === 'approved').length
-  const rejected = applications.filter((a) => a.status === 'rejected').length
+  const pending = applications.filter((a) => a.status === "pending").length;
+  const approved = applications.filter((a) => a.status === "approved").length;
+  const rejected = applications.filter((a) => a.status === "rejected").length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -104,29 +122,37 @@ export default async function ApplicationsPage() {
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Tenant Applications</h1>
-            <p className="mt-1 text-sm text-slate-500">Review and process rental applications</p>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Tenant Applications
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Review and process rental applications
+            </p>
           </div>
 
           {/* Application link share panel */}
-          {propertyList.length > 0 && (
-            <SharePanel properties={propertyList} />
-          )}
+          {propertyList.length > 0 && <SharePanel properties={propertyList} />}
         </div>
 
         {/* Stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
           <div className="card p-4 text-center">
             <p className="text-2xl font-bold text-amber-600">{pending}</p>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Pending</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              Pending
+            </p>
           </div>
           <div className="card p-4 text-center">
             <p className="text-2xl font-bold text-emerald-600">{approved}</p>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Approved</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              Approved
+            </p>
           </div>
           <div className="card p-4 text-center">
             <p className="text-2xl font-bold text-red-600">{rejected}</p>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Rejected</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              Rejected
+            </p>
           </div>
         </div>
 
@@ -136,10 +162,10 @@ export default async function ApplicationsPage() {
             <p className="text-slate-500">No applications yet.</p>
             {propertyList.length > 0 && (
               <p className="mt-2 text-sm text-slate-400">
-                Share a link like{' '}
+                Share a link like{" "}
                 <span className="font-mono text-slate-600">
                   /apply/{propertyList[0].id}
-                </span>{' '}
+                </span>{" "}
                 with prospective tenants.
               </p>
             )}
@@ -158,8 +184,10 @@ export default async function ApplicationsPage() {
 
             <div className="divide-y divide-slate-100">
               {applications.map((app) => {
-                const colour = app.credit_score != null
-                  ? creditScoreColour(app.credit_score) : null
+                const colour =
+                  app.credit_score != null
+                    ? creditScoreColour(app.credit_score)
+                    : null;
 
                 return (
                   <Link
@@ -170,17 +198,25 @@ export default async function ApplicationsPage() {
                     {/* Applicant */}
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
-                        {app.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        {app.full_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{app.full_name}</p>
-                        <p className="text-xs text-slate-500">{formatDate(app.created_at)}</p>
+                        <p className="font-semibold text-slate-900">
+                          {app.full_name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {formatDate(app.created_at)}
+                        </p>
                       </div>
                     </div>
 
                     {/* Property */}
                     <p className="text-sm text-slate-600">
-                      {propertyMap.get(app.property_id) ?? '—'}
+                      {propertyMap.get(app.property_id) ?? "—"}
                     </p>
 
                     {/* Credit score */}
@@ -206,23 +242,33 @@ export default async function ApplicationsPage() {
                     <ApplicationStatusBadge status={app.status} size="sm" />
 
                     {/* Arrow */}
-                    <svg className="hidden h-4 w-4 shrink-0 text-slate-300 sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="hidden h-4 w-4 shrink-0 text-slate-300 sm:block"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
 
                     {/* Fraud flags (mobile) */}
-                    {colour === 'red' && (
+                    {colour === "red" && (
                       <span className="w-fit rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 sm:hidden">
                         High risk
                       </span>
                     )}
                   </Link>
-                )
+                );
               })}
             </div>
           </div>
         )}
       </main>
     </div>
-  )
+  );
 }

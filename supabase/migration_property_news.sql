@@ -1,12 +1,9 @@
--- migration_property_news.sql
--- Property news digest system tables.
--- Run in Supabase SQL editor after schema.sql.
-
 -- News sources
 create table if not exists public.property_news_sources (
   id              uuid primary key default gen_random_uuid(),
   name            text not null,
-  source_type     text not null check (source_type in ('rss','url','api')),
+  source_type     text not null check (source_type in
+                  ('rss','url','api')),
   url             text,
   rss_url         text,
   is_active       boolean default true,
@@ -15,7 +12,6 @@ create table if not exists public.property_news_sources (
   updated_at      timestamptz default now()
 );
 
--- Articles
 create table if not exists public.property_news_articles (
   id                      uuid primary key default gen_random_uuid(),
   source_id               uuid references public.property_news_sources,
@@ -38,7 +34,6 @@ create table if not exists public.property_news_articles (
   updated_at              timestamptz default now()
 );
 
--- Weekly digests
 create table if not exists public.property_news_digests (
   id              uuid primary key default gen_random_uuid(),
   week_start_date date not null,
@@ -47,29 +42,31 @@ create table if not exists public.property_news_digests (
   intro_text      text,
   html_content    text,
   text_content    text,
-  status          text default 'draft' check (status in ('draft','approved','sent')),
+  status          text default 'draft'
+                  check (status in ('draft','approved','sent')),
   sent_at         timestamptz,
   articles_count  integer default 0,
   created_at      timestamptz default now(),
   updated_at      timestamptz default now()
 );
 
--- Digest to articles join
 create table if not exists public.property_news_digest_articles (
   id            uuid primary key default gen_random_uuid(),
-  digest_id     uuid references public.property_news_digests on delete cascade,
-  article_id    uuid references public.property_news_articles on delete cascade,
+  digest_id     uuid references public.property_news_digests
+                on delete cascade,
+  article_id    uuid references public.property_news_articles
+                on delete cascade,
   display_order integer default 0,
   section       text,
   created_at    timestamptz default now()
 );
 
--- Newsletter subscribers
 create table if not exists public.newsletter_subscribers (
   id                    uuid primary key default gen_random_uuid(),
   email                 text not null unique,
   first_name            text,
-  user_type             text check (user_type in ('tenant','landlord','investor','buyer')),
+  user_type             text check (user_type in
+                        ('tenant','landlord','investor','buyer')),
   preferred_locations   text[] default '{}',
   preferred_categories  text[] default '{}',
   is_subscribed         boolean default true,
@@ -80,7 +77,6 @@ create table if not exists public.newsletter_subscribers (
   updated_at            timestamptz default now()
 );
 
--- Digest send log
 create table if not exists public.property_news_send_log (
   id             uuid primary key default gen_random_uuid(),
   digest_id      uuid references public.property_news_digests,
@@ -98,25 +94,24 @@ alter table public.property_news_digest_articles enable row level security;
 alter table public.newsletter_subscribers        enable row level security;
 alter table public.property_news_send_log        enable row level security;
 
--- Public read for articles and sent digests
-create policy if not exists "public can read articles"
+-- Policies (no IF NOT EXISTS on policies)
+create policy "public can read articles"
   on public.property_news_articles for select using (true);
-create policy if not exists "public can read digests"
-  on public.property_news_digests for select using (status = 'sent');
 
--- Subscribers manage own record
-create policy if not exists "subscribers manage own record"
-  on public.newsletter_subscribers for all using (true);
+create policy "public can read sent digests"
+  on public.property_news_digests for select
+  using (status = 'sent');
 
--- Seed default SA property news sources
+create policy "subscribers manage own record"
+  on public.newsletter_subscribers for all
+  using (true);
+
+-- Seed default sources
 insert into public.property_news_sources
   (name, source_type, rss_url, category_hint, is_active)
 values
   ('Property24 News', 'rss',
    'https://www.property24.com/rss/property-news',
-   'South African property news', true),
-  ('Private Property News', 'rss',
-   'https://www.privateproperty.co.za/advice/rss',
    'South African property news', true),
   ('BusinessTech Property', 'rss',
    'https://businesstech.co.za/news/category/property/feed/',

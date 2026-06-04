@@ -9,17 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: [
+          "var(--font-geist-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       colors: {
         brand: {
-          blue:      "#1e40af",
+          blue: "#1e40af",
           "blue-lt": "#3b82f6",
-          navy:      "#0f172a",
-          green:     "#16a34a",
-          amber:     "#d97706",
-          red:       "#dc2626",
-          bg:        "#f8fafc",
+          navy: "#0f172a",
+          green: "#16a34a",
+          amber: "#d97706",
+          red: "#dc2626",
+          bg: "#f8fafc",
         },
       },
     },

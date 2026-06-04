@@ -5,7 +5,7 @@ const nextConfig = {
   // the readFileSync call fails because those test files don't exist there.
   // Marking it external makes Next.js use native require() at runtime instead.
   experimental: {
-    serverComponentsExternalPackages: ['pdf-parse'],
+    serverComponentsExternalPackages: ["pdf-parse"],
   },
 };
 

@@ -1,106 +1,121 @@
-import { Resend } from 'resend'
-import { createServiceClient } from '@/lib/supabase/service'
+import { Resend } from "resend";
+import { createServiceClient } from "@/lib/supabase/service";
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendDigestToSubscribers(
   digestId: string,
 ): Promise<{ sent: number; failed: number }> {
-  const supabase = createServiceClient()
-  let sent = 0
-  let failed = 0
+  const supabase = createServiceClient();
+  let sent = 0;
+  let failed = 0;
 
   const { data: digest } = await supabase
-    .from('property_news_digests')
-    .select('*')
-    .eq('id', digestId)
-    .single()
+    .from("property_news_digests")
+    .select("*")
+    .eq("id", digestId)
+    .single();
 
-  if (!digest) throw new Error('Digest not found')
-  if (digest.status === 'sent') throw new Error('Digest already sent')
+  if (!digest) throw new Error("Digest not found");
+  if (digest.status === "sent") throw new Error("Digest already sent");
 
   const { data: subscribers } = await supabase
-    .from('newsletter_subscribers')
-    .select('*')
-    .eq('is_subscribed', true)
+    .from("newsletter_subscribers")
+    .select("*")
+    .eq("is_subscribed", true);
 
   if (!subscribers?.length) {
-    console.log('No subscribers to send to')
-    return { sent: 0, failed: 0 }
+    console.log("No subscribers to send to");
+    return { sent: 0, failed: 0 };
   }
 
-  const batchSize = 10
+  const batchSize = 10;
   for (let i = 0; i < subscribers.length; i += batchSize) {
-    const batch = subscribers.slice(i, i + batchSize)
+    const batch = subscribers.slice(i, i + batchSize);
 
     for (const subscriber of batch) {
       try {
+        const token = subscriber.unsubscribe_token as string;
         const html = (digest.html_content as string).replace(
-          '{{unsubscribe_token}}',
-          subscriber.unsubscribe_token,
-        )
+          "{{unsubscribe_token}}",
+          token,
+        );
+        const text = (digest.text_content as string).replace(
+          "{{unsubscribe_token}}",
+          token,
+        );
+
+        const from =
+          process.env.RESEND_FROM_EMAIL ??
+          "PropTrust Weekly <newsletter@proptrust.co.za>";
 
         const { error } = await resend.emails.send({
-          from:    'PropTrust Weekly <newsletter@proptrust.co.za>',
-          to:      subscriber.email,
+          from,
+          to: subscriber.email,
           subject: digest.subject as string,
           html,
-          text:    digest.text_content as string,
-        })
+          text,
+        });
 
-        if (error) throw new Error(error.message)
+        if (error) throw new Error(error.message);
 
-        await supabase.from('property_news_send_log').insert({
-          digest_id:     digestId,
+        await supabase.from("property_news_send_log").insert({
+          digest_id: digestId,
           subscriber_id: subscriber.id,
-          status:        'sent',
-        })
+          status: "sent",
+        });
 
-        sent++
+        sent++;
       } catch (err) {
-        await supabase.from('property_news_send_log').insert({
-          digest_id:     digestId,
+        await supabase.from("property_news_send_log").insert({
+          digest_id: digestId,
           subscriber_id: subscriber.id,
-          status:        'failed',
+          status: "failed",
           error_message: String(err),
-        })
-        failed++
+        });
+        failed++;
       }
     }
 
     if (i + batchSize < subscribers.length) {
-      await new Promise(r => setTimeout(r, 2000))
+      await new Promise((r) => setTimeout(r, 2000));
     }
   }
 
   await supabase
-    .from('property_news_digests')
-    .update({ status: 'sent', sent_at: new Date().toISOString() })
-    .eq('id', digestId)
+    .from("property_news_digests")
+    .update({ status: "sent", sent_at: new Date().toISOString() })
+    .eq("id", digestId);
 
-  return { sent, failed }
+  return { sent, failed };
 }
 
-export async function sendTestDigest(digestId: string, testEmail: string): Promise<void> {
-  const supabase = createServiceClient()
+export async function sendTestDigest(
+  digestId: string,
+  testEmail: string,
+): Promise<void> {
+  const supabase = createServiceClient();
 
   const { data: digest } = await supabase
-    .from('property_news_digests')
-    .select('*')
-    .eq('id', digestId)
-    .single()
+    .from("property_news_digests")
+    .select("*")
+    .eq("id", digestId)
+    .single();
 
-  if (!digest) throw new Error('Digest not found')
+  if (!digest) throw new Error("Digest not found");
 
-  const html = (digest.html_content as string).replace('{{unsubscribe_token}}', 'test-token')
+  const html = (digest.html_content as string).replace(
+    "{{unsubscribe_token}}",
+    "test-token",
+  );
 
   const { error } = await resend.emails.send({
-    from:    'PropTrust Weekly <newsletter@proptrust.co.za>',
-    to:      testEmail,
-    subject: '[TEST] ' + (digest.subject as string),
+    from: "PropTrust Weekly <newsletter@proptrust.co.za>",
+    to: testEmail,
+    subject: "[TEST] " + (digest.subject as string),
     html,
-    text:    digest.text_content as string,
-  })
+    text: digest.text_content as string,
+  });
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(error.message);
 }

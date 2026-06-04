@@ -1,114 +1,175 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import MarketingNav from '@/components/marketing/MarketingNav'
-import MarketingFooter from '@/components/marketing/MarketingFooter'
-import type { PropertyListing } from '@/lib/types'
-import type { ScoreResult } from '@/lib/scoring/interest-engine'
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import MarketingNav from "@/components/marketing/MarketingNav";
+import MarketingFooter from "@/components/marketing/MarketingFooter";
+import type { PropertyListing } from "@/lib/types";
+import type { ScoreResult } from "@/lib/scoring/interest-engine";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 12;
 
 const PROVINCES = [
-  'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal',
-  'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape',
-]
+  "Eastern Cape",
+  "Free State",
+  "Gauteng",
+  "KwaZulu-Natal",
+  "Limpopo",
+  "Mpumalanga",
+  "North West",
+  "Northern Cape",
+  "Western Cape",
+];
 
 const PROP_TYPES = [
-  { value: 'any',       label: 'Any type'  },
-  { value: 'apartment', label: 'Apartment' },
-  { value: 'house',     label: 'House'     },
-  { value: 'townhouse', label: 'Townhouse' },
-  { value: 'room',      label: 'Room'      },
-]
+  { value: "any", label: "Any type" },
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "townhouse", label: "Townhouse" },
+  { value: "room", label: "Room" },
+];
 
 const BEDROOM_OPTS = [
-  { value: 'any', label: 'Any beds' },
-  { value: '0',   label: 'Studio'   },
-  { value: '1',   label: '1 bed'    },
-  { value: '2',   label: '2 beds'   },
-  { value: '3',   label: '3 beds'   },
-  { value: '4',   label: '4+ beds'  },
-]
+  { value: "any", label: "Any beds" },
+  { value: "0", label: "Studio" },
+  { value: "1", label: "1 bed" },
+  { value: "2", label: "2 beds" },
+  { value: "3", label: "3 beds" },
+  { value: "4", label: "4+ beds" },
+];
 
-type SortKey = 'score' | 'price_asc' | 'price_desc' | 'newest'
+type SortKey = "score" | "price_asc" | "price_desc" | "newest";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'score',      label: 'Best match'      },
-  { value: 'price_asc',  label: 'Price: low–high' },
-  { value: 'price_desc', label: 'Price: high–low' },
-  { value: 'newest',     label: 'Newest'          },
-]
+  { value: "score", label: "Best match" },
+  { value: "price_asc", label: "Price: low–high" },
+  { value: "price_desc", label: "Price: high–low" },
+  { value: "newest", label: "Newest" },
+];
 
-type AuthState = 'checking' | 'guest' | 'no_profile' | 'personalised'
+type AuthState = "checking" | "guest" | "no_profile" | "personalised";
 
 type TenantSummary = {
-  looking_in_area: string | null
-  looking_in_province: string | null
-  budget_min: number | null
-  budget_max: number | null
-}
+  looking_in_area: string | null;
+  looking_in_province: string | null;
+  budget_min: number | null;
+  budget_max: number | null;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtRand(cents: number) {
-  return `R ${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
+  return `R ${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 }
 
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString("en-ZA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function scoreBadgeColor(score: number) {
-  if (score >= 75) return 'bg-green-100 text-green-800'
-  if (score >= 45) return 'bg-amber-100 text-amber-800'
-  return 'bg-red-100 text-red-700'
+  if (score >= 75) return "bg-green-100 text-green-800";
+  if (score >= 45) return "bg-amber-100 text-amber-800";
+  return "bg-red-100 text-red-700";
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function IconSearch({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function IconMapPin({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function IconHouse({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+      />
     </svg>
-  )
+  );
 }
 
 function IconBed({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10M3 12h18m0-5v10M6 12v-1a2 2 0 012-2h8a2 2 0 012 2v1" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7v10M3 12h18m0-5v10M6 12v-1a2 2 0 012-2h8a2 2 0 012 2v1"
+      />
     </svg>
-  )
+  );
 }
 
 function IconCheck({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -127,7 +188,7 @@ function SkeletonCard() {
         <div className="h-9 rounded-lg bg-slate-200" />
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Property card ────────────────────────────────────────────────────────────
@@ -137,12 +198,12 @@ function PropertyCard({
   result,
   isPersonalised,
 }: {
-  property: PropertyListing
-  result: ScoreResult | undefined
-  isPersonalised: boolean
+  property: PropertyListing;
+  result: ScoreResult | undefined;
+  isPersonalised: boolean;
 }) {
-  const score = result?.score
-  const showApply = isPersonalised && score != null && score >= 45
+  const score = result?.score;
+  const showApply = isPersonalised && score != null && score >= 45;
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
@@ -163,7 +224,9 @@ function PropertyCard({
 
         {/* Score badge — personalised only */}
         {isPersonalised && score != null && (
-          <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-sm ${scoreBadgeColor(score)}`}>
+          <span
+            className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-sm ${scoreBadgeColor(score)}`}
+          >
             {score}% match
           </span>
         )}
@@ -184,7 +247,10 @@ function PropertyCard({
         {(p.suburb || p.province) && (
           <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
             <IconMapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>{p.suburb}{p.province ? `, ${p.province}` : ''}</span>
+            <span>
+              {p.suburb}
+              {p.province ? `, ${p.province}` : ""}
+            </span>
           </div>
         )}
 
@@ -192,7 +258,7 @@ function PropertyCard({
           {p.bedrooms != null && (
             <span className="flex items-center gap-1">
               <IconBed className="h-3.5 w-3.5" />
-              {p.bedrooms === 0 ? 'Studio' : `${p.bedrooms} bed`}
+              {p.bedrooms === 0 ? "Studio" : `${p.bedrooms} bed`}
             </span>
           )}
           {p.property_type && (
@@ -228,7 +294,7 @@ function PropertyCard({
       <div className="flex gap-2 border-t border-slate-100 p-4">
         <Link
           href={`/browse/${p.id}`}
-          className={`rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? 'flex-1' : 'w-full'}`}
+          className={`rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? "flex-1" : "w-full"}`}
         >
           View property
         </Link>
@@ -242,163 +308,205 @@ function PropertyCard({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function BrowseListing({ properties }: { properties: PropertyListing[] }) {
-  const supabase = createClient()
+export function BrowseListing({
+  properties,
+}: {
+  properties: PropertyListing[];
+}) {
+  const supabase = createClient();
 
-  const [authState,     setAuthState]     = useState<AuthState>('checking')
-  const [tenantSummary, setTenantSummary] = useState<TenantSummary | null>(null)
-  const [scoreMap,      setScoreMap]      = useState<Record<string, ScoreResult>>({})
-  const [scoresLoading, setScoresLoading] = useState(false)
+  const [authState, setAuthState] = useState<AuthState>("checking");
+  const [tenantSummary, setTenantSummary] = useState<TenantSummary | null>(
+    null,
+  );
+  const [scoreMap, setScoreMap] = useState<Record<string, ScoreResult>>({});
+  const [scoresLoading, setScoresLoading] = useState(false);
 
   // Filters
-  const [search,            setSearch]            = useState('')
-  const [filterProvince,    setFilterProvince]    = useState('')
-  const [filterType,        setFilterType]        = useState('any')
-  const [filterBedrooms,    setFilterBedrooms]    = useState('any')
-  const [filterPriceMin,    setFilterPriceMin]    = useState('')
-  const [filterPriceMax,    setFilterPriceMax]    = useState('')
-  const [filterAvailable,   setFilterAvailable]   = useState('')
-  const [filterPetFriendly, setFilterPetFriendly] = useState(false)
-  const [sort,              setSort]              = useState<SortKey>('newest')
-  const [page,              setPage]              = useState(1)
+  const [search, setSearch] = useState("");
+  const [filterProvince, setFilterProvince] = useState("");
+  const [filterType, setFilterType] = useState("any");
+  const [filterBedrooms, setFilterBedrooms] = useState("any");
+  const [filterPriceMin, setFilterPriceMin] = useState("");
+  const [filterPriceMax, setFilterPriceMax] = useState("");
+  const [filterAvailable, setFilterAvailable] = useState("");
+  const [filterPetFriendly, setFilterPetFriendly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("newest");
+  const [page, setPage] = useState(1);
 
   // ── Auth detection on mount ──────────────────────────────────────────────
   useEffect(() => {
     async function detect() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        setAuthState('guest')
-        return
+        setAuthState("guest");
+        return;
       }
 
       const { data: tp } = await supabase
-        .from('tenant_profiles')
-        .select('looking_in_area, looking_in_province, budget_min, budget_max')
-        .eq('user_id', user.id)
-        .single()
+        .from("tenant_profiles")
+        .select("looking_in_area, looking_in_province, budget_min, budget_max")
+        .eq("user_id", user.id)
+        .single();
 
-      const isPersonalised = !!(tp?.budget_max && tp?.looking_in_area)
+      const isPersonalised = !!(tp?.budget_max && tp?.looking_in_area);
 
       if (!isPersonalised) {
-        setAuthState('no_profile')
-        return
+        setAuthState("no_profile");
+        return;
       }
 
-      setTenantSummary(tp as TenantSummary)
-      setAuthState('personalised')
-      setSort('score')
+      setTenantSummary(tp as TenantSummary);
+      setAuthState("personalised");
+      setSort("score");
 
       // Load personalised scores
-      setScoresLoading(true)
+      setScoresLoading(true);
       try {
-        const res = await fetch('/api/scoring/match', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ property_ids: properties.map(p => p.id) }),
-        })
-        const data = await res.json()
-        const map: Record<string, ScoreResult> = {}
+        const res = await fetch("/api/scoring/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ property_ids: properties.map((p) => p.id) }),
+        });
+        const data = await res.json();
+        const map: Record<string, ScoreResult> = {};
         for (const r of data.results ?? []) {
-          if (r.property_id) map[r.property_id] = r
+          if (r.property_id) map[r.property_id] = r;
         }
-        setScoreMap(map)
+        setScoreMap(map);
       } finally {
-        setScoresLoading(false)
+        setScoresLoading(false);
       }
     }
-    detect()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    detect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const isPersonalised = authState === 'personalised'
-  const isLoading      = authState === 'checking' || (isPersonalised && scoresLoading)
+  const isPersonalised = authState === "personalised";
+  const isLoading =
+    authState === "checking" || (isPersonalised && scoresLoading);
 
   const hasFilters =
-    search || filterProvince || filterType !== 'any' || filterBedrooms !== 'any' ||
-    filterPriceMin || filterPriceMax || filterAvailable || filterPetFriendly
+    search ||
+    filterProvince ||
+    filterType !== "any" ||
+    filterBedrooms !== "any" ||
+    filterPriceMin ||
+    filterPriceMax ||
+    filterAvailable ||
+    filterPetFriendly;
 
   function clearFilters() {
-    setSearch('')
-    setFilterProvince('')
-    setFilterType('any')
-    setFilterBedrooms('any')
-    setFilterPriceMin('')
-    setFilterPriceMax('')
-    setFilterAvailable('')
-    setFilterPetFriendly(false)
-    setPage(1)
+    setSearch("");
+    setFilterProvince("");
+    setFilterType("any");
+    setFilterBedrooms("any");
+    setFilterPriceMin("");
+    setFilterPriceMax("");
+    setFilterAvailable("");
+    setFilterPetFriendly(false);
+    setPage(1);
   }
 
-  function onFilter(fn: () => void) { fn(); setPage(1) }
+  function onFilter(fn: () => void) {
+    fn();
+    setPage(1);
+  }
 
   // Filter
   const filtered = useMemo(() => {
-    return properties.filter(p => {
+    return properties.filter((p) => {
       if (search) {
-        const q = search.toLowerCase()
+        const q = search.toLowerCase();
         if (
           !p.name.toLowerCase().includes(q) &&
           !p.suburb?.toLowerCase().includes(q) &&
           !p.address.toLowerCase().includes(q) &&
           !p.province?.toLowerCase().includes(q)
-        ) return false
+        )
+          return false;
       }
-      if (filterProvince && p.province !== filterProvince) return false
-      if (filterType !== 'any' && p.property_type !== filterType) return false
-      if (filterBedrooms !== 'any') {
-        const beds = p.bedrooms ?? 0
-        if (filterBedrooms === '4') { if (beds < 4) return false }
-        else if (beds !== parseInt(filterBedrooms)) return false
+      if (filterProvince && p.province !== filterProvince) return false;
+      if (filterType !== "any" && p.property_type !== filterType) return false;
+      if (filterBedrooms !== "any") {
+        const beds = p.bedrooms ?? 0;
+        if (filterBedrooms === "4") {
+          if (beds < 4) return false;
+        } else if (beds !== parseInt(filterBedrooms)) return false;
       }
       if (filterPriceMin && p.asking_rent != null) {
-        if (p.asking_rent / 100 < parseInt(filterPriceMin)) return false
+        if (p.asking_rent / 100 < parseInt(filterPriceMin)) return false;
       }
       if (filterPriceMax && p.asking_rent != null) {
-        if (p.asking_rent / 100 > parseInt(filterPriceMax)) return false
+        if (p.asking_rent / 100 > parseInt(filterPriceMax)) return false;
       }
       if (filterAvailable && p.available_from) {
-        if (p.available_from > filterAvailable) return false
+        if (p.available_from > filterAvailable) return false;
       }
-      if (filterPetFriendly && !p.pets_allowed) return false
-      return true
-    })
-  }, [properties, search, filterProvince, filterType, filterBedrooms, filterPriceMin, filterPriceMax, filterAvailable, filterPetFriendly])
+      if (filterPetFriendly && !p.pets_allowed) return false;
+      return true;
+    });
+  }, [
+    properties,
+    search,
+    filterProvince,
+    filterType,
+    filterBedrooms,
+    filterPriceMin,
+    filterPriceMax,
+    filterAvailable,
+    filterPetFriendly,
+  ]);
 
   // Sort
   const sorted = useMemo(() => {
-    const copy = [...filtered]
+    const copy = [...filtered];
     switch (sort) {
-      case 'score':
-        return copy.sort((a, b) => (scoreMap[b.id]?.score ?? 0) - (scoreMap[a.id]?.score ?? 0))
-      case 'price_asc':
-        return copy.sort((a, b) => (a.asking_rent ?? 0) - (b.asking_rent ?? 0))
-      case 'price_desc':
-        return copy.sort((a, b) => (b.asking_rent ?? 0) - (a.asking_rent ?? 0))
-      case 'newest':
-        return copy.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      case "score":
+        return copy.sort(
+          (a, b) => (scoreMap[b.id]?.score ?? 0) - (scoreMap[a.id]?.score ?? 0),
+        );
+      case "price_asc":
+        return copy.sort((a, b) => (a.asking_rent ?? 0) - (b.asking_rent ?? 0));
+      case "price_desc":
+        return copy.sort((a, b) => (b.asking_rent ?? 0) - (a.asking_rent ?? 0));
+      case "newest":
+        return copy.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
     }
-  }, [filtered, sort, scoreMap])
+  }, [filtered, sort, scoreMap]);
 
   // Pagination
-  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
-  const paginated  = sorted.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+  const paginated = sorted.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
 
   // Score quality detection
-  const topScore = isPersonalised && !scoresLoading
-    ? (sorted.length > 0 ? Math.max(0, ...sorted.map(p => scoreMap[p.id]?.score ?? 0)) : 0)
-    : 0
-  const hasStrongMatches = topScore >= 70
-  const hasWeakMatches   = isPersonalised && !scoresLoading && topScore < 50 && sorted.length > 0
+  const topScore =
+    isPersonalised && !scoresLoading
+      ? sorted.length > 0
+        ? Math.max(0, ...sorted.map((p) => scoreMap[p.id]?.score ?? 0))
+        : 0
+      : 0;
+  const hasStrongMatches = topScore >= 70;
+  const hasWeakMatches =
+    isPersonalised && !scoresLoading && topScore < 50 && sorted.length > 0;
 
   function goToPage(n: number) {
-    setPage(Math.max(1, Math.min(n, totalPages)))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setPage(Math.max(1, Math.min(n, totalPages)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -421,7 +529,7 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
                 type="text"
                 placeholder="Search by suburb or city…"
                 value={search}
-                onChange={e => onFilter(() => setSearch(e.target.value))}
+                onChange={(e) => onFilter(() => setSearch(e.target.value))}
                 className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -439,47 +547,100 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
       <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
         <div className="mx-auto max-w-7xl overflow-x-auto px-4 py-3 sm:px-6">
           <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:flex-wrap">
-            <select value={filterProvince} onChange={e => onFilter(() => setFilterProvince(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <select
+              value={filterProvince}
+              onChange={(e) =>
+                onFilter(() => setFilterProvince(e.target.value))
+              }
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
               <option value="">All provinces</option>
-              {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+              {PROVINCES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
             </select>
 
-            <select value={filterType} onChange={e => onFilter(() => setFilterType(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-              {PROP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            <select
+              value={filterType}
+              onChange={(e) => onFilter(() => setFilterType(e.target.value))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {PROP_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </select>
 
-            <select value={filterBedrooms} onChange={e => onFilter(() => setFilterBedrooms(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-              {BEDROOM_OPTS.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
+            <select
+              value={filterBedrooms}
+              onChange={(e) =>
+                onFilter(() => setFilterBedrooms(e.target.value))
+              }
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {BEDROOM_OPTS.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
+              ))}
             </select>
 
             <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2">
               <span className="text-xs font-medium text-slate-400">R</span>
-              <input type="number" placeholder="Min" value={filterPriceMin}
-                onChange={e => onFilter(() => setFilterPriceMin(e.target.value))}
-                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300" />
+              <input
+                type="number"
+                placeholder="Min"
+                value={filterPriceMin}
+                onChange={(e) =>
+                  onFilter(() => setFilterPriceMin(e.target.value))
+                }
+                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300"
+              />
               <span className="text-slate-300">–</span>
-              <input type="number" placeholder="Max" value={filterPriceMax}
-                onChange={e => onFilter(() => setFilterPriceMax(e.target.value))}
-                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300" />
+              <input
+                type="number"
+                placeholder="Max"
+                value={filterPriceMax}
+                onChange={(e) =>
+                  onFilter(() => setFilterPriceMax(e.target.value))
+                }
+                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300"
+              />
             </div>
 
-            <input type="date" value={filterAvailable} title="Available from"
-              onChange={e => onFilter(() => setFilterAvailable(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <input
+              type="date"
+              value={filterAvailable}
+              title="Available from"
+              onChange={(e) =>
+                onFilter(() => setFilterAvailable(e.target.value))
+              }
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
 
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300">
-              <input type="checkbox" checked={filterPetFriendly}
-                onChange={e => onFilter(() => setFilterPetFriendly(e.target.checked))}
-                className="h-3.5 w-3.5 accent-blue-600" />
+              <input
+                type="checkbox"
+                checked={filterPetFriendly}
+                onChange={(e) =>
+                  onFilter(() => setFilterPetFriendly(e.target.checked))
+                }
+                className="h-3.5 w-3.5 accent-blue-600"
+              />
               Pet friendly
             </label>
 
             {hasFilters && (
-              <button onClick={() => { clearFilters(); setPage(1) }}
-                className="text-sm text-slate-400 underline hover:text-slate-700">
+              <button
+                onClick={() => {
+                  clearFilters();
+                  setPage(1);
+                }}
+                className="text-sm text-slate-400 underline hover:text-slate-700"
+              >
                 Clear filters
               </button>
             )}
@@ -488,10 +649,9 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-
         {/* ── Auth state banners ─────────────────────────────────────────── */}
 
-        {(authState === 'guest' || authState === 'no_profile') && (
+        {(authState === "guest" || authState === "no_profile") && (
           <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-5 py-4 sm:flex-row sm:items-center">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100">
@@ -499,37 +659,45 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
               </div>
               <p className="text-sm text-blue-900">
                 <span className="font-semibold">
-                  {authState === 'no_profile'
-                    ? 'Complete your profile to see matched properties'
-                    : 'Sign in to see properties matched to your budget, area and preferences'}
+                  {authState === "no_profile"
+                    ? "Complete your profile to see matched properties"
+                    : "Sign in to see properties matched to your budget, area and preferences"}
                 </span>
-                {authState === 'guest' && (
+                {authState === "guest" && (
                   <span className="mt-0.5 block text-xs text-blue-700">
-                    Create a free tenant profile and PropTrust will rank every listing by how well it fits your life.
+                    Create a free tenant profile and PropTrust will rank every
+                    listing by how well it fits your life.
                   </span>
                 )}
-                {authState === 'no_profile' && (
+                {authState === "no_profile" && (
                   <span className="mt-0.5 block text-xs text-blue-700">
-                    Add your area, budget and preferences to unlock personalised match scores.
+                    Add your area, budget and preferences to unlock personalised
+                    match scores.
                   </span>
                 )}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
-              {authState === 'guest' ? (
+              {authState === "guest" ? (
                 <>
-                  <Link href="/login"
-                    className="rounded-lg border border-blue-700 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50">
+                  <Link
+                    href="/login"
+                    className="rounded-lg border border-blue-700 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+                  >
                     Sign in
                   </Link>
-                  <Link href="/register"
-                    className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800">
+                  <Link
+                    href="/register"
+                    className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"
+                  >
                     Create free profile
                   </Link>
                 </>
               ) : (
-                <Link href="/tenant/profile"
-                  className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800">
+                <Link
+                  href="/tenant/profile"
+                  className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"
+                >
                   Complete profile
                 </Link>
               )}
@@ -542,15 +710,25 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
             <p className="text-sm text-green-900">
               <span className="font-semibold">
                 {tenantSummary.looking_in_area}
-                {tenantSummary.looking_in_province ? `, ${tenantSummary.looking_in_province}` : ''}
+                {tenantSummary.looking_in_province
+                  ? `, ${tenantSummary.looking_in_province}`
+                  : ""}
               </span>
               {tenantSummary.budget_max && (
                 <span className="text-green-700">
-                  {' '}· Budget: {tenantSummary.budget_min ? fmtRand(tenantSummary.budget_min) : 'R 0'}–{fmtRand(tenantSummary.budget_max)}/mo
+                  {" "}
+                  · Budget:{" "}
+                  {tenantSummary.budget_min
+                    ? fmtRand(tenantSummary.budget_min)
+                    : "R 0"}
+                  –{fmtRand(tenantSummary.budget_max)}/mo
                 </span>
               )}
             </p>
-            <Link href="/tenant/profile" className="shrink-0 text-xs font-medium text-green-700 hover:underline">
+            <Link
+              href="/tenant/profile"
+              className="shrink-0 text-xs font-medium text-green-700 hover:underline"
+            >
               Edit preferences
             </Link>
           </div>
@@ -559,15 +737,29 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
         {/* ── Sort + count ───────────────────────────────────────────────── */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-900">{filtered.length}</span>{' '}
-            {filtered.length === 1 ? 'property' : 'properties'} found
-            {isPersonalised && !scoresLoading && ' — sorted by your match score'}
+            <span className="font-semibold text-slate-900">
+              {filtered.length}
+            </span>{" "}
+            {filtered.length === 1 ? "property" : "properties"} found
+            {isPersonalised &&
+              !scoresLoading &&
+              " — sorted by your match score"}
           </p>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-400">Sort by</span>
-            <select value={sort} onChange={e => { setSort(e.target.value as SortKey); setPage(1) }}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400">
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as SortKey);
+                setPage(1);
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -579,10 +771,13 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
               No strong matches yet in your area
             </p>
             <p className="mt-0.5 text-xs text-amber-700">
-              Showing all available properties. Update your preferences to improve your matches.
+              Showing all available properties. Update your preferences to
+              improve your matches.
             </p>
-            <Link href="/tenant/profile"
-              className="mt-3 inline-block rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700">
+            <Link
+              href="/tenant/profile"
+              className="mt-3 inline-block rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+            >
               Update preferences
             </Link>
           </div>
@@ -606,8 +801,12 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
           /* No properties at all */
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
             <IconHouse className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <p className="text-base font-semibold text-slate-700">No properties listed yet</p>
-            <p className="mt-2 text-sm text-slate-400">Check back soon as new listings are added.</p>
+            <p className="text-base font-semibold text-slate-700">
+              No properties listed yet
+            </p>
+            <p className="mt-2 text-sm text-slate-400">
+              Check back soon as new listings are added.
+            </p>
           </div>
         ) : paginated.length === 0 ? (
           /* Filters too narrow */
@@ -616,23 +815,27 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
             <p className="text-base font-semibold text-slate-700">
               {isPersonalised
                 ? `No properties match your current filters`
-                : 'No properties found matching your search'}
+                : "No properties found matching your search"}
             </p>
             <p className="mt-2 text-sm text-slate-400">
               {isPersonalised
-                ? `There ${properties.length === 1 ? 'is' : 'are'} ${properties.length} ${properties.length === 1 ? 'property' : 'properties'} in other areas.`
-                : 'Try adjusting your filters or search term.'}
+                ? `There ${properties.length === 1 ? "is" : "are"} ${properties.length} ${properties.length === 1 ? "property" : "properties"} in other areas.`
+                : "Try adjusting your filters or search term."}
             </p>
             <div className="mt-5 flex justify-center gap-3">
               {hasFilters && (
-                <button onClick={clearFilters}
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                <button
+                  onClick={clearFilters}
+                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+                >
                   Clear filters
                 </button>
               )}
               {isPersonalised && (
-                <Link href="/tenant/profile"
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <Link
+                  href="/tenant/profile"
+                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
                   Update my preferences
                 </Link>
               )}
@@ -640,7 +843,7 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {paginated.map(p => (
+            {paginated.map((p) => (
               <PropertyCard
                 key={p.id}
                 property={p}
@@ -654,13 +857,21 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
         {/* ── Pagination ────────────────────────────────────────────────── */}
         {!isLoading && totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-3">
-            <button onClick={() => goToPage(page - 1)} disabled={page === 1}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
+            <button
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 1}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+            >
               Previous
             </button>
-            <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
-            <button onClick={() => goToPage(page + 1)} disabled={page === totalPages}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
+            <span className="text-sm text-slate-500">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(page + 1)}
+              disabled={page === totalPages}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+            >
               Next
             </button>
           </div>
@@ -669,5 +880,5 @@ export function BrowseListing({ properties }: { properties: PropertyListing[] })
 
       <MarketingFooter />
     </div>
-  )
+  );
 }

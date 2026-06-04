@@ -1,93 +1,119 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { calculateMatchScore, matchColour } from '@/lib/matching'
-import { EditPreferencesPanel } from './EditPreferencesPanel'
-import type { TenantProfile, PropertyListing, IntroductionRequest } from '@/lib/types'
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { calculateMatchScore, matchColour } from "@/lib/matching";
+import { EditPreferencesPanel } from "./EditPreferencesPanel";
+import type {
+  TenantProfile,
+  PropertyListing,
+  IntroductionRequest,
+} from "@/lib/types";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 const EMPLOYMENT_LABELS: Record<string, string> = {
-  employed: 'Employed',
-  self_employed: 'Self-employed',
-  student: 'Student',
-  other: 'Other',
-}
+  employed: "Employed",
+  self_employed: "Self-employed",
+  student: "Student",
+  other: "Other",
+};
 
 function fmt(cents: number) {
-  return `R${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
+  return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 }
 
 function MatchBadge({ score }: { score: number }) {
-  const colour = matchColour(score)
+  const colour = matchColour(score);
   const cls =
-    colour === 'green' ? 'bg-green-100 text-green-800' :
-    colour === 'amber' ? 'bg-amber-100 text-amber-800' :
-                         'bg-red-100 text-red-800'
+    colour === "green"
+      ? "bg-green-100 text-green-800"
+      : colour === "amber"
+        ? "bg-amber-100 text-amber-800"
+        : "bg-red-100 text-red-800";
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}
+    >
       {score}% match
     </span>
-  )
+  );
 }
 
 export default async function TenantProfilePage({
   searchParams,
 }: {
-  searchParams: { welcome?: string }
+  searchParams: { welcome?: string };
 }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  const isWelcome = searchParams.welcome === '1'
+  const isWelcome = searchParams.welcome === "1";
 
   const [{ data: tp }, { data: profile }] = await Promise.all([
-    supabase.from('tenant_profiles').select('*').eq('user_id', user.id).single(),
-    supabase.from('profiles').select('full_name, email, phone, is_landlord').eq('id', user.id).single(),
-  ])
+    supabase
+      .from("tenant_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("full_name, email, phone, is_landlord")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
-  const tenantProfile = tp as TenantProfile | null
+  const tenantProfile = tp as TenantProfile | null;
 
   if (!tenantProfile) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="card max-w-md p-8 text-center">
-          <h1 className="text-xl font-bold text-slate-900">Profile not found</h1>
+          <h1 className="text-xl font-bold text-slate-900">
+            Profile not found
+          </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Your tenant profile could not be loaded. Please contact support or try logging in again.
+            Your tenant profile could not be loaded. Please contact support or
+            try logging in again.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Match listed properties ───────────────────────────────────────────────
   const { data: rawProps } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('is_listed', true)
-    .order('created_at', { ascending: false })
-    .limit(50)
+    .from("properties")
+    .select("*")
+    .eq("is_listed", true)
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   const scoredProperties = ((rawProps ?? []) as PropertyListing[])
-    .map(p => ({ property: p, score: calculateMatchScore(tenantProfile, p) }))
+    .map((p) => ({ property: p, score: calculateMatchScore(tenantProfile, p) }))
     .filter(({ score }) => score.total > 0)
     .sort((a, b) => b.score.total - a.score.total)
-    .slice(0, 12)
+    .slice(0, 12);
 
   // ── Introduction requests ─────────────────────────────────────────────────
   const { data: introRaw } = await supabase
-    .from('introduction_requests')
-    .select('*')
-    .eq('tenant_id', user.id)
-    .order('created_at', { ascending: false })
+    .from("introduction_requests")
+    .select("*")
+    .eq("tenant_id", user.id)
+    .order("created_at", { ascending: false });
 
-  const introductions = (introRaw ?? []) as IntroductionRequest[]
-  const pendingCount  = introductions.filter(i => i.status === 'pending').length
+  const introductions = (introRaw ?? []) as IntroductionRequest[];
+  const pendingCount = introductions.filter(
+    (i) => i.status === "pending",
+  ).length;
 
   // ── Profile completeness check ────────────────────────────────────────────
-  const isIncomplete = !tenantProfile.looking_in_area || !tenantProfile.budget_max || !tenantProfile.employment_status
+  const isIncomplete =
+    !tenantProfile.looking_in_area ||
+    !tenantProfile.budget_max ||
+    !tenantProfile.employment_status;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -96,26 +122,43 @@ export default async function TenantProfilePage({
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-700">
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <svg
+                className="h-4 w-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
               </svg>
             </div>
             <span className="text-lg font-bold text-slate-900">PropTrust</span>
           </div>
           <div className="flex items-center gap-3">
             {profile?.is_landlord && (
-              <a href="/dashboard" className="text-sm font-medium text-slate-500 hover:text-slate-900">
+              <a
+                href="/dashboard"
+                className="text-sm font-medium text-slate-500 hover:text-slate-900"
+              >
                 Landlord dashboard →
               </a>
             )}
             {pendingCount > 0 && (
-              <a href="#introductions"
-                className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
-                {pendingCount} introduction{pendingCount > 1 ? 's' : ''} pending
+              <a
+                href="#introductions"
+                className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+              >
+                {pendingCount} introduction{pendingCount > 1 ? "s" : ""} pending
               </a>
             )}
-            <VisibilityToggle userId={user.id} currentValue={tenantProfile.is_visible} />
+            <VisibilityToggle
+              userId={user.id}
+              currentValue={tenantProfile.is_visible}
+            />
           </div>
         </div>
       </nav>
@@ -124,59 +167,94 @@ export default async function TenantProfilePage({
         <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
           <p className="font-semibold">Welcome to PropTrust!</p>
           <p className="mt-0.5 text-sm text-green-100">
-            Your profile is set up. Landlords matching your preferences will be able to find and contact you.
+            Your profile is set up. Landlords matching your preferences will be
+            able to find and contact you.
           </p>
         </div>
       )}
 
       <div className="mx-auto max-w-4xl px-4 py-8">
-
         {/* ── Onboarding prompt (shown until area + budget set) ────────── */}
         {isIncomplete && (
           <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a]">
             <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
               {/* Icon */}
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="h-6 w-6 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </div>
 
               {/* Text + steps */}
               <div className="flex-1">
-                <p className="text-base font-bold text-white">Complete your profile to get matched</p>
+                <p className="text-base font-bold text-white">
+                  Complete your profile to get matched
+                </p>
                 <p className="mt-1 text-sm text-slate-400">
-                  Add your area, budget and preferences to start seeing personalised property recommendations.
+                  Add your area, budget and preferences to start seeing
+                  personalised property recommendations.
                 </p>
 
                 {/* Progress steps */}
                 <div className="mt-4 flex items-center gap-0">
                   {[
-                    { label: 'Account created', done: true  },
-                    { label: 'Add preferences', done: false, current: true },
-                    { label: 'Browse matches',  done: false },
+                    { label: "Account created", done: true },
+                    { label: "Add preferences", done: false, current: true },
+                    { label: "Browse matches", done: false },
                   ].map((step, i) => (
                     <div key={i} className="flex items-center">
                       {i > 0 && (
-                        <div className={`mx-2 h-px w-8 sm:w-12 ${step.done ? 'bg-green-500' : 'bg-white/20'}`} />
+                        <div
+                          className={`mx-2 h-px w-8 sm:w-12 ${step.done ? "bg-green-500" : "bg-white/20"}`}
+                        />
                       )}
                       <div className="flex flex-col items-center gap-1">
-                        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                          step.done    ? 'bg-green-500 text-white' :
-                          step.current ? 'bg-blue-500 text-white' :
-                                         'bg-white/10 text-slate-500'
-                        }`}>
+                        <div
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                            step.done
+                              ? "bg-green-500 text-white"
+                              : step.current
+                                ? "bg-blue-500 text-white"
+                                : "bg-white/10 text-slate-500"
+                          }`}
+                        >
                           {step.done ? (
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            <svg
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={3}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
-                          ) : (i + 1)}
+                          ) : (
+                            i + 1
+                          )}
                         </div>
-                        <span className={`hidden text-[10px] sm:block ${
-                          step.done ? 'text-green-400' :
-                          step.current ? 'text-blue-400 font-semibold' :
-                                         'text-slate-600'
-                        }`}>
+                        <span
+                          className={`hidden text-[10px] sm:block ${
+                            step.done
+                              ? "text-green-400"
+                              : step.current
+                                ? "text-blue-400 font-semibold"
+                                : "text-slate-600"
+                          }`}
+                        >
                           {step.label}
                         </span>
                       </div>
@@ -187,7 +265,10 @@ export default async function TenantProfilePage({
 
               {/* CTA */}
               <div className="shrink-0">
-                <CompleteProfileButton tenantProfile={tenantProfile} userId={user.id} />
+                <CompleteProfileButton
+                  tenantProfile={tenantProfile}
+                  userId={user.id}
+                />
               </div>
             </div>
           </div>
@@ -198,56 +279,91 @@ export default async function TenantProfilePage({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900">{profile?.full_name}</h1>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  tenantProfile.is_visible ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                }`}>
-                  {tenantProfile.is_visible ? '● Actively looking' : '○ Not looking'}
+                <h1 className="text-xl font-bold text-slate-900">
+                  {profile?.full_name}
+                </h1>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    tenantProfile.is_visible
+                      ? "bg-green-100 text-green-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {tenantProfile.is_visible
+                    ? "● Actively looking"
+                    : "○ Not looking"}
                 </span>
               </div>
               <p className="text-sm text-slate-500">{profile?.email}</p>
-              {profile?.phone && <p className="text-sm text-slate-500">{profile.phone}</p>}
+              {profile?.phone && (
+                <p className="text-sm text-slate-500">{profile.phone}</p>
+              )}
             </div>
 
             {/* Edit button — client component island */}
             <div className="shrink-0">
-              <EditPreferencesPanel tenantProfile={tenantProfile} userId={user.id} />
+              <EditPreferencesPanel
+                tenantProfile={tenantProfile}
+                userId={user.id}
+              />
             </div>
           </div>
 
           {/* Preferences summary */}
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {tenantProfile.looking_in_area ? (
-              <Stat label="Looking in"
-                value={`${tenantProfile.looking_in_area}${tenantProfile.looking_in_province ? ', ' + tenantProfile.looking_in_province : ''}`} />
+              <Stat
+                label="Looking in"
+                value={`${tenantProfile.looking_in_area}${tenantProfile.looking_in_province ? ", " + tenantProfile.looking_in_province : ""}`}
+              />
             ) : (
               <StatEmpty label="Looking in" />
             )}
             {tenantProfile.budget_max ? (
-              <Stat label="Budget"
-                value={`${tenantProfile.budget_min ? fmt(tenantProfile.budget_min) : '–'} – ${fmt(tenantProfile.budget_max)}/mo`} />
+              <Stat
+                label="Budget"
+                value={`${tenantProfile.budget_min ? fmt(tenantProfile.budget_min) : "–"} – ${fmt(tenantProfile.budget_max)}/mo`}
+              />
             ) : (
               <StatEmpty label="Budget" />
             )}
             {tenantProfile.move_in_date ? (
-              <Stat label="Move-in"
-                value={new Date(tenantProfile.move_in_date).toLocaleDateString('en-ZA', {
-                  day: 'numeric', month: 'short', year: 'numeric',
-                })} />
+              <Stat
+                label="Move-in"
+                value={new Date(tenantProfile.move_in_date).toLocaleDateString(
+                  "en-ZA",
+                  {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  },
+                )}
+              />
             ) : (
               <StatEmpty label="Move-in" />
             )}
             {tenantProfile.lease_length_months ? (
-              <Stat label="Lease" value={`${tenantProfile.lease_length_months} months`} />
+              <Stat
+                label="Lease"
+                value={`${tenantProfile.lease_length_months} months`}
+              />
             ) : (
               <StatEmpty label="Lease" />
             )}
             {tenantProfile.employment_status && (
-              <Stat label="Employment"
-                value={EMPLOYMENT_LABELS[tenantProfile.employment_status] ?? tenantProfile.employment_status} />
+              <Stat
+                label="Employment"
+                value={
+                  EMPLOYMENT_LABELS[tenantProfile.employment_status] ??
+                  tenantProfile.employment_status
+                }
+              />
             )}
             {tenantProfile.monthly_income && (
-              <Stat label="Monthly income" value={`${fmt(tenantProfile.monthly_income)} net`} />
+              <Stat
+                label="Monthly income"
+                value={`${fmt(tenantProfile.monthly_income)} net`}
+              />
             )}
           </div>
 
@@ -258,19 +374,44 @@ export default async function TenantProfilePage({
               className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
             >
               Edit search preferences
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </Link>
-            {((tenantProfile as Record<string, unknown>).lifestyle_interests as string[] | null)?.length ? (
+            {(
+              (tenantProfile as Record<string, unknown>).lifestyle_interests as
+                | string[]
+                | null
+            )?.length ? (
               <span className="ml-3 text-xs text-slate-400">
-                {((tenantProfile as Record<string, unknown>).lifestyle_interests as string[]).length +
-                  (((tenantProfile as Record<string, unknown>).property_interests as string[] | null)?.length ?? 0) +
-                  (((tenantProfile as Record<string, unknown>).area_interests as string[] | null)?.length ?? 0)} preference{' '}
-                tags saved
+                {(
+                  (tenantProfile as Record<string, unknown>)
+                    .lifestyle_interests as string[]
+                ).length +
+                  ((
+                    (tenantProfile as Record<string, unknown>)
+                      .property_interests as string[] | null
+                  )?.length ?? 0) +
+                  ((
+                    (tenantProfile as Record<string, unknown>)
+                      .area_interests as string[] | null
+                  )?.length ?? 0)}{" "}
+                preference tags saved
               </span>
             ) : (
-              <span className="ml-3 text-xs text-amber-600">No preferences set — add some to improve your match scores</span>
+              <span className="ml-3 text-xs text-amber-600">
+                No preferences set — add some to improve your match scores
+              </span>
             )}
           </div>
         </div>
@@ -281,63 +422,95 @@ export default async function TenantProfilePage({
             <h2 className="text-lg font-bold text-slate-900">
               Matched properties
               <span className="ml-2 text-sm font-normal text-slate-500">
-                {scoredProperties.length} listing{scoredProperties.length !== 1 ? 's' : ''} match your search
+                {scoredProperties.length} listing
+                {scoredProperties.length !== 1 ? "s" : ""} match your search
               </span>
             </h2>
-            <Link href="/how-scoring-works" className="shrink-0 text-xs text-slate-400 hover:text-slate-700 hover:underline">
+            <Link
+              href="/how-scoring-works"
+              className="shrink-0 text-xs text-slate-400 hover:text-slate-700 hover:underline"
+            >
               How scoring works
             </Link>
           </div>
 
           {scoredProperties.length === 0 ? (
             <div className="card p-8 text-center">
-              <p className="text-slate-500">No listed properties match your search yet.</p>
+              <p className="text-slate-500">
+                No listed properties match your search yet.
+              </p>
               <p className="mt-1 text-sm text-slate-400">
                 {isIncomplete
-                  ? 'Complete your profile above to improve matches.'
-                  : 'Update your preferences or check back soon.'}
+                  ? "Complete your profile above to improve matches."
+                  : "Update your preferences or check back soon."}
               </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {scoredProperties.map(({ property: p, score }) => (
-                <Link key={p.id} href={`/browse/${p.id}`} className="card overflow-hidden transition hover:shadow-md">
+                <Link
+                  key={p.id}
+                  href={`/browse/${p.id}`}
+                  className="card overflow-hidden transition hover:shadow-md"
+                >
                   {p.photos?.length > 0 ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.photos[0]} alt={p.name} className="h-40 w-full object-cover" />
+                    <img
+                      src={p.photos[0]}
+                      alt={p.name}
+                      className="h-40 w-full object-cover"
+                    />
                   ) : (
                     <div className="flex h-40 items-center justify-center bg-slate-100">
-                      <svg className="h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      <svg
+                        className="h-10 w-10 text-slate-300"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1}
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        />
                       </svg>
                     </div>
                   )}
                   <div className="p-4">
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <p className="font-semibold leading-snug text-slate-900">{p.name}</p>
+                      <p className="font-semibold leading-snug text-slate-900">
+                        {p.name}
+                      </p>
                       <MatchBadge score={score.total} />
                     </div>
                     <p className="text-xs text-slate-500">
-                      {p.suburb}{p.province ? `, ${p.province}` : ''}
+                      {p.suburb}
+                      {p.province ? `, ${p.province}` : ""}
                     </p>
                     <div className="mt-3 flex items-center justify-between">
                       {p.asking_rent && (
                         <span className="text-base font-bold text-slate-900">
                           {fmt(p.asking_rent)}
-                          <span className="text-xs font-normal text-slate-400">/mo</span>
+                          <span className="text-xs font-normal text-slate-400">
+                            /mo
+                          </span>
                         </span>
                       )}
                       <div className="flex gap-2 text-xs text-slate-500">
                         {p.bedrooms != null && (
-                          <span>{p.bedrooms === 0 ? 'Studio' : `${p.bedrooms} bed`}</span>
+                          <span>
+                            {p.bedrooms === 0 ? "Studio" : `${p.bedrooms} bed`}
+                          </span>
                         )}
                         {p.property_type && (
                           <span className="capitalize">{p.property_type}</span>
                         )}
                       </div>
                     </div>
-                    <p className="mt-3 text-xs font-medium text-blue-600">View score breakdown →</p>
+                    <p className="mt-3 text-xs font-medium text-blue-600">
+                      View score breakdown →
+                    </p>
                   </div>
                 </Link>
               ))}
@@ -348,9 +521,11 @@ export default async function TenantProfilePage({
         {/* ── Introduction requests ──────────────────────────────────────── */}
         {introductions.length > 0 && (
           <section id="introductions" className="mb-8">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Introduction requests</h2>
+            <h2 className="mb-4 text-lg font-bold text-slate-900">
+              Introduction requests
+            </h2>
             <div className="card divide-y divide-slate-100">
-              {introductions.map(intro => (
+              {introductions.map((intro) => (
                 <IntroductionRow key={intro.id} intro={intro} />
               ))}
             </div>
@@ -358,7 +533,7 @@ export default async function TenantProfilePage({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ── Server-side helpers ────────────────────────────────────────────────────────
@@ -369,7 +544,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-medium text-slate-400">{label}</p>
       <p className="mt-0.5 text-sm font-semibold text-slate-900">{value}</p>
     </div>
-  )
+  );
 }
 
 function StatEmpty({ label }: { label: string }) {
@@ -378,55 +553,85 @@ function StatEmpty({ label }: { label: string }) {
       <p className="text-xs font-medium text-slate-400">{label}</p>
       <p className="mt-0.5 text-xs text-slate-300">Not set</p>
     </div>
-  )
+  );
 }
 
 function IntroductionRow({ intro }: { intro: IntroductionRequest }) {
   const statusCls =
-    intro.status === 'pending'  ? 'bg-amber-100 text-amber-700' :
-    intro.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                                   'bg-slate-100 text-slate-500'
+    intro.status === "pending"
+      ? "bg-amber-100 text-amber-700"
+      : intro.status === "accepted"
+        ? "bg-green-100 text-green-700"
+        : "bg-slate-100 text-slate-500";
   return (
     <div className="flex items-center justify-between px-5 py-4">
       <div>
-        <p className="text-sm font-medium text-slate-900">Introduction request</p>
+        <p className="text-sm font-medium text-slate-900">
+          Introduction request
+        </p>
         <p className="text-xs text-slate-500">
-          {new Date(intro.created_at).toLocaleDateString('en-ZA', {
-            day: 'numeric', month: 'long', year: 'numeric',
+          {new Date(intro.created_at).toLocaleDateString("en-ZA", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
           })}
         </p>
       </div>
-      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusCls}`}>
+      <span
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusCls}`}
+      >
         {intro.status}
       </span>
     </div>
-  )
+  );
 }
 
-function VisibilityToggle({ userId, currentValue }: { userId: string; currentValue: boolean }) {
-  void userId
+function VisibilityToggle({
+  userId,
+  currentValue,
+}: {
+  userId: string;
+  currentValue: boolean;
+}) {
+  void userId;
   return (
-    <form action="/api/tenant-profile/visibility" method="POST" className="inline">
+    <form
+      action="/api/tenant-profile/visibility"
+      method="POST"
+      className="inline"
+    >
       <input type="hidden" name="is_visible" value={String(!currentValue)} />
-      <button type="submit"
+      <button
+        type="submit"
         className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
           currentValue
-            ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
-            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
         }`}
       >
-        {currentValue ? '● Actively looking' : '○ Hidden — turn on'}
+        {currentValue ? "● Actively looking" : "○ Hidden — turn on"}
       </button>
     </form>
-  )
+  );
 }
 
 // Client island — "Complete your profile" button that opens the edit panel
 // We reuse EditPreferencesPanel to avoid a separate auto-open mechanism
-function CompleteProfileButton({ tenantProfile, userId }: { tenantProfile: TenantProfile; userId: string }) {
+function CompleteProfileButton({
+  tenantProfile,
+  userId,
+}: {
+  tenantProfile: TenantProfile;
+  userId: string;
+}) {
   return (
     <div className="shrink-0">
-      <EditPreferencesPanel tenantProfile={tenantProfile} userId={userId} label="Add my preferences" white />
+      <EditPreferencesPanel
+        tenantProfile={tenantProfile}
+        userId={userId}
+        label="Add my preferences"
+        white
+      />
     </div>
-  )
+  );
 }

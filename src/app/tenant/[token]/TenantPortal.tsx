@@ -1,115 +1,142 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import type { TenantQuery, Payment, QueryCategory, QueryStatus } from '@/lib/types'
+import { useState } from "react";
+import type {
+  TenantQuery,
+  Payment,
+  QueryCategory,
+  QueryStatus,
+} from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TenantInfo = {
-  id: string
-  full_name: string
-  email: string
-  phone: string | null
-  monthly_rent: number
-  lease_start: string
-  lease_end: string | null
-  portal_token: string
-}
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  monthly_rent: number;
+  lease_start: string;
+  lease_end: string | null;
+  portal_token: string;
+};
 
 type PropertyInfo = {
-  id: string
-  name: string
-  address: string
-  province: string | null
-}
+  id: string;
+  name: string;
+  address: string;
+  province: string | null;
+};
 
 type LandlordInfo = {
-  full_name: string
-  email: string
-  phone: string | null
-}
+  full_name: string;
+  email: string;
+  phone: string | null;
+};
 
 type ServiceCategory = {
-  id: string; name: string; icon: string | null; description: string | null
-}
+  id: string;
+  name: string;
+  icon: string | null;
+  description: string | null;
+};
 
 type ServiceProvider = {
-  id: string; category_id: string; name: string; phone: string | null
-  whatsapp: string | null; area: string | null; province: string | null
-  rate_description: string | null
-}
+  id: string;
+  category_id: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  area: string | null;
+  province: string | null;
+  rate_description: string | null;
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'home',        label: 'Home',        icon: '🏠' },
-  { id: 'payments',    label: 'Payments',    icon: '💳' },
-  { id: 'lease',       label: 'Lease',       icon: '📄' },
-  { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
-  { id: 'services',    label: 'Services',    icon: '⭐' },
-  { id: 'queries',     label: 'Queries',     icon: '💬' },
-] as const
+  { id: "home", label: "Home", icon: "🏠" },
+  { id: "payments", label: "Payments", icon: "💳" },
+  { id: "lease", label: "Lease", icon: "📄" },
+  { id: "maintenance", label: "Maintenance", icon: "🔧" },
+  { id: "services", label: "Services", icon: "⭐" },
+  { id: "queries", label: "Queries", icon: "💬" },
+] as const;
 
-type TabId = (typeof TABS)[number]['id']
+type TabId = (typeof TABS)[number]["id"];
 
 type LeaseInfo = {
-  id: string
-  lease_start: string
-  lease_end: string | null
-  monthly_rent: number
-  deposit_amount: number | null
-  payment_due_day: number
-  notice_period_days: number
-  pet_allowed: boolean
-  subletting_allowed: boolean
-  special_conditions: string | null
-  status: string
-  landlord_signed_at: string | null
-  tenant_signed_at: string | null
-}
+  id: string;
+  lease_start: string;
+  lease_end: string | null;
+  monthly_rent: number;
+  deposit_amount: number | null;
+  payment_due_day: number;
+  notice_period_days: number;
+  pet_allowed: boolean;
+  subletting_allowed: boolean;
+  special_conditions: string | null;
+  status: string;
+  landlord_signed_at: string | null;
+  tenant_signed_at: string | null;
+};
 
 const MAINTENANCE_CATEGORIES = [
-  { value: 'plumbing',      label: '🚿 Plumbing' },
-  { value: 'electrical',    label: '⚡ Electrical' },
-  { value: 'appliances',    label: '🔌 Appliances' },
-  { value: 'doors_windows', label: '🚪 Doors / Windows' },
-  { value: 'garden',        label: '🌿 Garden' },
-  { value: 'other',         label: '🔨 Other' },
-]
+  { value: "plumbing", label: "🚿 Plumbing" },
+  { value: "electrical", label: "⚡ Electrical" },
+  { value: "appliances", label: "🔌 Appliances" },
+  { value: "doors_windows", label: "🚪 Doors / Windows" },
+  { value: "garden", label: "🌿 Garden" },
+  { value: "other", label: "🔨 Other" },
+];
 
 const QUERY_STATUS: Record<QueryStatus, { label: string; cls: string }> = {
-  open:        { label: 'Open',        cls: 'bg-amber-100 text-amber-700' },
-  in_progress: { label: 'In Progress', cls: 'bg-blue-100 text-blue-700' },
-  resolved:    { label: 'Resolved',    cls: 'bg-emerald-100 text-emerald-700' },
-}
+  open: { label: "Open", cls: "bg-amber-100 text-amber-700" },
+  in_progress: { label: "In Progress", cls: "bg-blue-100 text-blue-700" },
+  resolved: { label: "Resolved", cls: "bg-emerald-100 text-emerald-700" },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtRand(cents: number) {
-  return `R${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
+  return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 }
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString("en-ZA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function fmtMonth(iso: string) {
-  return new Date(iso).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString("en-ZA", {
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function daysUntil(iso: string) {
-  const diff = new Date(iso).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)
-  return Math.round(diff / 86400000)
+  const diff =
+    new Date(iso).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0);
+  return Math.round(diff / 86400000);
 }
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`rounded-2xl bg-white shadow-sm ${className}`}>
       {children}
     </div>
-  )
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -126,21 +153,23 @@ export function TenantPortal({
   nextPayment,
   initialLease,
 }: {
-  token: string
-  tenant: TenantInfo
-  property: PropertyInfo
-  landlord: LandlordInfo
-  initialPayments: Payment[]
-  initialQueries: TenantQuery[]
-  serviceCategories: ServiceCategory[]
-  serviceProviders: ServiceProvider[]
-  nextPayment: Payment | null
-  initialLease: LeaseInfo | null
+  token: string;
+  tenant: TenantInfo;
+  property: PropertyInfo;
+  landlord: LandlordInfo;
+  initialPayments: Payment[];
+  initialQueries: TenantQuery[];
+  serviceCategories: ServiceCategory[];
+  serviceProviders: ServiceProvider[];
+  nextPayment: Payment | null;
+  initialLease: LeaseInfo | null;
 }) {
-  const [activeTab, setActiveTab] = useState<TabId>('home')
-  const [queries,   setQueries]   = useState<TenantQuery[]>(initialQueries)
-  const [lease,     setLease]     = useState<LeaseInfo | null>(initialLease)
-  const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [queries, setQueries] = useState<TenantQuery[]>(initialQueries);
+  const [lease, setLease] = useState<LeaseInfo | null>(initialLease);
+  const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(
+    null,
+  );
 
   return (
     <div>
@@ -152,8 +181,8 @@ export function TenantPortal({
             onClick={() => setActiveTab(tab.id)}
             className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-medium transition ${
               activeTab === tab.id
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             <span className="text-base">{tab.icon}</span>
@@ -163,7 +192,7 @@ export function TenantPortal({
       </div>
 
       {/* Tab content */}
-      {activeTab === 'home' && (
+      {activeTab === "home" && (
         <HomeTab
           tenant={tenant}
           property={property}
@@ -172,13 +201,10 @@ export function TenantPortal({
           onNavigate={setActiveTab}
         />
       )}
-      {activeTab === 'payments' && (
-        <PaymentsTab
-          payments={initialPayments}
-          token={token}
-        />
+      {activeTab === "payments" && (
+        <PaymentsTab payments={initialPayments} token={token} />
       )}
-      {activeTab === 'lease' && (
+      {activeTab === "lease" && (
         <LeaseTab
           lease={lease}
           token={token}
@@ -189,32 +215,32 @@ export function TenantPortal({
           onSigned={(updated) => setLease(updated)}
         />
       )}
-      {activeTab === 'maintenance' && (
+      {activeTab === "maintenance" && (
         <MaintenanceTab
-          queries={queries.filter((q) => q.category === 'maintenance')}
+          queries={queries.filter((q) => q.category === "maintenance")}
           onSubmit={(q) => setQueries((prev) => [q, ...prev])}
           token={token}
         />
       )}
-      {activeTab === 'services' && (
+      {activeTab === "services" && (
         <ServicesTab
           categories={serviceCategories}
           providers={serviceProviders}
-          tenantId={tenant.id}
+          tenantToken={token}
           propertyId={property.id}
           selectedCatId={selectedServiceCat}
           onSelectCat={setSelectedServiceCat}
         />
       )}
-      {activeTab === 'queries' && (
+      {activeTab === "queries" && (
         <QueriesTab
-          queries={queries.filter((q) => q.category !== 'maintenance')}
+          queries={queries.filter((q) => q.category !== "maintenance")}
           onSubmit={(q) => setQueries((prev) => [q, ...prev])}
           token={token}
         />
       )}
     </div>
-  )
+  );
 }
 
 // ─── HOME TAB ─────────────────────────────────────────────────────────────────
@@ -226,25 +252,31 @@ function HomeTab({
   nextPayment,
   onNavigate,
 }: {
-  tenant: TenantInfo
-  property: PropertyInfo
-  landlord: LandlordInfo
-  nextPayment: Payment | null
-  onNavigate: (tab: TabId) => void
+  tenant: TenantInfo;
+  property: PropertyInfo;
+  landlord: LandlordInfo;
+  nextPayment: Payment | null;
+  onNavigate: (tab: TabId) => void;
 }) {
-  const days = nextPayment ? daysUntil(nextPayment.due_date) : null
+  const days = nextPayment ? daysUntil(nextPayment.due_date) : null;
 
   const paymentColour =
-    days === null         ? 'bg-slate-50 border-slate-200' :
-    days < 0              ? 'bg-red-50 border-red-200' :
-    days <= 3             ? 'bg-amber-50 border-amber-200' :
-                            'bg-emerald-50 border-emerald-200'
+    days === null
+      ? "bg-slate-50 border-slate-200"
+      : days < 0
+        ? "bg-red-50 border-red-200"
+        : days <= 3
+          ? "bg-amber-50 border-amber-200"
+          : "bg-emerald-50 border-emerald-200";
 
   const paymentTextColour =
-    days === null         ? 'text-slate-600' :
-    days < 0              ? 'text-red-700' :
-    days <= 3             ? 'text-amber-700' :
-                            'text-emerald-700'
+    days === null
+      ? "text-slate-600"
+      : days < 0
+        ? "text-red-700"
+        : days <= 3
+          ? "text-amber-700"
+          : "text-emerald-700";
 
   return (
     <div className="space-y-4">
@@ -259,10 +291,13 @@ function HomeTab({
               {fmtRand(nextPayment.amount)}
             </p>
             <p className={`mt-0.5 text-sm font-medium ${paymentTextColour}`}>
-              {days === 0  ? 'Due today'                        :
-               days === 1  ? 'Due tomorrow'                     :
-               days! < 0   ? `${Math.abs(days!)} days overdue`  :
-                             `Due in ${days} days (${fmtDate(nextPayment.due_date)})`}
+              {days === 0
+                ? "Due today"
+                : days === 1
+                  ? "Due tomorrow"
+                  : days! < 0
+                    ? `${Math.abs(days!)} days overdue`
+                    : `Due in ${days} days (${fmtDate(nextPayment.due_date)})`}
             </p>
           </>
         ) : (
@@ -278,20 +313,26 @@ function HomeTab({
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="text-xs text-slate-400">Property</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-900 leading-tight">{property.name}</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900 leading-tight">
+              {property.name}
+            </p>
           </div>
           <div className="rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="text-xs text-slate-400">Monthly rent</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-900">{fmtRand(tenant.monthly_rent)}</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+              {fmtRand(tenant.monthly_rent)}
+            </p>
           </div>
           <div className="rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="text-xs text-slate-400">Lease start</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-900">{fmtDate(tenant.lease_start)}</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+              {fmtDate(tenant.lease_start)}
+            </p>
           </div>
           <div className="rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="text-xs text-slate-400">Lease end</p>
             <p className="mt-0.5 text-sm font-semibold text-slate-900">
-              {tenant.lease_end ? fmtDate(tenant.lease_end) : 'Month-to-month'}
+              {tenant.lease_end ? fmtDate(tenant.lease_end) : "Month-to-month"}
             </p>
           </div>
         </div>
@@ -304,20 +345,27 @@ function HomeTab({
         </p>
         <p className="font-semibold text-slate-900">{landlord.full_name}</p>
         <div className="mt-2 flex gap-2">
-          <a href={`mailto:${landlord.email}`}
-            className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+          <a
+            href={`mailto:${landlord.email}`}
+            className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+          >
             ✉️ Email
           </a>
           {landlord.phone && (
-            <a href={`tel:${landlord.phone}`}
-              className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+            <a
+              href={`tel:${landlord.phone}`}
+              className="flex-1 rounded-xl bg-slate-100 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+            >
               📞 Call
             </a>
           )}
           {landlord.phone && (
-            <a href={`https://wa.me/27${landlord.phone.replace(/^0/, '').replace(/\D/g, '')}`}
-              target="_blank" rel="noreferrer"
-              className="flex-1 rounded-xl bg-green-100 py-2.5 text-center text-sm font-medium text-green-800 transition hover:bg-green-200">
+            <a
+              href={`https://wa.me/27${landlord.phone.replace(/^0/, "").replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 rounded-xl bg-green-100 py-2.5 text-center text-sm font-medium text-green-800 transition hover:bg-green-200"
+            >
               💬 WhatsApp
             </a>
           )}
@@ -327,7 +375,7 @@ function HomeTab({
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => onNavigate('maintenance')}
+          onClick={() => onNavigate("maintenance")}
           className="rounded-2xl bg-amber-500 p-5 text-left transition active:scale-95"
         >
           <p className="text-2xl">🔧</p>
@@ -335,7 +383,7 @@ function HomeTab({
           <p className="text-xs text-amber-100">Maintenance request</p>
         </button>
         <button
-          onClick={() => onNavigate('queries')}
+          onClick={() => onNavigate("queries")}
           className="rounded-2xl bg-blue-600 p-5 text-left transition active:scale-95"
         >
           <p className="text-2xl">💬</p>
@@ -343,7 +391,7 @@ function HomeTab({
           <p className="text-xs text-blue-200">Send a query</p>
         </button>
         <button
-          onClick={() => onNavigate('payments')}
+          onClick={() => onNavigate("payments")}
           className="rounded-2xl bg-emerald-600 p-5 text-left transition active:scale-95"
         >
           <p className="text-2xl">💳</p>
@@ -351,7 +399,7 @@ function HomeTab({
           <p className="text-xs text-emerald-200">View history</p>
         </button>
         <button
-          onClick={() => onNavigate('services')}
+          onClick={() => onNavigate("services")}
           className="rounded-2xl bg-violet-600 p-5 text-left transition active:scale-95"
         >
           <p className="text-2xl">⭐</p>
@@ -360,7 +408,7 @@ function HomeTab({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // ─── PAYMENTS TAB ─────────────────────────────────────────────────────────────
@@ -369,27 +417,27 @@ function PaymentsTab({
   payments,
   token,
 }: {
-  payments: Payment[]
-  token: string
+  payments: Payment[];
+  token: string;
 }) {
-  const [notifiedId, setNotifiedId] = useState<string | null>(null)
-  const [notifying,  setNotifying]  = useState<string | null>(null)
+  const [notifiedId, setNotifiedId] = useState<string | null>(null);
+  const [notifying, setNotifying] = useState<string | null>(null);
 
   async function notifyPaid(paymentId: string) {
-    setNotifying(paymentId)
+    setNotifying(paymentId);
     try {
-      await fetch('/api/tenant/paid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/tenant/paid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, payment_id: paymentId }),
-      })
-      setNotifiedId(paymentId)
+      });
+      setNotifiedId(paymentId);
     } finally {
-      setNotifying(null)
+      setNotifying(null);
     }
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="space-y-3">
@@ -402,59 +450,79 @@ function PaymentsTab({
       )}
 
       {payments.map((pmt) => {
-        const overdue = pmt.status !== 'paid' && pmt.due_date < today
-        const notified = notifiedId === pmt.id
+        const overdue = pmt.status !== "paid" && pmt.due_date < today;
+        const notified = notifiedId === pmt.id;
 
         return (
           <Card
             key={pmt.id}
             className={`border p-4 ${
-              overdue ? 'border-red-200 bg-red-50' :
-              pmt.status === 'paid' ? 'border-slate-100' :
-              'border-amber-200 bg-amber-50'
+              overdue
+                ? "border-red-200 bg-red-50"
+                : pmt.status === "paid"
+                  ? "border-slate-100"
+                  : "border-amber-200 bg-amber-50"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-slate-900">{fmtMonth(pmt.due_date)}</p>
-                <p className="mt-0.5 text-xs text-slate-500">Due {fmtDate(pmt.due_date)}</p>
+                <p className="font-semibold text-slate-900">
+                  {fmtMonth(pmt.due_date)}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Due {fmtDate(pmt.due_date)}
+                </p>
                 {pmt.paid_date && (
-                  <p className="mt-0.5 text-xs text-emerald-600">Paid {fmtDate(pmt.paid_date)}</p>
+                  <p className="mt-0.5 text-xs text-emerald-600">
+                    Paid {fmtDate(pmt.paid_date)}
+                  </p>
                 )}
               </div>
               <div className="text-right">
-                <p className="text-base font-bold text-slate-900">{fmtRand(pmt.amount)}</p>
-                <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                  pmt.status === 'paid'   ? 'bg-emerald-100 text-emerald-700' :
-                  pmt.status === 'late'   ? 'bg-amber-100 text-amber-700' :
-                                            'bg-red-100 text-red-700'
-                }`}>
-                  {pmt.status === 'paid' ? '✓ Paid' : overdue ? '⚠ Overdue' : '⏳ Unpaid'}
+                <p className="text-base font-bold text-slate-900">
+                  {fmtRand(pmt.amount)}
+                </p>
+                <span
+                  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                    pmt.status === "paid"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : pmt.status === "late"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {pmt.status === "paid"
+                    ? "✓ Paid"
+                    : overdue
+                      ? "⚠ Overdue"
+                      : "⏳ Unpaid"}
                 </span>
               </div>
             </div>
 
             {/* "I paid" button for unpaid */}
-            {pmt.status !== 'paid' && (
+            {pmt.status !== "paid" && (
               <button
                 disabled={notifying === pmt.id || notified}
                 onClick={() => notifyPaid(pmt.id)}
                 className={`mt-3 w-full rounded-xl py-2.5 text-sm font-semibold transition ${
                   notified
-                    ? 'bg-emerald-100 text-emerald-700 cursor-default'
-                    : 'bg-slate-900 text-white hover:bg-slate-700 active:scale-95'
+                    ? "bg-emerald-100 text-emerald-700 cursor-default"
+                    : "bg-slate-900 text-white hover:bg-slate-700 active:scale-95"
                 }`}
               >
-                {notified          ? '✓ Landlord notified' :
-                 notifying === pmt.id ? 'Notifying…' :
-                                    '✓ I have paid — notify landlord'}
+                {notified
+                  ? "✓ Landlord notified"
+                  : notifying === pmt.id
+                    ? "Notifying…"
+                    : "✓ I have paid — notify landlord"}
               </button>
             )}
           </Card>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // ─── MAINTENANCE TAB ──────────────────────────────────────────────────────────
@@ -464,74 +532,97 @@ function MaintenanceTab({
   onSubmit,
   token,
 }: {
-  queries: TenantQuery[]
-  onSubmit: (q: TenantQuery) => void
-  token: string
+  queries: TenantQuery[];
+  onSubmit: (q: TenantQuery) => void;
+  token: string;
 }) {
-  const [view,        setView]        = useState<'list' | 'new'>('list')
-  const [category,    setCategory]    = useState('')
-  const [title,       setTitle]       = useState('')
-  const [description, setDescription] = useState('')
-  const [urgency,     setUrgency]     = useState<'low' | 'medium' | 'high'>('medium')
-  const [submitting,  setSubmitting]  = useState(false)
-  const [error,       setError]       = useState<string | null>(null)
-  const [success,     setSuccess]     = useState(false)
+  const [view, setView] = useState<"list" | "new">("list");
+  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [urgency, setUrgency] = useState<"low" | "medium" | "high">("medium");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function submit() {
-    if (!title.trim() || !description.trim()) return
-    setSubmitting(true)
-    setError(null)
+    if (!title.trim() || !description.trim()) return;
+    setSubmitting(true);
+    setError(null);
 
-    const res = await fetch('/api/queries', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
+    const res = await fetch("/api/queries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         token,
-        category:    'maintenance' as QueryCategory,
+        category: "maintenance" as QueryCategory,
         subcategory: category || undefined,
-        title:       title.trim(),
+        title: title.trim(),
         description: `[${urgency.toUpperCase()} URGENCY] ${description.trim()}`,
       }),
-    })
+    });
 
-    const json = await res.json()
-    setSubmitting(false)
+    const json = await res.json();
+    setSubmitting(false);
 
-    if (!res.ok) { setError(json.error ?? 'Failed to submit'); return }
+    if (!res.ok) {
+      setError(json.error ?? "Failed to submit");
+      return;
+    }
 
     onSubmit({
-      id: json.query.id, tenant_id: '', category: 'maintenance',
-      subcategory: category || null, title: title.trim(),
+      id: json.query.id,
+      tenant_id: "",
+      category: "maintenance",
+      subcategory: category || null,
+      title: title.trim(),
       description: `[${urgency.toUpperCase()} URGENCY] ${description.trim()}`,
-      status: 'open', landlord_notes: null,
-      created_at: json.query.created_at, updated_at: json.query.created_at,
-    })
+      status: "open",
+      landlord_notes: null,
+      created_at: json.query.created_at,
+      updated_at: json.query.created_at,
+    });
 
-    setSuccess(true)
-    setTitle(''); setDescription(''); setCategory(''); setUrgency('medium')
-    setView('list')
+    setSuccess(true);
+    setTitle("");
+    setDescription("");
+    setCategory("");
+    setUrgency("medium");
+    setView("list");
   }
 
-  if (success && view === 'list') {
+  if (success && view === "list") {
     return (
       <div className="space-y-3">
-        <SuccessBanner message="Maintenance request submitted. Your landlord has been notified." onClose={() => setSuccess(false)} />
-        <MaintenanceList queries={queries} onNew={() => setView('new')} />
+        <SuccessBanner
+          message="Maintenance request submitted. Your landlord has been notified."
+          onClose={() => setSuccess(false)}
+        />
+        <MaintenanceList queries={queries} onNew={() => setView("new")} />
       </div>
-    )
+    );
   }
 
-  if (view === 'new') {
+  if (view === "new") {
     return (
       <div className="space-y-3">
-        <button onClick={() => setView('list')} className="text-sm text-white/60 hover:text-white">← Back</button>
+        <button
+          onClick={() => setView("list")}
+          className="text-sm text-white/60 hover:text-white"
+        >
+          ← Back
+        </button>
 
         <Card className="border border-slate-100 p-5">
-          <p className="mb-4 font-semibold text-slate-900">Report a maintenance issue</p>
+          <p className="mb-4 font-semibold text-slate-900">
+            Report a maintenance issue
+          </p>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-medium text-slate-600">Category</label>
+              <label className="mb-2 block text-xs font-medium text-slate-600">
+                Category
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 {MAINTENANCE_CATEGORIES.map((c) => (
                   <button
@@ -539,8 +630,8 @@ function MaintenanceTab({
                     onClick={() => setCategory(c.value)}
                     className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
                       category === c.value
-                        ? 'border-amber-400 bg-amber-50 font-medium text-amber-700'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        ? "border-amber-400 bg-amber-50 font-medium text-amber-700"
+                        : "border-slate-200 text-slate-600 hover:border-slate-300"
                     }`}
                   >
                     {c.label}
@@ -575,21 +666,25 @@ function MaintenanceTab({
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-slate-600">Urgency</label>
+              <label className="mb-2 block text-xs font-medium text-slate-600">
+                Urgency
+              </label>
               <div className="flex gap-2">
-                {(['low', 'medium', 'high'] as const).map((u) => (
+                {(["low", "medium", "high"] as const).map((u) => (
                   <button
                     key={u}
                     onClick={() => setUrgency(u)}
                     className={`flex-1 rounded-xl py-2.5 text-sm font-medium capitalize transition ${
                       urgency === u
-                        ? u === 'high'   ? 'bg-red-600 text-white'
-                          : u === 'medium' ? 'bg-amber-500 text-white'
-                          :                  'bg-slate-600 text-white'
-                        : 'border border-slate-200 text-slate-600 hover:border-slate-300'
+                        ? u === "high"
+                          ? "bg-red-600 text-white"
+                          : u === "medium"
+                            ? "bg-amber-500 text-white"
+                            : "bg-slate-600 text-white"
+                        : "border border-slate-200 text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    {u === 'high' ? '🔴' : u === 'medium' ? '🟡' : '🟢'} {u}
+                    {u === "high" ? "🔴" : u === "medium" ? "🟡" : "🟢"} {u}
                   </button>
                 ))}
               </div>
@@ -602,18 +697,24 @@ function MaintenanceTab({
               onClick={submit}
               className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 active:scale-95"
             >
-              {submitting ? 'Submitting…' : 'Submit Request'}
+              {submitting ? "Submitting…" : "Submit Request"}
             </button>
           </div>
         </Card>
       </div>
-    )
+    );
   }
 
-  return <MaintenanceList queries={queries} onNew={() => setView('new')} />
+  return <MaintenanceList queries={queries} onNew={() => setView("new")} />;
 }
 
-function MaintenanceList({ queries, onNew }: { queries: TenantQuery[]; onNew: () => void }) {
+function MaintenanceList({
+  queries,
+  onNew,
+}: {
+  queries: TenantQuery[];
+  onNew: () => void;
+}) {
   return (
     <div className="space-y-3">
       <button
@@ -629,27 +730,34 @@ function MaintenanceList({ queries, onNew }: { queries: TenantQuery[]; onNew: ()
         </Card>
       ) : (
         queries.map((q) => {
-          const st = QUERY_STATUS[q.status]
+          const st = QUERY_STATUS[q.status];
           return (
             <Card key={q.id} className="border border-slate-100 p-4">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-slate-900 leading-tight">{q.title}</p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                <p className="font-medium text-slate-900 leading-tight">
+                  {q.title}
+                </p>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}
+                >
                   {st.label}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">{fmtDate(q.created_at)}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {fmtDate(q.created_at)}
+              </p>
               {q.landlord_notes && (
                 <div className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                  <span className="font-semibold">Landlord: </span>{q.landlord_notes}
+                  <span className="font-semibold">Landlord: </span>
+                  {q.landlord_notes}
                 </div>
               )}
             </Card>
-          )
+          );
         })
       )}
     </div>
-  )
+  );
 }
 
 // ─── SERVICES TAB ─────────────────────────────────────────────────────────────
@@ -657,54 +765,67 @@ function MaintenanceList({ queries, onNew }: { queries: TenantQuery[]; onNew: ()
 function ServicesTab({
   categories,
   providers,
-  tenantId,
+  tenantToken,
   propertyId,
   selectedCatId,
   onSelectCat,
 }: {
-  categories: ServiceCategory[]
-  providers: ServiceProvider[]
-  tenantId: string
-  propertyId: string
-  selectedCatId: string | null
-  onSelectCat: (id: string | null) => void
+  categories: ServiceCategory[];
+  providers: ServiceProvider[];
+  tenantToken: string;
+  propertyId: string;
+  selectedCatId: string | null;
+  onSelectCat: (id: string | null) => void;
 }) {
-  const [bookingProviderId, setBookingProviderId] = useState<string | null>(null)
-  const [bookedIds, setBookedIds] = useState<Set<string>>(new Set())
-  const [bookingDate, setBookingDate] = useState('')
-  const [bookingNotes, setBookingNotes] = useState('')
-  const [booking, setBooking] = useState(false)
-  const [bookError, setBookError] = useState<string | null>(null)
+  const [bookingProviderId, setBookingProviderId] = useState<string | null>(
+    null,
+  );
+  const [bookedIds, setBookedIds] = useState<Set<string>>(new Set());
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [booking, setBooking] = useState(false);
+  const [bookError, setBookError] = useState<string | null>(null);
 
   const visibleProviders = selectedCatId
     ? providers.filter((p) => p.category_id === selectedCatId)
-    : []
+    : [];
 
   async function submitBooking(providerId: string) {
-    if (!bookingDate) { setBookError('Please select a date'); return }
-    setBooking(true)
-    setBookError(null)
+    if (!bookingDate) {
+      setBookError("Please select a date");
+      return;
+    }
+    setBooking(true);
+    setBookError(null);
     try {
-      const res = await fetch('/api/service-bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/service-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider_id:    providerId,
-          property_id:    propertyId,
-          tenant_id:      tenantId,
+          provider_id: providerId,
+          property_id: propertyId,
+          tenant_token: tenantToken,
           scheduled_date: bookingDate,
-          notes:          bookingNotes || undefined,
+          notes: bookingNotes || undefined,
         }),
-      })
-      if (!res.ok) { const j = await res.json(); setBookError(j.error ?? 'Booking failed'); return }
-      setBookedIds((s) => { const n = new Set(s); n.add(providerId); return n })
-      setBookingProviderId(null)
-      setBookingDate('')
-      setBookingNotes('')
+      });
+      if (!res.ok) {
+        const j = await res.json();
+        setBookError(j.error ?? "Booking failed");
+        return;
+      }
+      setBookedIds((s) => {
+        const n = new Set(s);
+        n.add(providerId);
+        return n;
+      });
+      setBookingProviderId(null);
+      setBookingDate("");
+      setBookingNotes("");
     } catch {
-      setBookError('Network error. Please try again.')
+      setBookError("Network error. Please try again.");
     } finally {
-      setBooking(false)
+      setBooking(false);
     }
   }
 
@@ -717,14 +838,16 @@ function ServicesTab({
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => onSelectCat(selectedCatId === cat.id ? null : cat.id)}
+            onClick={() =>
+              onSelectCat(selectedCatId === cat.id ? null : cat.id)
+            }
             className={`flex shrink-0 flex-col items-center gap-1 rounded-xl px-4 py-3 text-xs font-medium transition ${
               selectedCatId === cat.id
-                ? 'bg-violet-600 text-white'
-                : 'bg-white text-slate-700 hover:bg-slate-50'
+                ? "bg-violet-600 text-white"
+                : "bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            <span className="text-xl">{cat.icon ?? '📦'}</span>
+            <span className="text-xl">{cat.icon ?? "📦"}</span>
             <span>{cat.name}</span>
           </button>
         ))}
@@ -735,22 +858,33 @@ function ServicesTab({
         <div className="space-y-3">
           {visibleProviders.length === 0 ? (
             <Card className="border border-slate-100 p-8 text-center">
-              <p className="text-sm text-slate-500">No providers available in your area yet.</p>
+              <p className="text-sm text-slate-500">
+                No providers available in your area yet.
+              </p>
             </Card>
           ) : (
             visibleProviders.map((prov) => {
-              const isBooked = bookedIds.has(prov.id)
-              const isBooking = bookingProviderId === prov.id
+              const isBooked = bookedIds.has(prov.id);
+              const isBooking = bookingProviderId === prov.id;
 
               return (
-                <Card key={prov.id} className="border border-slate-100 overflow-hidden">
+                <Card
+                  key={prov.id}
+                  className="border border-slate-100 overflow-hidden"
+                >
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-slate-900">{prov.name}</p>
-                        <p className="text-xs text-slate-500">📍 {prov.area ?? prov.province ?? '—'}</p>
+                        <p className="font-semibold text-slate-900">
+                          {prov.name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          📍 {prov.area ?? prov.province ?? "—"}
+                        </p>
                         {prov.rate_description && (
-                          <p className="mt-1 text-xs font-medium text-violet-700">{prov.rate_description}</p>
+                          <p className="mt-1 text-xs font-medium text-violet-700">
+                            {prov.rate_description}
+                          </p>
                         )}
                       </div>
                       {isBooked ? (
@@ -759,7 +893,9 @@ function ServicesTab({
                         </span>
                       ) : (
                         <button
-                          onClick={() => setBookingProviderId(isBooking ? null : prov.id)}
+                          onClick={() =>
+                            setBookingProviderId(isBooking ? null : prov.id)
+                          }
                           className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-700"
                         >
                           📅 Book
@@ -769,8 +905,9 @@ function ServicesTab({
 
                     {prov.whatsapp && (
                       <a
-                        href={`https://wa.me/27${prov.whatsapp.replace(/^0/, '').replace(/\D/g, '')}`}
-                        target="_blank" rel="noreferrer"
+                        href={`https://wa.me/27${prov.whatsapp.replace(/^0/, "").replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
                         className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline"
                       >
                         💬 WhatsApp provider
@@ -781,19 +918,25 @@ function ServicesTab({
                   {/* Inline booking form */}
                   {isBooking && !isBooked && (
                     <div className="border-t border-slate-100 bg-slate-50 p-4 space-y-3">
-                      <p className="text-xs font-semibold text-slate-700">Book {prov.name}</p>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Book {prov.name}
+                      </p>
                       <div>
-                        <label className="mb-1 block text-xs text-slate-500">Preferred date</label>
+                        <label className="mb-1 block text-xs text-slate-500">
+                          Preferred date
+                        </label>
                         <input
                           type="date"
-                          min={new Date().toISOString().split('T')[0]}
+                          min={new Date().toISOString().split("T")[0]}
                           value={bookingDate}
                           onChange={(e) => setBookingDate(e.target.value)}
                           className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs text-slate-500">Notes (optional)</label>
+                        <label className="mb-1 block text-xs text-slate-500">
+                          Notes (optional)
+                        </label>
                         <textarea
                           value={bookingNotes}
                           onChange={(e) => setBookingNotes(e.target.value)}
@@ -802,18 +945,20 @@ function ServicesTab({
                           placeholder="Any special requirements…"
                         />
                       </div>
-                      {bookError && <p className="text-xs text-red-600">{bookError}</p>}
+                      {bookError && (
+                        <p className="text-xs text-red-600">{bookError}</p>
+                      )}
                       <button
                         disabled={booking || !bookingDate}
                         onClick={() => submitBooking(prov.id)}
                         className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
                       >
-                        {booking ? 'Booking…' : 'Confirm Request'}
+                        {booking ? "Booking…" : "Confirm Request"}
                       </button>
                     </div>
                   )}
                 </Card>
-              )
+              );
             })
           )}
         </div>
@@ -821,11 +966,13 @@ function ServicesTab({
 
       {!selectedCatId && (
         <Card className="border border-slate-100 p-8 text-center">
-          <p className="text-sm text-slate-500">Select a service category above to see providers.</p>
+          <p className="text-sm text-slate-500">
+            Select a service category above to see providers.
+          </p>
         </Card>
       )}
     </div>
-  )
+  );
 }
 
 // ─── QUERIES TAB ─────────────────────────────────────────────────────────────
@@ -835,49 +982,70 @@ function QueriesTab({
   onSubmit,
   token,
 }: {
-  queries: TenantQuery[]
-  onSubmit: (q: TenantQuery) => void
-  token: string
+  queries: TenantQuery[];
+  onSubmit: (q: TenantQuery) => void;
+  token: string;
 }) {
-  const [view,        setView]        = useState<'list' | 'new'>('list')
-  const [category,    setCategory]    = useState<'emergency' | 'general'>('general')
-  const [title,       setTitle]       = useState('')
-  const [description, setDescription] = useState('')
-  const [submitting,  setSubmitting]  = useState(false)
-  const [error,       setError]       = useState<string | null>(null)
-  const [success,     setSuccess]     = useState(false)
+  const [view, setView] = useState<"list" | "new">("list");
+  const [category, setCategory] = useState<"emergency" | "general">("general");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function submit() {
-    if (!title.trim() || !description.trim()) return
-    setSubmitting(true)
-    setError(null)
+    if (!title.trim() || !description.trim()) return;
+    setSubmitting(true);
+    setError(null);
 
-    const res = await fetch('/api/queries', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ token, category, title: title.trim(), description: description.trim() }),
-    })
+    const res = await fetch("/api/queries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        category,
+        title: title.trim(),
+        description: description.trim(),
+      }),
+    });
 
-    const json = await res.json()
-    setSubmitting(false)
+    const json = await res.json();
+    setSubmitting(false);
 
-    if (!res.ok) { setError(json.error ?? 'Failed to submit'); return }
+    if (!res.ok) {
+      setError(json.error ?? "Failed to submit");
+      return;
+    }
 
     onSubmit({
-      id: json.query.id, tenant_id: '', category,
-      subcategory: null, title: title.trim(), description: description.trim(),
-      status: 'open', landlord_notes: null,
-      created_at: json.query.created_at, updated_at: json.query.created_at,
-    })
+      id: json.query.id,
+      tenant_id: "",
+      category,
+      subcategory: null,
+      title: title.trim(),
+      description: description.trim(),
+      status: "open",
+      landlord_notes: null,
+      created_at: json.query.created_at,
+      updated_at: json.query.created_at,
+    });
 
-    setSuccess(true)
-    setTitle(''); setDescription(''); setView('list')
+    setSuccess(true);
+    setTitle("");
+    setDescription("");
+    setView("list");
   }
 
-  if (view === 'new') {
+  if (view === "new") {
     return (
       <div className="space-y-3">
-        <button onClick={() => setView('list')} className="text-sm text-white/60 hover:text-white">← Back</button>
+        <button
+          onClick={() => setView("list")}
+          className="text-sm text-white/60 hover:text-white"
+        >
+          ← Back
+        </button>
 
         <Card className="border border-slate-100 p-5">
           <p className="mb-4 font-semibold text-slate-900">Submit a query</p>
@@ -885,30 +1053,31 @@ function QueriesTab({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setCategory('emergency')}
+                onClick={() => setCategory("emergency")}
                 className={`rounded-xl border py-3 text-sm font-semibold transition ${
-                  category === 'emergency'
-                    ? 'border-red-400 bg-red-50 text-red-700'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  category === "emergency"
+                    ? "border-red-400 bg-red-50 text-red-700"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
                 🚨 Emergency
               </button>
               <button
-                onClick={() => setCategory('general')}
+                onClick={() => setCategory("general")}
                 className={`rounded-xl border py-3 text-sm font-semibold transition ${
-                  category === 'general'
-                    ? 'border-blue-400 bg-blue-50 text-blue-700'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  category === "general"
+                    ? "border-blue-400 bg-blue-50 text-blue-700"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
                 💬 General
               </button>
             </div>
 
-            {category === 'emergency' && (
+            {category === "emergency" && (
               <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                ⚠ For life-threatening emergencies, call <strong>10111</strong> (police) or <strong>10177</strong> (ambulance) first.
+                ⚠ For life-threatening emergencies, call <strong>10111</strong>{" "}
+                (police) or <strong>10177</strong> (ambulance) first.
               </div>
             )}
 
@@ -933,25 +1102,30 @@ function QueriesTab({
               disabled={submitting || !title.trim() || !description.trim()}
               onClick={submit}
               className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-50 active:scale-95 ${
-                category === 'emergency' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                category === "emergency"
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              {submitting ? 'Submitting…' : 'Send Query'}
+              {submitting ? "Submitting…" : "Send Query"}
             </button>
           </div>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-3">
       {success && (
-        <SuccessBanner message="Query submitted — your landlord has been notified." onClose={() => setSuccess(false)} />
+        <SuccessBanner
+          message="Query submitted — your landlord has been notified."
+          onClose={() => setSuccess(false)}
+        />
       )}
 
       <button
-        onClick={() => setView('new')}
+        onClick={() => setView("new")}
         className="w-full rounded-2xl bg-blue-600 py-4 text-base font-semibold text-white transition hover:bg-blue-700 active:scale-95"
       >
         💬 New Query
@@ -963,35 +1137,41 @@ function QueriesTab({
         </Card>
       ) : (
         queries.map((q) => {
-          const st = QUERY_STATUS[q.status]
-          const isEmergency = q.category === 'emergency'
+          const st = QUERY_STATUS[q.status];
+          const isEmergency = q.category === "emergency";
           return (
             <Card
               key={q.id}
-              className={`border p-4 ${isEmergency ? 'border-red-200 bg-red-50' : 'border-slate-100'}`}
+              className={`border p-4 ${isEmergency ? "border-red-200 bg-red-50" : "border-slate-100"}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="font-medium text-slate-900 leading-tight">
-                    {isEmergency ? '🚨 ' : ''}{q.title}
+                    {isEmergency ? "🚨 " : ""}
+                    {q.title}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">{fmtDate(q.created_at)}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {fmtDate(q.created_at)}
+                  </p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}
+                >
                   {st.label}
                 </span>
               </div>
               {q.landlord_notes && (
                 <div className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                  <span className="font-semibold">Landlord: </span>{q.landlord_notes}
+                  <span className="font-semibold">Landlord: </span>
+                  {q.landlord_notes}
                 </div>
               )}
             </Card>
-          )
+          );
         })
       )}
     </div>
-  )
+  );
 }
 
 // ─── LEASE TAB ────────────────────────────────────────────────────────────────
@@ -1005,58 +1185,69 @@ function LeaseTab({
   propertyAddress,
   onSigned,
 }: {
-  lease: LeaseInfo | null
-  token: string
-  tenantName: string
-  landlordName: string
-  propertyName: string
-  propertyAddress: string
-  onSigned: (l: LeaseInfo) => void
+  lease: LeaseInfo | null;
+  token: string;
+  tenantName: string;
+  landlordName: string;
+  propertyName: string;
+  propertyAddress: string;
+  onSigned: (l: LeaseInfo) => void;
 }) {
-  const [signing,  setSigning]  = useState(false)
-  const [signed,   setSigned]   = useState(!!lease?.tenant_signed_at)
-  const [signErr,  setSignErr]  = useState<string | null>(null)
+  const [signing, setSigning] = useState(false);
+  const [signed, setSigned] = useState(!!lease?.tenant_signed_at);
+  const [signErr, setSignErr] = useState<string | null>(null);
 
   if (!lease) {
     return (
       <Card className="border border-slate-100 p-8 text-center">
         <p className="text-2xl">📄</p>
-        <p className="mt-3 font-semibold text-slate-700">No lease document available</p>
-        <p className="mt-1 text-sm text-slate-400">Your landlord hasn&apos;t generated a lease yet.</p>
+        <p className="mt-3 font-semibold text-slate-700">
+          No lease document available
+        </p>
+        <p className="mt-1 text-sm text-slate-400">
+          Your landlord hasn&apos;t generated a lease yet.
+        </p>
       </Card>
-    )
+    );
   }
 
   async function signLease() {
-    if (!lease) return
-    setSigning(true)
-    setSignErr(null)
+    if (!lease) return;
+    setSigning(true);
+    setSignErr(null);
     try {
-      const res = await fetch('/api/tenant/sign-lease', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ token, lease_id: lease.id }),
-      })
-      const json = await res.json()
-      if (!res.ok) { setSignErr(json.error ?? 'Failed to sign'); return }
-      setSigned(true)
-      onSigned(json.lease as LeaseInfo)
+      const res = await fetch("/api/tenant/sign-lease", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, lease_id: lease.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSignErr(json.error ?? "Failed to sign");
+        return;
+      }
+      setSigned(true);
+      onSigned(json.lease as LeaseInfo);
     } finally {
-      setSigning(false)
+      setSigning(false);
     }
   }
 
   function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+    return new Date(iso).toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   }
   function fmtRand(cents: number) {
-    return `R${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+    return `R${(cents / 100).toLocaleString("en-ZA", { minimumFractionDigits: 0 })}`;
   }
   function ordinal(n: number) {
-    if (n === 1) return '1st'
-    if (n === 2) return '2nd'
-    if (n === 3) return '3rd'
-    return `${n}th`
+    if (n === 1) return "1st";
+    if (n === 2) return "2nd";
+    if (n === 3) return "3rd";
+    return `${n}th`;
   }
 
   return (
@@ -1073,80 +1264,120 @@ function LeaseTab({
 
       <Card className="border border-slate-100 p-5">
         <div className="border-b border-slate-100 pb-4 text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-slate-800">Residential Lease Agreement</p>
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-800">
+            Residential Lease Agreement
+          </p>
           <p className="mt-1 text-xs text-slate-400">Entered into between:</p>
         </div>
 
         <div className="mt-4 space-y-4 text-sm">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Landlord</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Landlord
+            </p>
             <p className="font-medium text-slate-900">{landlordName}</p>
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Tenant</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Tenant
+            </p>
             <p className="font-medium text-slate-900">{tenantName}</p>
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Property</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Property
+            </p>
             <p className="font-medium text-slate-900">{propertyName}</p>
             <p className="text-slate-500">{propertyAddress}</p>
           </div>
 
           <div className="rounded-xl bg-slate-50 p-4">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Lease Terms</p>
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Lease Terms
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-xs text-slate-400">Start date</p>
-                <p className="font-medium text-slate-900">{fmtDate(lease.lease_start)}</p>
+                <p className="font-medium text-slate-900">
+                  {fmtDate(lease.lease_start)}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">End date</p>
-                <p className="font-medium text-slate-900">{lease.lease_end ? fmtDate(lease.lease_end) : 'Month-to-month'}</p>
+                <p className="font-medium text-slate-900">
+                  {lease.lease_end
+                    ? fmtDate(lease.lease_end)
+                    : "Month-to-month"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Monthly rent</p>
-                <p className="font-medium text-slate-900">{fmtRand(lease.monthly_rent)}</p>
+                <p className="font-medium text-slate-900">
+                  {fmtRand(lease.monthly_rent)}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Deposit</p>
-                <p className="font-medium text-slate-900">{lease.deposit_amount ? fmtRand(lease.deposit_amount) : '—'}</p>
+                <p className="font-medium text-slate-900">
+                  {lease.deposit_amount ? fmtRand(lease.deposit_amount) : "—"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Payment due</p>
-                <p className="font-medium text-slate-900">{ordinal(lease.payment_due_day)} of month</p>
+                <p className="font-medium text-slate-900">
+                  {ordinal(lease.payment_due_day)} of month
+                </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Notice period</p>
-                <p className="font-medium text-slate-900">{lease.notice_period_days} days</p>
+                <p className="font-medium text-slate-900">
+                  {lease.notice_period_days} days
+                </p>
               </div>
             </div>
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Tenant Obligations</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Tenant Obligations
+            </p>
             <ol className="space-y-1 text-xs leading-relaxed text-slate-600">
               <li>1. Pay rent on or before the due date each month.</li>
               <li>2. Maintain the property in good and clean condition.</li>
               <li>3. Not make alterations without written landlord consent.</li>
               <li>4. Not sublet without written landlord consent.</li>
               <li>5. Comply with all body corporate rules where applicable.</li>
-              <li>6. Give {lease.notice_period_days} days written notice of intention to vacate.</li>
+              <li>
+                6. Give {lease.notice_period_days} days written notice of
+                intention to vacate.
+              </li>
             </ol>
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Landlord Obligations</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              Landlord Obligations
+            </p>
             <ol className="space-y-1 text-xs leading-relaxed text-slate-600">
               <li>1. Maintain the property in a habitable condition.</li>
-              <li>2. Not enter without reasonable notice except in emergency.</li>
-              <li>3. Return the deposit within 21 days of vacating subject to inspection.</li>
+              <li>
+                2. Not enter without reasonable notice except in emergency.
+              </li>
+              <li>
+                3. Return the deposit within 21 days of vacating subject to
+                inspection.
+              </li>
             </ol>
           </div>
 
           {lease.special_conditions && (
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Special Conditions</p>
-              <p className="text-xs text-slate-600">{lease.special_conditions}</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Special Conditions
+              </p>
+              <p className="text-xs text-slate-600">
+                {lease.special_conditions}
+              </p>
             </div>
           )}
         </div>
@@ -1156,34 +1387,48 @@ function LeaseTab({
           {signed || lease.tenant_signed_at ? (
             <div className="rounded-xl bg-emerald-50 px-4 py-3 text-center">
               <p className="text-sm font-semibold text-emerald-700">
-                ✓ You accepted this lease on {fmtDate(lease.tenant_signed_at ?? new Date().toISOString())}
+                ✓ You accepted this lease on{" "}
+                {fmtDate(lease.tenant_signed_at ?? new Date().toISOString())}
               </p>
             </div>
           ) : (
             <>
-              {signErr && <p className="mb-2 text-xs text-red-600">{signErr}</p>}
+              {signErr && (
+                <p className="mb-2 text-xs text-red-600">{signErr}</p>
+              )}
               <button
                 disabled={signing}
                 onClick={signLease}
                 className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 active:scale-95"
               >
-                {signing ? 'Signing…' : 'I have read and accept this lease'}
+                {signing ? "Signing…" : "I have read and accept this lease"}
               </button>
             </>
           )}
         </div>
       </Card>
     </div>
-  )
+  );
 }
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-function SuccessBanner({ message, onClose }: { message: string; onClose: () => void }) {
+function SuccessBanner({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
       <p className="text-sm font-medium text-emerald-800">✓ {message}</p>
-      <button onClick={onClose} className="shrink-0 text-emerald-500 hover:text-emerald-700">✕</button>
+      <button
+        onClick={onClose}
+        className="shrink-0 text-emerald-500 hover:text-emerald-700"
+      >
+        ✕
+      </button>
     </div>
-  )
+  );
 }
