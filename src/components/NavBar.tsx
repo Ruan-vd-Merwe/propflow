@@ -45,6 +45,14 @@ function IconChat({ className }: { className?: string }) {
   )
 }
 
+function IconSearch({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  )
+}
+
 function IconShoppingBag({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -104,7 +112,8 @@ const LANDLORD_LINKS = [
 ]
 
 const TENANT_LINKS = [
-  { href: '/dashboard?tab=tenant', label: 'My Search',  Icon: IconHouse },
+  { href: '/browse',               label: 'Browse',     Icon: IconSearch },
+  { href: '/dashboard?tab=tenant', label: 'My Search',  Icon: IconHouse  },
   { href: '/tenant/profile',       label: 'My Profile', Icon: IconPeople },
 ]
 

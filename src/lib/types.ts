@@ -27,13 +27,21 @@ export type Property = {
 export type PropertyListing = Property & {
   property_type: 'apartment' | 'house' | 'townhouse' | 'room' | null
   bedrooms: number | null
-  asking_rent: number | null   // cents
+  asking_rent: number | null      // cents
   available_from: string | null
   suburb: string | null
   province: string | null
   description: string | null
   is_listed: boolean
   photos: string[]
+  // tag columns added in migration_property_tags.sql
+  floor_size_m2: number | null
+  pets_allowed: boolean | null
+  parking_available: boolean | null
+  fibre_available: boolean | null
+  property_tags: string[]
+  area_tags: string[]
+  lifestyle_tags: string[]
 }
 
 // ─── Marketplace ──────────────────────────────────────────────────────────────

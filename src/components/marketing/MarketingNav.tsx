@@ -31,7 +31,8 @@ const NAV: NavSection[] = [
       { label: 'Body Corporate',        href: '/features#bodycorp'     },
     ],
   },
-  { type: 'link', label: 'Pricing',   href: '/pricing' },
+  { type: 'link', label: 'Browse Properties', href: '/browse' },
+  { type: 'link', label: 'Pricing',          href: '/pricing' },
   {
     type: 'dropdown', label: 'Resources',
     items: [
