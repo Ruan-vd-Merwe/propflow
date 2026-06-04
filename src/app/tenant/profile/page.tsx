@@ -131,17 +131,65 @@ export default async function TenantProfilePage({
 
       <div className="mx-auto max-w-4xl px-4 py-8">
 
-        {/* ── Incomplete profile prompt ─────────────────────────────────── */}
+        {/* ── Onboarding prompt (shown until area + budget set) ────────── */}
         {isIncomplete && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <div>
-              <p className="text-sm font-semibold text-amber-900">Complete your profile to get matched with properties</p>
-              <p className="mt-0.5 text-xs text-amber-700">
-                Add your search area, budget and employment details so landlords can find you.
-              </p>
+          <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a]">
+            <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
+              {/* Icon */}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              {/* Text + steps */}
+              <div className="flex-1">
+                <p className="text-base font-bold text-white">Complete your profile to get matched</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Add your area, budget and preferences to start seeing personalised property recommendations.
+                </p>
+
+                {/* Progress steps */}
+                <div className="mt-4 flex items-center gap-0">
+                  {[
+                    { label: 'Account created', done: true  },
+                    { label: 'Add preferences', done: false, current: true },
+                    { label: 'Browse matches',  done: false },
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center">
+                      {i > 0 && (
+                        <div className={`mx-2 h-px w-8 sm:w-12 ${step.done ? 'bg-green-500' : 'bg-white/20'}`} />
+                      )}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                          step.done    ? 'bg-green-500 text-white' :
+                          step.current ? 'bg-blue-500 text-white' :
+                                         'bg-white/10 text-slate-500'
+                        }`}>
+                          {step.done ? (
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (i + 1)}
+                        </div>
+                        <span className={`hidden text-[10px] sm:block ${
+                          step.done ? 'text-green-400' :
+                          step.current ? 'text-blue-400 font-semibold' :
+                                         'text-slate-600'
+                        }`}>
+                          {step.label}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="shrink-0">
+                <CompleteProfileButton tenantProfile={tenantProfile} userId={user.id} />
+              </div>
             </div>
-            {/* The EditPreferencesPanel button opens automatically — handled via CSS trick below */}
-            <CompleteProfileButton tenantProfile={tenantProfile} userId={user.id} />
           </div>
         )}
 
@@ -378,7 +426,7 @@ function VisibilityToggle({ userId, currentValue }: { userId: string; currentVal
 function CompleteProfileButton({ tenantProfile, userId }: { tenantProfile: TenantProfile; userId: string }) {
   return (
     <div className="shrink-0">
-      <EditPreferencesPanel tenantProfile={tenantProfile} userId={userId} label="Complete profile →" />
+      <EditPreferencesPanel tenantProfile={tenantProfile} userId={userId} label="Add my preferences" white />
     </div>
   )
 }

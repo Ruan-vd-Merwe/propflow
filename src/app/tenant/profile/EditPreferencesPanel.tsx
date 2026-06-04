@@ -21,9 +21,10 @@ interface Props {
   tenantProfile: TenantProfile
   userId: string
   label?: string
+  white?: boolean
 }
 
-export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit preferences' }: Props) {
+export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit preferences', white = false }: Props) {
   const router   = useRouter()
   const supabase = createClient()
 
@@ -97,7 +98,10 @@ export function EditPreferencesPanel({ tenantProfile, userId, label = 'Edit pref
       {/* ── Trigger button ─────────────────────────────────────────────────── */}
       <button
         onClick={openPanel}
-        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-700"
+        className={white
+          ? 'rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100'
+          : 'rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-700'
+        }
       >
         {label}
       </button>

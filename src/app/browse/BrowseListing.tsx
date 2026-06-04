@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import type { PropertyListing } from '@/lib/types'
@@ -16,15 +17,15 @@ const PROVINCES = [
   'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape',
 ]
 
-const PROP_TYPES: { value: string; label: string }[] = [
-  { value: 'any',        label: 'Any type'   },
-  { value: 'apartment',  label: 'Apartment'  },
-  { value: 'house',      label: 'House'      },
-  { value: 'townhouse',  label: 'Townhouse'  },
-  { value: 'room',       label: 'Room'       },
+const PROP_TYPES = [
+  { value: 'any',       label: 'Any type'  },
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'house',     label: 'House'     },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'room',      label: 'Room'      },
 ]
 
-const BEDROOM_OPTS: { value: string; label: string }[] = [
+const BEDROOM_OPTS = [
   { value: 'any', label: 'Any beds' },
   { value: '0',   label: 'Studio'   },
   { value: '1',   label: '1 bed'    },
@@ -36,16 +37,25 @@ const BEDROOM_OPTS: { value: string; label: string }[] = [
 type SortKey = 'score' | 'price_asc' | 'price_desc' | 'newest'
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'score',      label: 'Best match'       },
-  { value: 'price_asc',  label: 'Price: low–high'  },
-  { value: 'price_desc', label: 'Price: high–low'  },
-  { value: 'newest',     label: 'Newest'           },
+  { value: 'score',      label: 'Best match'      },
+  { value: 'price_asc',  label: 'Price: low–high' },
+  { value: 'price_desc', label: 'Price: high–low' },
+  { value: 'newest',     label: 'Newest'          },
 ]
+
+type AuthState = 'checking' | 'guest' | 'no_profile' | 'personalised'
+
+type TenantSummary = {
+  looking_in_area: string | null
+  looking_in_province: string | null
+  budget_min: number | null
+  budget_max: number | null
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtRand(cents: number) {
-  return `R ${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
+  return `R ${(cents / 100).toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`
 }
 
 function fmtDate(d: string) {
@@ -58,7 +68,7 @@ function scoreBadgeColor(score: number) {
   return 'bg-red-100 text-red-700'
 }
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function IconSearch({ className }: { className?: string }) {
   return (
@@ -85,14 +95,6 @@ function IconHouse({ className }: { className?: string }) {
   )
 }
 
-function IconCheck({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  )
-}
-
 function IconBed({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -101,7 +103,15 @@ function IconBed({ className }: { className?: string }) {
   )
 }
 
-// ─── Skeleton card ────────────────────────────────────────────────────────────
+function IconCheck({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  )
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
   return (
@@ -110,7 +120,8 @@ function SkeletonCard() {
       <div className="p-4">
         <div className="mb-2 h-4 w-3/4 rounded bg-slate-200" />
         <div className="mb-3 h-3 w-1/2 rounded bg-slate-200" />
-        <div className="h-5 w-1/3 rounded bg-slate-200" />
+        <div className="mb-2 h-6 w-1/3 rounded bg-slate-200" />
+        <div className="h-3 w-1/4 rounded bg-slate-200" />
       </div>
       <div className="border-t border-slate-100 p-4">
         <div className="h-9 rounded-lg bg-slate-200" />
@@ -124,19 +135,18 @@ function SkeletonCard() {
 function PropertyCard({
   property: p,
   result,
-  isLoggedIn,
-  isTenant,
-  hasTenantProfile,
+  isPersonalised,
 }: {
   property: PropertyListing
   result: ScoreResult | undefined
-  isLoggedIn: boolean
-  isTenant: boolean
-  hasTenantProfile: boolean
+  isPersonalised: boolean
 }) {
+  const score = result?.score
+  const showApply = isPersonalised && score != null && score >= 45
+
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      {/* Photo + badges */}
+      {/* Photo */}
       <div className="relative h-48 overflow-hidden bg-slate-100">
         {p.photos?.length > 0 ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -151,19 +161,14 @@ function PropertyCard({
           </div>
         )}
 
-        {/* Score badge — top right */}
-        {isLoggedIn && hasTenantProfile && result?.status === 'ranked' && (
-          <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-sm ${scoreBadgeColor(result.score)}`}>
-            {result.score}/100 match
-          </span>
-        )}
-        {!isLoggedIn && (
-          <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
-            Sign in for match score
+        {/* Score badge — personalised only */}
+        {isPersonalised && score != null && (
+          <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-sm ${scoreBadgeColor(score)}`}>
+            {score}% match
           </span>
         )}
 
-        {/* Verified badge — bottom left */}
+        {/* Verified badge */}
         <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-green-700 shadow-sm">
           <IconCheck className="h-3 w-3" />
           Verified landlord
@@ -172,7 +177,7 @@ function PropertyCard({
 
       {/* Body */}
       <div className="flex-1 p-4">
-        <p className="font-semibold leading-snug text-slate-900 group-hover:text-blue-700 transition-colors">
+        <p className="font-semibold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
           {p.name}
         </p>
 
@@ -212,7 +217,7 @@ function PropertyCard({
           </p>
         )}
 
-        {result?.match_reasons?.[0] && (
+        {isPersonalised && result?.match_reasons?.[0] && (
           <p className="mt-2 line-clamp-1 text-[11px] text-green-700">
             {result.match_reasons[0]}
           </p>
@@ -223,25 +228,18 @@ function PropertyCard({
       <div className="flex gap-2 border-t border-slate-100 p-4">
         <Link
           href={`/browse/${p.id}`}
-          className="flex-1 rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className={`rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? 'flex-1' : 'w-full'}`}
         >
           View property
         </Link>
-        {isTenant && hasTenantProfile ? (
+        {showApply && (
           <Link
             href={`/apply?property_id=${p.id}`}
             className="flex-1 rounded-lg bg-blue-700 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
           >
             Apply now
           </Link>
-        ) : !isLoggedIn ? (
-          <Link
-            href="/login"
-            className="flex-1 rounded-lg bg-slate-900 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-700"
-          >
-            Sign in to apply
-          </Link>
-        ) : null}
+        )}
       </div>
     </div>
   )
@@ -249,29 +247,77 @@ function PropertyCard({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function BrowseListing({
-  properties,
-  scoreMap,
-  isLoggedIn,
-  isTenant,
-  hasTenantProfile,
-}: {
-  properties: PropertyListing[]
-  scoreMap: Record<string, ScoreResult>
-  isLoggedIn: boolean
-  isTenant: boolean
-  hasTenantProfile: boolean
-}) {
-  const [search,           setSearch]           = useState('')
-  const [filterProvince,   setFilterProvince]   = useState('')
-  const [filterType,       setFilterType]       = useState('any')
-  const [filterBedrooms,   setFilterBedrooms]   = useState('any')
-  const [filterPriceMin,   setFilterPriceMin]   = useState('')
-  const [filterPriceMax,   setFilterPriceMax]   = useState('')
-  const [filterAvailable,  setFilterAvailable]  = useState('')
-  const [filterPetFriendly,setFilterPetFriendly]= useState(false)
-  const [sort,             setSort]             = useState<SortKey>('score')
-  const [page,             setPage]             = useState(1)
+export function BrowseListing({ properties }: { properties: PropertyListing[] }) {
+  const supabase = createClient()
+
+  const [authState,     setAuthState]     = useState<AuthState>('checking')
+  const [tenantSummary, setTenantSummary] = useState<TenantSummary | null>(null)
+  const [scoreMap,      setScoreMap]      = useState<Record<string, ScoreResult>>({})
+  const [scoresLoading, setScoresLoading] = useState(false)
+
+  // Filters
+  const [search,            setSearch]            = useState('')
+  const [filterProvince,    setFilterProvince]    = useState('')
+  const [filterType,        setFilterType]        = useState('any')
+  const [filterBedrooms,    setFilterBedrooms]    = useState('any')
+  const [filterPriceMin,    setFilterPriceMin]    = useState('')
+  const [filterPriceMax,    setFilterPriceMax]    = useState('')
+  const [filterAvailable,   setFilterAvailable]   = useState('')
+  const [filterPetFriendly, setFilterPetFriendly] = useState(false)
+  const [sort,              setSort]              = useState<SortKey>('newest')
+  const [page,              setPage]              = useState(1)
+
+  // ── Auth detection on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    async function detect() {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setAuthState('guest')
+        return
+      }
+
+      const { data: tp } = await supabase
+        .from('tenant_profiles')
+        .select('looking_in_area, looking_in_province, budget_min, budget_max')
+        .eq('user_id', user.id)
+        .single()
+
+      const isPersonalised = !!(tp?.budget_max && tp?.looking_in_area)
+
+      if (!isPersonalised) {
+        setAuthState('no_profile')
+        return
+      }
+
+      setTenantSummary(tp as TenantSummary)
+      setAuthState('personalised')
+      setSort('score')
+
+      // Load personalised scores
+      setScoresLoading(true)
+      try {
+        const res = await fetch('/api/scoring/match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ property_ids: properties.map(p => p.id) }),
+        })
+        const data = await res.json()
+        const map: Record<string, ScoreResult> = {}
+        for (const r of data.results ?? []) {
+          if (r.property_id) map[r.property_id] = r
+        }
+        setScoreMap(map)
+      } finally {
+        setScoresLoading(false)
+      }
+    }
+    detect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const isPersonalised = authState === 'personalised'
+  const isLoading      = authState === 'checking' || (isPersonalised && scoresLoading)
 
   const hasFilters =
     search || filterProvince || filterType !== 'any' || filterBedrooms !== 'any' ||
@@ -289,17 +335,19 @@ export function BrowseListing({
     setPage(1)
   }
 
+  function onFilter(fn: () => void) { fn(); setPage(1) }
+
   // Filter
   const filtered = useMemo(() => {
     return properties.filter(p => {
       if (search) {
         const q = search.toLowerCase()
-        const match =
-          p.name.toLowerCase().includes(q) ||
-          p.suburb?.toLowerCase().includes(q) ||
-          p.address.toLowerCase().includes(q) ||
-          p.province?.toLowerCase().includes(q)
-        if (!match) return false
+        if (
+          !p.name.toLowerCase().includes(q) &&
+          !p.suburb?.toLowerCase().includes(q) &&
+          !p.address.toLowerCase().includes(q) &&
+          !p.province?.toLowerCase().includes(q)
+        ) return false
       }
       if (filterProvince && p.province !== filterProvince) return false
       if (filterType !== 'any' && p.property_type !== filterType) return false
@@ -341,15 +389,16 @@ export function BrowseListing({
   const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
   const paginated  = sorted.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
+  // Score quality detection
+  const topScore = isPersonalised && !scoresLoading
+    ? (sorted.length > 0 ? Math.max(0, ...sorted.map(p => scoreMap[p.id]?.score ?? 0)) : 0)
+    : 0
+  const hasStrongMatches = topScore >= 70
+  const hasWeakMatches   = isPersonalised && !scoresLoading && topScore < 50 && sorted.length > 0
+
   function goToPage(n: number) {
     setPage(Math.max(1, Math.min(n, totalPages)))
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  // Reset page on filter/sort change
-  function onFilter(fn: () => void) {
-    fn()
-    setPage(1)
   }
 
   return (
@@ -377,8 +426,8 @@ export function BrowseListing({
               />
             </div>
             <button
-              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
               onClick={() => goToPage(1)}
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               Search
             </button>
@@ -387,84 +436,50 @@ export function BrowseListing({
       </section>
 
       {/* Filter bar */}
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm shadow-sm">
+      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
         <div className="mx-auto max-w-7xl overflow-x-auto px-4 py-3 sm:px-6">
-          <div className="flex min-w-max items-center gap-2 sm:flex-wrap sm:min-w-0">
-
-            {/* Province */}
-            <select
-              value={filterProvince}
-              onChange={e => onFilter(() => setFilterProvince(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
+          <div className="flex min-w-max items-center gap-2 sm:min-w-0 sm:flex-wrap">
+            <select value={filterProvince} onChange={e => onFilter(() => setFilterProvince(e.target.value))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="">All provinces</option>
               {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
 
-            {/* Type */}
-            <select
-              value={filterType}
-              onChange={e => onFilter(() => setFilterType(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
+            <select value={filterType} onChange={e => onFilter(() => setFilterType(e.target.value))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
               {PROP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
 
-            {/* Bedrooms */}
-            <select
-              value={filterBedrooms}
-              onChange={e => onFilter(() => setFilterBedrooms(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
+            <select value={filterBedrooms} onChange={e => onFilter(() => setFilterBedrooms(e.target.value))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
               {BEDROOM_OPTS.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
             </select>
 
-            {/* Price min */}
             <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2">
               <span className="text-xs font-medium text-slate-400">R</span>
-              <input
-                type="number"
-                placeholder="Min"
-                value={filterPriceMin}
+              <input type="number" placeholder="Min" value={filterPriceMin}
                 onChange={e => onFilter(() => setFilterPriceMin(e.target.value))}
-                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300"
-              />
+                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300" />
               <span className="text-slate-300">–</span>
-              <input
-                type="number"
-                placeholder="Max"
-                value={filterPriceMax}
+              <input type="number" placeholder="Max" value={filterPriceMax}
                 onChange={e => onFilter(() => setFilterPriceMax(e.target.value))}
-                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300"
-              />
+                className="w-20 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-300" />
             </div>
 
-            {/* Available from */}
-            <input
-              type="date"
-              value={filterAvailable}
+            <input type="date" value={filterAvailable} title="Available from"
               onChange={e => onFilter(() => setFilterAvailable(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              title="Available from"
-            />
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400" />
 
-            {/* Pet friendly toggle */}
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300">
-              <input
-                type="checkbox"
-                checked={filterPetFriendly}
+              <input type="checkbox" checked={filterPetFriendly}
                 onChange={e => onFilter(() => setFilterPetFriendly(e.target.checked))}
-                className="h-3.5 w-3.5 accent-blue-600"
-              />
+                className="h-3.5 w-3.5 accent-blue-600" />
               Pet friendly
             </label>
 
-            {/* Clear */}
             {hasFilters && (
-              <button
-                onClick={() => { clearFilters(); setPage(1) }}
-                className="text-sm text-slate-400 underline hover:text-slate-700"
-              >
+              <button onClick={() => { clearFilters(); setPage(1) }}
+                className="text-sm text-slate-400 underline hover:text-slate-700">
                 Clear filters
               </button>
             )}
@@ -472,56 +487,156 @@ export function BrowseListing({
         </div>
       </div>
 
-      {/* Results */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
 
-        {/* Sort + count row */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* ── Auth state banners ─────────────────────────────────────────── */}
+
+        {(authState === 'guest' || authState === 'no_profile') && (
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-5 py-4 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                <IconHouse className="h-5 w-5 text-blue-600" />
+              </div>
+              <p className="text-sm text-blue-900">
+                <span className="font-semibold">
+                  {authState === 'no_profile'
+                    ? 'Complete your profile to see matched properties'
+                    : 'Sign in to see properties matched to your budget, area and preferences'}
+                </span>
+                {authState === 'guest' && (
+                  <span className="mt-0.5 block text-xs text-blue-700">
+                    Create a free tenant profile and PropTrust will rank every listing by how well it fits your life.
+                  </span>
+                )}
+                {authState === 'no_profile' && (
+                  <span className="mt-0.5 block text-xs text-blue-700">
+                    Add your area, budget and preferences to unlock personalised match scores.
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {authState === 'guest' ? (
+                <>
+                  <Link href="/login"
+                    className="rounded-lg border border-blue-700 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50">
+                    Sign in
+                  </Link>
+                  <Link href="/register"
+                    className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800">
+                    Create free profile
+                  </Link>
+                </>
+              ) : (
+                <Link href="/tenant/profile"
+                  className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-800">
+                  Complete profile
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isPersonalised && tenantSummary && !scoresLoading && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-5 py-3">
+            <p className="text-sm text-green-900">
+              <span className="font-semibold">
+                {tenantSummary.looking_in_area}
+                {tenantSummary.looking_in_province ? `, ${tenantSummary.looking_in_province}` : ''}
+              </span>
+              {tenantSummary.budget_max && (
+                <span className="text-green-700">
+                  {' '}· Budget: {tenantSummary.budget_min ? fmtRand(tenantSummary.budget_min) : 'R 0'}–{fmtRand(tenantSummary.budget_max)}/mo
+                </span>
+              )}
+            </p>
+            <Link href="/tenant/profile" className="shrink-0 text-xs font-medium text-green-700 hover:underline">
+              Edit preferences
+            </Link>
+          </div>
+        )}
+
+        {/* ── Sort + count ───────────────────────────────────────────────── */}
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             <span className="font-semibold text-slate-900">{filtered.length}</span>{' '}
             {filtered.length === 1 ? 'property' : 'properties'} found
-            {isLoggedIn && hasTenantProfile && ' — sorted by your match score'}
-            {!isLoggedIn && ' — sign in to see personalised match scores'}
+            {isPersonalised && !scoresLoading && ' — sorted by your match score'}
           </p>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-400">Sort by</span>
-            <select
-              value={sort}
-              onChange={e => { setSort(e.target.value as SortKey); setPage(1) }}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
+            <select value={sort} onChange={e => { setSort(e.target.value as SortKey); setPage(1) }}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400">
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Sign-in nudge */}
-        {!isLoggedIn && (
-          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
-            <p className="text-sm font-semibold text-blue-900">Sign in to see your personal match score</p>
-            <p className="mt-1 text-xs text-blue-700">
-              Create a tenant profile and PropTrust ranks every listing by how well it fits your budget, lifestyle and preferences.
+        {/* ── Weak match notice ─────────────────────────────────────────── */}
+        {hasWeakMatches && !hasFilters && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <p className="text-sm font-semibold text-amber-900">
+              No strong matches yet in your area
             </p>
-            <Link href="/login" className="mt-3 inline-block rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800">
-              Sign in
+            <p className="mt-0.5 text-xs text-amber-700">
+              Showing all available properties. Update your preferences to improve your matches.
+            </p>
+            <Link href="/tenant/profile"
+              className="mt-3 inline-block rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700">
+              Update preferences
             </Link>
           </div>
         )}
 
-        {/* Grid or empty state */}
-        {paginated.length === 0 ? (
+        {/* ── Strong matches header ─────────────────────────────────────── */}
+        {isPersonalised && hasStrongMatches && !scoresLoading && (
+          <p className="mb-4 text-base font-semibold text-slate-900">
+            Strong matches for you
+          </p>
+        )}
+
+        {/* ── Grid ──────────────────────────────────────────────────────── */}
+        {isLoading ? (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : properties.length === 0 ? (
+          /* No properties at all */
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
             <IconHouse className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <p className="text-base font-semibold text-slate-700">No properties found matching your search</p>
-            <p className="mt-2 text-sm text-slate-400">Try adjusting your filters or search term.</p>
-            {hasFilters && (
-              <button
-                onClick={clearFilters}
-                className="mt-5 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
-              >
-                Clear all filters
-              </button>
-            )}
+            <p className="text-base font-semibold text-slate-700">No properties listed yet</p>
+            <p className="mt-2 text-sm text-slate-400">Check back soon as new listings are added.</p>
+          </div>
+        ) : paginated.length === 0 ? (
+          /* Filters too narrow */
+          <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
+            <IconSearch className="mx-auto mb-4 h-10 w-10 text-slate-300" />
+            <p className="text-base font-semibold text-slate-700">
+              {isPersonalised
+                ? `No properties match your current filters`
+                : 'No properties found matching your search'}
+            </p>
+            <p className="mt-2 text-sm text-slate-400">
+              {isPersonalised
+                ? `There ${properties.length === 1 ? 'is' : 'are'} ${properties.length} ${properties.length === 1 ? 'property' : 'properties'} in other areas.`
+                : 'Try adjusting your filters or search term.'}
+            </p>
+            <div className="mt-5 flex justify-center gap-3">
+              {hasFilters && (
+                <button onClick={clearFilters}
+                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                  Clear filters
+                </button>
+              )}
+              {isPersonalised && (
+                <Link href="/tenant/profile"
+                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  Update my preferences
+                </Link>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -530,36 +645,22 @@ export function BrowseListing({
                 key={p.id}
                 property={p}
                 result={scoreMap[p.id]}
-                isLoggedIn={isLoggedIn}
-                isTenant={isTenant}
-                hasTenantProfile={hasTenantProfile}
+                isPersonalised={isPersonalised}
               />
-            ))}
-            {/* Skeleton fillers during sort transitions — not needed but good for alignment */}
-            {paginated.length % 3 !== 0 && Array.from({ length: 3 - (paginated.length % 3) }).map((_, i) => (
-              <div key={`filler-${i}`} className="hidden xl:block" />
             ))}
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* ── Pagination ────────────────────────────────────────────────── */}
+        {!isLoading && totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-3">
-            <button
-              onClick={() => goToPage(page - 1)}
-              disabled={page === 1}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
-            >
+            <button onClick={() => goToPage(page - 1)} disabled={page === 1}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
               Previous
             </button>
-            <span className="text-sm text-slate-500">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={() => goToPage(page + 1)}
-              disabled={page === totalPages}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
-            >
+            <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+            <button onClick={() => goToPage(page + 1)} disabled={page === totalPages}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
               Next
             </button>
           </div>
@@ -570,5 +671,3 @@ export function BrowseListing({
     </div>
   )
 }
-
-export { SkeletonCard }

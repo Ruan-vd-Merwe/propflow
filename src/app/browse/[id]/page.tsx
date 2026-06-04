@@ -325,7 +325,32 @@ export default async function BrowsePropertyPage({
               <div className="my-4 border-t border-slate-100" />
 
               {/* CTA — conditional on auth state */}
-              {isTenant && hasTenantProfile ? (
+              {isTenant && hasTenantProfile && scoreResult ? (
+                <>
+                  {/* Personalised: show score + apply */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className={`rounded-full px-3 py-1.5 text-lg font-extrabold tabular-nums ${
+                      scoreResult.score >= 75 ? 'bg-green-100 text-green-800' :
+                      scoreResult.score >= 45 ? 'bg-amber-100 text-amber-800' :
+                                                'bg-red-100 text-red-700'
+                    }`}>
+                      {scoreResult.score}%
+                    </span>
+                    <p className="text-sm font-semibold text-slate-900">
+                      This property is a {scoreResult.score}% match for you
+                    </p>
+                  </div>
+                  <Link
+                    href={`/apply?property_id=${property.id}`}
+                    className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
+                  >
+                    Apply for this property
+                  </Link>
+                  <p className="mt-2 text-center text-xs text-slate-400">
+                    Your verified profile will be shared with the landlord on application.
+                  </p>
+                </>
+              ) : isTenant && hasTenantProfile ? (
                 <>
                   <Link
                     href={`/apply?property_id=${property.id}`}
@@ -334,7 +359,7 @@ export default async function BrowsePropertyPage({
                     Apply for this property
                   </Link>
                   <p className="mt-2 text-center text-xs text-slate-400">
-                    Your verified profile will be shared with the landlord.
+                    Your verified profile will be shared with the landlord on application.
                   </p>
                 </>
               ) : isTenant && !hasTenantProfile ? (
@@ -361,17 +386,20 @@ export default async function BrowsePropertyPage({
                 </>
               ) : (
                 <>
+                  <p className="mb-4 text-sm font-semibold text-slate-900">
+                    Sign in to apply for this property
+                  </p>
                   <Link
                     href="/login"
-                    className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
+                    className="block w-full rounded-xl border border-slate-900 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
                   >
-                    Sign in to apply
+                    Sign in
                   </Link>
                   <Link
-                    href="/register?type=tenant"
-                    className="mt-2 block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    href="/register"
+                    className="mt-2 block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
                   >
-                    Register as tenant
+                    Register free
                   </Link>
                   <p className="mt-2 text-center text-xs text-slate-400">
                     Free to apply. No agent fees.
