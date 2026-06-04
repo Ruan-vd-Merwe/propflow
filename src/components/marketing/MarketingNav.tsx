@@ -40,6 +40,34 @@ const NAV: NavSection[] = [
   { type: "link", label: "Pricing", href: "/pricing" },
 ];
 
+const MOBILE_NAV_LINKS = [
+  { label: "Features", href: "/features" },
+  { label: "Browse Properties", href: "/browse" },
+  { label: "Area Match", href: "/area-match" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Resources", href: "/resources" },
+  { label: "Contact", href: "/contact" },
+];
+
+const SOLUTIONS_ITEMS: NavLink[] = [
+  {
+    label: "For Tenants",
+    href: "/solutions/tenants",
+    desc: "Find a home that fits your life",
+  },
+  {
+    label: "For Landlords",
+    href: "/solutions/landlords",
+    desc: "Manage properties without a rental agent",
+  },
+  {
+    label: "How Scoring Works",
+    href: "/how-scoring-works",
+    desc: "How we match properties to tenants",
+  },
+  { label: "All Features", href: "/features" },
+];
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 function IconChevron({ open }: { open: boolean }) {
@@ -142,7 +170,6 @@ function DesktopDropdown({
   function onLeave() {
     leaveTimer.current = setTimeout(() => setOpen(false), 80);
   }
-  // Close immediately on click so no timer fires mid-navigation
   function onItemClick() {
     clearTimeout(leaveTimer.current);
     setOpen(false);
@@ -203,7 +230,6 @@ export default function MarketingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => {
@@ -216,135 +242,156 @@ export default function MarketingNav() {
     setOpenSection(null);
   }
 
-  function toggleSection(label: string) {
-    setOpenSection((prev) => (prev === label ? null : label));
-  }
-
   return (
-    <header
-      className={`sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm transition-all duration-200 ${
-        scrolled ? "border-[#e2e8f0] shadow-sm" : "border-transparent"
-      }`}
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
-        <NavLogo />
+    <>
+      <header
+        className={`sticky top-0 z-50 border-b bg-white/95 backdrop-blur-sm transition-all duration-200 ${
+          scrolled ? "border-[#e2e8f0] shadow-sm" : "border-transparent"
+        }`}
+      >
+        {/* Top bar */}
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+          <NavLogo />
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-0.5 lg:flex">
-          {NAV.map((section) =>
-            section.type === "link" ? (
-              <Link
-                key={section.label}
-                href={section.href}
-                className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
-              >
-                {section.label}
-              </Link>
-            ) : (
-              <DesktopDropdown
-                key={section.label}
-                label={section.label}
-                items={section.items}
-              />
-            ),
-          )}
-        </nav>
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-0.5 lg:flex">
+            {NAV.map((section) =>
+              section.type === "link" ? (
+                <Link
+                  key={section.label}
+                  href={section.href}
+                  className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  {section.label}
+                </Link>
+              ) : (
+                <DesktopDropdown
+                  key={section.label}
+                  label={section.label}
+                  items={section.items}
+                />
+              ),
+            )}
+          </nav>
 
-        {/* Right buttons */}
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/login"
-            className="rounded-lg border-[1.5px] border-[#0f172a] px-3 py-2 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:px-4"
-          >
-            Login
-          </Link>
-          <Link
-            href="/area-match"
-            className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-          >
-            Find my area
-          </Link>
-          <button
-            onClick={() => setMobileOpen((o) => !o)}
-            className="ml-1 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <IconClose /> : <IconMenu />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="fixed inset-0 top-16 z-50 flex flex-col overflow-y-auto bg-white lg:hidden">
-          <div className="flex-1 px-6 py-4">
-            {NAV.map((section) => (
-              <div
-                key={section.label}
-                className="border-b border-slate-100 last:border-0"
-              >
-                {section.type === "link" ? (
-                  <Link
-                    href={section.href}
-                    onClick={closeMobile}
-                    className="flex w-full items-center py-4 text-base font-semibold text-slate-800"
-                  >
-                    {section.label}
-                  </Link>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => toggleSection(section.label)}
-                      className="flex w-full items-center justify-between py-4 text-base font-semibold text-slate-800"
-                    >
-                      {section.label}
-                      <IconChevron open={openSection === section.label} />
-                    </button>
-                    {openSection === section.label && (
-                      <div className="mb-4 space-y-1 pl-2">
-                        {section.items.map((item) => (
-                          <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={closeMobile}
-                            className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                          >
-                            {item.label}
-                            {item.desc && (
-                              <span className="mt-0.5 block text-xs text-slate-400">
-                                {item.desc}
-                              </span>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
+          {/* Right buttons */}
+          <div className="flex items-center gap-2">
+            {/* Login — always visible; compact on mobile */}
+            <Link
+              href="/login"
+              className="rounded-lg border-[1.5px] border-[#0f172a] px-3 py-1.5 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:px-4 lg:py-2"
+            >
+              Login
+            </Link>
+            {/* Find my area — desktop only */}
+            <Link
+              href="/area-match"
+              className="hidden rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 lg:block"
+            >
+              Find my area
+            </Link>
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setMobileOpen((o) => !o)}
+              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <IconClose /> : <IconMenu />}
+            </button>
           </div>
+        </div>
 
-          <div className="border-t border-slate-100 px-6 py-6">
-            <div className="flex flex-col gap-3">
+        {/* Mobile menu — always in DOM, animated via inline max-height */}
+        <div
+          className="lg:hidden"
+          style={{
+            maxHeight: mobileOpen ? "100vh" : "0px",
+            overflow: "hidden",
+            transition: "max-height 0.3s ease-in-out",
+          }}
+        >
+          <div className="border-t border-[#f1f5f9] bg-white">
+            {/* Solutions expandable row */}
+            <div className="border-b border-[#f1f5f9]">
+              <button
+                onClick={() =>
+                  setOpenSection((p) => (p === "Solutions" ? null : "Solutions"))
+                }
+                className="flex w-full items-center justify-between px-6 text-base font-medium text-slate-900 transition hover:bg-slate-50"
+                style={{ minHeight: 52 }}
+              >
+                Solutions
+                <IconChevron open={openSection === "Solutions"} />
+              </button>
+              {openSection === "Solutions" && (
+                <div className="bg-slate-50 pb-2 pt-1">
+                  {SOLUTIONS_ITEMS.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={closeMobile}
+                      className="flex flex-col px-8 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      {item.label}
+                      {item.desc && (
+                        <span className="mt-0.5 text-xs text-slate-400">
+                          {item.desc}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Flat nav links */}
+            {MOBILE_NAV_LINKS.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={closeMobile}
+                className="flex w-full items-center border-b border-[#f1f5f9] px-6 text-base font-medium text-slate-900 transition hover:bg-slate-50"
+                style={{ minHeight: 52 }}
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            {/* CTA buttons */}
+            <div className="px-4 pb-8 pt-5" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Link
+                href="/register"
+                onClick={closeMobile}
+                className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
+                style={{ height: 48, background: "#1e40af", fontSize: 15 }}
+              >
+                Get Started
+              </Link>
               <Link
                 href="/login"
                 onClick={closeMobile}
-                className="rounded-xl border-2 border-[#0f172a] px-4 py-3 text-center text-base font-bold text-[#0f172a]"
+                className="flex items-center justify-center rounded-xl font-bold transition hover:bg-slate-50"
+                style={{
+                  height: 48,
+                  border: "2px solid #0f172a",
+                  color: "#0f172a",
+                  fontSize: 15,
+                }}
               >
                 Login
-              </Link>
-              <Link
-                href="/area-match"
-                onClick={closeMobile}
-                className="rounded-xl bg-[#1e40af] px-4 py-3 text-center text-base font-bold text-white"
-              >
-                Find my area
               </Link>
             </div>
           </div>
         </div>
+      </header>
+
+      {/* Backdrop — closes menu when tapping outside */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={closeMobile}
+        />
       )}
-    </header>
+    </>
   );
 }
