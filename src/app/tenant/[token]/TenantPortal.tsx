@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   TenantQuery,
   Payment,
@@ -59,6 +59,7 @@ const TABS = [
   { id: "payments", label: "Payments", icon: "💳" },
   { id: "lease", label: "Lease", icon: "📄" },
   { id: "maintenance", label: "Maintenance", icon: "🔧" },
+  { id: "documents", label: "Documents", icon: "📁" },
   { id: "services", label: "Services", icon: "⭐" },
   { id: "queries", label: "Queries", icon: "💬" },
 ] as const;
@@ -232,6 +233,7 @@ export function TenantPortal({
           onSelectCat={setSelectedServiceCat}
         />
       )}
+      {activeTab === "documents" && <DocumentsTab token={token} />}
       {activeTab === "queries" && (
         <QueriesTab
           queries={queries.filter((q) => q.category !== "maintenance")}
@@ -1407,6 +1409,152 @@ function LeaseTab({
           )}
         </div>
       </Card>
+    </div>
+  );
+}
+
+// ─── DOCUMENTS TAB ───────────────────────────────────────────────────────────
+
+type PortalDoc = {
+  id: string;
+  document_type: string;
+  file_name: string;
+  created_at: string;
+  signed_url: string | null;
+};
+
+const PORTAL_DOC_TYPES = [
+  { value: "id_document", label: "ID Document", description: "South African ID or passport" },
+  { value: "bank_statement", label: "Bank Statement", description: "Last 3 months of statements" },
+  { value: "proof_of_income", label: "Proof of Income", description: "Payslip or employment letter" },
+] as const;
+
+function DocumentsTab({ token }: { token: string }) {
+  const [docs, setDocs] = useState<PortalDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function loadDocs() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/tenant/documents?token=${encodeURIComponent(token)}`);
+      if (res.ok) {
+        const json = await res.json();
+        setDocs(json.documents ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDocs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  async function handleUpload(docType: string, file: File) {
+    setUploading(docType);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append("token", token);
+      form.append("file", file);
+      form.append("document_type", docType);
+      const res = await fetch("/api/tenant/documents/upload", { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok) {
+        setUploadError(json.error ?? "Upload failed");
+        return;
+      }
+      await loadDocs();
+    } catch {
+      setUploadError("Network error. Please try again.");
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-white/70">Your documents</p>
+      {loading ? (
+        <Card className="border border-slate-100 p-8 flex justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+        </Card>
+      ) : (
+        <>
+          {uploadError && (
+            <Card className="border border-red-200 bg-red-50 p-4">
+              <p className="text-sm text-red-700">{uploadError}</p>
+            </Card>
+          )}
+          {PORTAL_DOC_TYPES.map((dt) => {
+            const existing = docs.find((d) => d.document_type === dt.value);
+            const isUploading = uploading === dt.value;
+            return (
+              <Card key={dt.value} className="border border-slate-100 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">{dt.label}</p>
+                    <p className="text-xs text-slate-500">{dt.description}</p>
+                    {existing && (
+                      <p className="mt-1 text-xs text-emerald-600">
+                        Uploaded {new Date(existing.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      existing
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {existing ? "Uploaded" : "Not uploaded"}
+                  </span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  {existing?.signed_url && (
+                    <a
+                      href={existing.signed_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 rounded-xl border border-slate-200 py-2.5 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View
+                    </a>
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      className="hidden"
+                      disabled={isUploading}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUpload(dt.value, f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <span
+                      className={`block w-full rounded-xl py-2.5 text-center text-xs font-semibold transition ${
+                        isUploading
+                          ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                          : existing
+                            ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                    >
+                      {isUploading ? "Uploading…" : existing ? "Re-upload" : "Upload"}
+                    </span>
+                  </label>
+                </div>
+              </Card>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }

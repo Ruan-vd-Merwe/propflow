@@ -155,6 +155,11 @@ export function sendTenantPaidNotification(opts: {
   );
 }
 
+/** Custom message from landlord to tenant */
+export function sendCustomMessage(phone: string, message: string) {
+  return sendWhatsApp(phone, message);
+}
+
 /** Service booking confirmation to provider */
 export function sendBookingToProvider(opts: {
   phone: string;

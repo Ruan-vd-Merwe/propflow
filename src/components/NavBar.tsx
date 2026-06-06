@@ -213,6 +213,7 @@ const LANDLORD_LINKS = [
   { href: "/dashboard", label: "Dashboard", Icon: IconHouse },
   { href: "/tenants/browse", label: "Find Tenants", Icon: IconPeople },
   { href: "/applications", label: "Applications", Icon: IconDocument },
+  { href: "/documents", label: "Documents", Icon: IconDocument },
   { href: "/leases", label: "Leases", Icon: IconShield },
   { href: "/queries", label: "Queries", Icon: IconChat },
   { href: "/services", label: "Services", Icon: IconShoppingBag },
