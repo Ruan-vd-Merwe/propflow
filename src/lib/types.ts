@@ -433,3 +433,72 @@ export type BodyCorpFlag = {
   resolved: boolean;
   created_at: string;
 };
+
+// ─── Portfolio finance ────────────────────────────────────────────────────────
+
+export type PropertyWithFinance = Property & {
+  purchase_price_cents: number | null;
+  current_value_cents: number | null;
+  bond_bank: string | null;
+  bond_original_amount_cents: number | null;
+  bond_monthly_payment_cents: number | null;
+  bond_interest_rate_pct: number | null;
+  bond_start_date: string | null;
+  bond_term_years: number | null;
+  levy_monthly_cents: number | null;
+  rates_monthly_cents: number | null;
+  insurance_monthly_cents: number | null;
+  management_fee_pct: number | null;
+};
+
+export type PropertyExpense = {
+  id: string;
+  property_id: string;
+  owner_id: string;
+  expense_type:
+    | "bond"
+    | "levy"
+    | "rates"
+    | "insurance"
+    | "maintenance"
+    | "management_fee"
+    | "water"
+    | "electricity"
+    | "other";
+  description: string | null;
+  amount_cents: number;
+  is_recurring: boolean;
+  frequency: "monthly" | "quarterly" | "annual" | "once";
+  period_month: number | null;
+  period_year: number | null;
+  status: "pending" | "paid" | "overdue";
+  paid_at: string | null;
+  reference: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BankTransactionRecord = {
+  id: string;
+  owner_id: string;
+  property_id: string | null;
+  transaction_date: string;
+  description: string;
+  amount_cents: number;
+  transaction_type: "credit" | "debit";
+  category:
+    | "rental_income"
+    | "bond_payment"
+    | "levy_payment"
+    | "rates_payment"
+    | "maintenance"
+    | "insurance"
+    | "management_fee"
+    | "other_income"
+    | "other_expense"
+    | "uncategorised";
+  bank_reference: string | null;
+  is_reconciled: boolean;
+  source: "manual" | "statement" | "api";
+  created_at: string;
+};

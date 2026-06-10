@@ -597,6 +597,48 @@ export default async function DashboardPage({
               />
             </div>
 
+            {/* ── Portfolio nudge ────────────────────────────────────────────── */}
+            {isLandlord &&
+              propertyList.length > 0 &&
+              (propertyList as (typeof propertyList[0] & { bond_monthly_payment_cents?: number | null })[]).every(
+                (p) => p.bond_monthly_payment_cents == null,
+              ) && (
+                <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+                      <svg
+                        className="h-5 w-5 text-slate-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        Track your portfolio finances
+                      </p>
+                      <p className="mt-0.5 text-sm text-slate-500">
+                        Add bond, levy and rates to each property to see your
+                        monthly cash flow and yields.
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href="/portfolio"
+                    className="shrink-0 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                  >
+                    Set up portfolio
+                  </a>
+                </div>
+              )}
+
             {/* ── Intelligence section ─────────────────────────────────────────── */}
             {(activeJobs.length > 0 ||
               overdueComps.length > 0 ||
