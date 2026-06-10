@@ -26,17 +26,16 @@ const TIERS: Tier[] = [
     annual: 990,
     sub: "For landlords with up to 3 properties.",
     includes: [
-      "Unlimited tenant records",
-      "Tenant screening workflow",
+      "Tenant records and applications",
       "Rent tracking",
-      "Email reminders",
+      "Lease and document storage",
+      "Basic email reminders",
       "Tenant portal",
-      "Document storage",
     ],
     excludes: [
       "WhatsApp notifications",
-      "Body corporate tools",
-      "Advanced maintenance management",
+      "Maintenance workflow",
+      "Portfolio finance dashboard",
     ],
     cta: "Start free trial",
     ctaHref: "/register",
@@ -45,16 +44,16 @@ const TIERS: Tier[] = [
     name: "Professional",
     monthly: 299,
     annual: 2990,
-    sub: "For landlords and managers with up to 15 properties.",
+    sub: "For landlords managing multiple rentals.",
     featured: true,
     includes: [
       "Everything in Starter",
       "WhatsApp notifications",
-      "Body corporate tools",
-      "Maintenance management",
       "Bank statement review",
-      "Tenant marketplace access",
-      "Priority support",
+      "Maintenance workflow",
+      "Body corporate tools",
+      "Portfolio finance dashboard",
+      "Yield and cash flow tracking",
     ],
     excludes: [],
     cta: "Start free trial",
@@ -64,17 +63,17 @@ const TIERS: Tier[] = [
     name: "Enterprise",
     monthly: 799,
     annual: 7990,
-    sub: "For larger portfolios and property teams.",
+    sub: "For property managers and large portfolios.",
     includes: [
       "Everything in Professional",
       "Unlimited properties",
-      "Dedicated account support",
-      "Custom integrations",
-      "API access",
-      "White-label options",
-      "SA document templates",
+      "Priority support",
     ],
-    excludes: [],
+    excludes: [
+      "Team access",
+      "Advanced reporting",
+      "API and custom integrations",
+    ],
     cta: "Contact us",
     ctaHref: "/contact",
   },
@@ -82,22 +81,21 @@ const TIERS: Tier[] = [
 
 const ALL_FEATURES = [
   { label: "Tenant records", tiers: [true, true, true] },
-  { label: "Tenant screening workflow", tiers: [true, true, true] },
   { label: "Rent tracking", tiers: [true, true, true] },
   { label: "Email reminders", tiers: [true, true, true] },
   { label: "Tenant portal", tiers: [true, true, true] },
-  { label: "Document storage", tiers: [true, true, true] },
+  { label: "Lease and document storage", tiers: [true, true, true] },
   { label: "WhatsApp notifications", tiers: [false, true, true] },
-  { label: "Body corporate tools", tiers: [false, true, true] },
-  { label: "Maintenance management", tiers: [false, true, true] },
   { label: "Bank statement review", tiers: [false, true, true] },
-  { label: "Tenant marketplace", tiers: [false, true, true] },
-  { label: "Priority support", tiers: [false, true, true] },
+  { label: "Maintenance workflow", tiers: [false, true, true] },
+  { label: "Body corporate tools", tiers: [false, true, true] },
+  { label: "Portfolio finance dashboard", tiers: [false, true, true] },
+  { label: "Yield and cash flow tracking", tiers: [false, true, true] },
   { label: "Unlimited properties", tiers: [false, false, true] },
-  { label: "Dedicated account support", tiers: [false, false, true] },
-  { label: "API access", tiers: [false, false, true] },
-  { label: "Custom integrations", tiers: [false, false, true] },
-  { label: "White-label options", tiers: [false, false, true] },
+  { label: "Priority support", tiers: [false, false, true] },
+  { label: "Team access", tiers: [false, false, false] },
+  { label: "Advanced reporting", tiers: [false, false, false] },
+  { label: "API and custom integrations", tiers: [false, false, false] },
 ];
 
 const FAQS = [
@@ -261,6 +259,41 @@ export default function PricingPage() {
             </div>
           </div>
 
+          {/* Tenant tier — free */}
+          <div className="mb-8 rounded-3xl border border-green-200 bg-green-50 p-8">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-green-700">
+                  For Tenants
+                </p>
+                <p className="text-3xl font-extrabold text-[#0f172a]">Free</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  No cost, no subscription.
+                </p>
+              </div>
+              <ul className="flex flex-wrap gap-x-8 gap-y-2">
+                {[
+                  "Area Match",
+                  "Verified rental profile",
+                  "Document storage",
+                  "Apply to properties",
+                  "Application tracking",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-slate-700">
+                    <PlanCheck included featured={false} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/register"
+                className="shrink-0 rounded-2xl border-2 border-green-700 px-6 py-3.5 text-center text-sm font-bold text-green-700 transition hover:bg-green-100"
+              >
+                Create free profile
+              </Link>
+            </div>
+          </div>
+
           {/* Pricing cards */}
           <div className="grid gap-6 md:grid-cols-3">
             {TIERS.map((tier) => {
@@ -329,8 +362,13 @@ export default function PricingPage() {
                     {tier.excludes.map((f) => (
                       <li key={f} className="flex items-start gap-2.5">
                         <PlanCheck included={false} />
-                        <span className="text-sm text-slate-400 line-through">
-                          {f}
+                        <span className="flex items-center gap-2 text-sm text-slate-400">
+                          <span className={tier.name === "Enterprise" ? "" : "line-through"}>{f}</span>
+                          {tier.name === "Enterprise" && (
+                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                              coming soon
+                            </span>
+                          )}
                         </span>
                       </li>
                     ))}
@@ -351,9 +389,15 @@ export default function PricingPage() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-sm text-slate-400">
-            All plans include a 30-day free trial. No credit card required.
-          </p>
+          <div className="mt-8 space-y-2 text-center">
+            <p className="text-sm text-slate-400">
+              All landlord plans include a 30-day free trial. No credit card
+              required.
+            </p>
+            <p className="text-sm text-slate-400">
+              Pricing is per landlord account.
+            </p>
+          </div>
         </div>
       </section>
 
