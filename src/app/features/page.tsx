@@ -11,7 +11,7 @@ const FEATURES = [
   {
     id: "screening",
     title: "Tenant Screening",
-    short: "Review applicant details before signing a lease.",
+    short: "Review verified rental profiles including income summary, affordability check, ID verification, and references before signing.",
     body: "PropTrust guides tenants through a structured submission flow, ID, bank statements, income details and references. As a landlord, you receive a clear summary without needing to chase documents manually. Review the information, ask follow-up questions and make a more informed decision before any lease is signed.",
     perks: [
       "SA ID validation",
@@ -38,7 +38,7 @@ const FEATURES = [
   {
     id: "rent",
     title: "Rent Tracking",
-    short: "See what has been paid, what is due and what needs follow-up.",
+    short: "See which payments have been made, which are overdue, and follow up with WhatsApp reminders.",
     body: "Keep a clear payment record for every tenant. Mark payments received, view outstanding amounts and trigger reminders, all from one place. PropTrust tracks payment history so you have a reliable record available at any time, without relying on a spreadsheet or separate banking app.",
     perks: [
       "Per-tenant payment history",
@@ -65,7 +65,7 @@ const FEATURES = [
   {
     id: "maintenance",
     title: "Maintenance Requests",
-    short: "Keep repair requests organised from request to resolution.",
+    short: "Log repair requests, assign contractors, and track progress from request to resolution.",
     body: "Tenants submit maintenance requests through their portal with a description and optional photos. You track each request through open, in-progress and resolved stages. No more hunting through WhatsApp threads to find out what was reported or what was fixed.",
     perks: [
       "Tenant portal submission",
@@ -92,7 +92,7 @@ const FEATURES = [
   {
     id: "dashboard",
     title: "Property Dashboard",
-    short: "Track each unit, tenant and task in one place.",
+    short: "See monthly income, bond payments, levies, rates, insurance, and net cash flow across all your properties.",
     body: "The PropTrust dashboard gives you a single view of all your properties, tenants and outstanding tasks. See rent status, open maintenance requests, upcoming lease renewals and recent activity at a glance. Designed to reduce the mental overhead of managing multiple units.",
     perks: [
       "Multi-property overview",
@@ -119,7 +119,7 @@ const FEATURES = [
   {
     id: "documents",
     title: "Document Storage",
-    short: "Keep leases, IDs and property documents easy to find.",
+    short: "Store leases, IDs, body corporate notices, inspection reports, and other property documents per property and per tenant.",
     body: "Upload and organise leases, inspection reports, tenant IDs, body corporate notices and any other property documents. Documents are stored per property and per tenant so you can find what you need quickly, from any device.",
     perks: [
       "Per-tenant document folders",
@@ -146,7 +146,7 @@ const FEATURES = [
   {
     id: "whatsapp",
     title: "WhatsApp Notifications",
-    short: "Send practical reminders through a channel people already use.",
+    short: "Send rent reminders, maintenance updates, and payment notices through the channel tenants actually check.",
     body: "In South Africa, WhatsApp is the default communication channel. PropTrust uses WhatsApp to send rent reminders, maintenance updates and important notices directly to your tenants, so the message actually gets read.",
     perks: [
       "Rent due reminders",
@@ -173,7 +173,7 @@ const FEATURES = [
   {
     id: "marketplace",
     title: "Tenant Marketplace",
-    short: "Connect landlords and tenants directly.",
+    short: "Connect landlords and verified tenants directly, without going through an agent.",
     body: "Verified tenants can list their profile in the PropTrust marketplace, making it easier for landlords to find suitable applicants without going through an agent. Listings show verified information so landlords can assess fit before reaching out.",
     perks: [
       "Verified tenant profiles",
@@ -199,8 +199,8 @@ const FEATURES = [
   },
   {
     id: "bodycorp",
-    title: "Body Corporate Support",
-    short: "Keep levies, notices and shared-property details organised.",
+    title: "Body Corporate",
+    short: "Track levy payments, store meeting minutes, and manage sectional title admin in one place.",
     body: "For landlords in sectional title schemes, PropTrust helps you track levy payments, store body corporate notices and rules, and manage the administrative side of shared-property ownership. Available on Professional and Enterprise plans.",
     perks: [
       "Levy tracking",
@@ -391,9 +391,9 @@ export default function FeaturesPage() {
             Platform features
           </p>
           <h1 className="mb-5 text-5xl font-extrabold leading-tight tracking-tight text-white md:text-6xl">
-            Every feature you need
+            What PropTrust does
             <br />
-            <span className="text-[#3b82f6]">to manage rentals properly</span>
+            <span className="text-[#3b82f6]">for landlords</span>
           </h1>
           <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-slate-300">
             PropTrust brings screening, payments, maintenance and documents into
@@ -557,6 +557,10 @@ export default function FeaturesPage() {
           </h2>
           <p className="mb-10 text-blue-100">
             All features available free for 30 days. No credit card required.
+          </p>
+          <p className="mb-10 text-sm text-blue-200">
+            Manage your portfolio without paying 8 to 10 percent agent
+            commission every month.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
