@@ -25,32 +25,32 @@ const CITIES = [
 ];
 
 const STRIP_ITEMS = [
-  { label: "Area Match", desc: "Find the right suburb first" },
-  { label: "Property Match", desc: "Ranked by fit, not newest first" },
-  { label: "Rental Profile", desc: "One profile. Apply anywhere." },
-  { label: "No agent fees", desc: "Free for tenants. Always." },
+  { label: "Free for tenants", desc: "No cost, no subscription" },
+  { label: "Landlords from R99/month", desc: "Fixed price, no commission" },
+  { label: "No agent commission", desc: "Direct connection only" },
+  { label: "South Africa", desc: "Built for the local market" },
 ];
 
-const STEPS = [
+const TENANT_POINTS = [
   {
     n: "01",
-    title: "Tell us about your life",
-    desc: "Budget, commute, lifestyle and where you need to be.",
+    title: "Start with area fit",
+    desc: "Match suburbs by budget, commute, safety, and lifestyle before browsing listings.",
   },
   {
     n: "02",
-    title: "Get area recommendations",
-    desc: "We compare suburbs by safety, commute time, social fit and rental value.",
+    title: "One verified profile",
+    desc: "Upload your documents once and reuse your rental profile for every application.",
   },
   {
     n: "03",
-    title: "See properties that match you",
-    desc: "Every listing is scored against your profile — not listed by upload date.",
+    title: "Apply directly",
+    desc: "Contact landlords without going through an agent.",
   },
   {
     n: "04",
-    title: "Apply with one profile",
-    desc: "Upload your documents once. Reuse your profile for every application.",
+    title: "Stay organised",
+    desc: "Track applications and keep documents in one place.",
   },
 ];
 
@@ -61,12 +61,38 @@ const SUBURB_SCORES = [
   { name: "Woodstock", score: 62, tag: "Creative · Affordable" },
 ];
 
-const PROFILE_ROWS = [
-  { label: "SA ID", status: "Verified" },
-  { label: "Monthly income", status: "Confirmed" },
-  { label: "Bank statements", status: "3 months" },
-  { label: "References", status: "2 added" },
-  { label: "Credit profile", status: "Good standing" },
+const LANDLORD_POINTS = [
+  {
+    title: "Screen tenants properly",
+    desc: "Review verified rental profiles including income summary, documents, and references before signing.",
+  },
+  {
+    title: "Manage leases and documents",
+    desc: "Store signed leases, inspection reports, and tenant documents organised by property.",
+  },
+  {
+    title: "Track rent and finances",
+    desc: "Log rent payments, track bond payments, levies, rates, and see monthly cash flow per property.",
+  },
+  {
+    title: "Reduce agent dependency",
+    desc: "Handle applications, leases, rent tracking, and maintenance without 8 to 10 percent monthly commission.",
+  },
+];
+
+const TRUST_POINTS = [
+  {
+    title: "Documents stay private",
+    desc: "Tenants control what they share. Landlords only see documents submitted as part of an application.",
+  },
+  {
+    title: "POPIA-aligned approach",
+    desc: "PropTrust is designed to handle personal and financial information responsibly, in line with South African privacy expectations.",
+  },
+  {
+    title: "No unnecessary middlemen",
+    desc: "Landlords and tenants connect directly. No agent handling your documents or data.",
+  },
 ];
 
 const QUOTES = [
@@ -111,32 +137,29 @@ export default function HomePage() {
           </p>
 
           <h1 className="text-5xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl md:text-7xl">
-            Find a home that
-            <br />
-            fits your life.
+            Rent privately, safely.
           </h1>
 
           <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
-            PropTrust helps you choose the right area, discover properties that
-            match your lifestyle, and apply with one trusted rental profile.
+            PropTrust helps tenants apply with one verified rental profile and
+            helps landlords screen tenants, manage leases, and track rent
+            without relying on a rental agent.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
-              href="/area-match"
+              href="/areas"
               className="rounded-full bg-[#3b82f6] px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-95"
             >
-              Find my best area
+              I am looking for a place
             </Link>
             <Link
-              href="/solutions/landlords"
+              href="/for-landlords"
               className="rounded-full border-2 border-white/25 px-8 py-4 text-base font-bold text-white transition hover:border-white/50 hover:bg-white/5 active:scale-95"
             >
-              List a property
+              I am a landlord
             </Link>
           </div>
-
-          <p className="mt-5 text-xs text-slate-500">Free for tenants. Always.</p>
         </div>
       </section>
 
@@ -173,17 +196,22 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── 3. HOW IT WORKS ───────────────────────────────────────────────────── */}
+      {/* ── 3. FOR TENANTS ────────────────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-20 md:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
+            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
+              For Tenants
+            </p>
             <h2 className="text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-              How it works
+              Find the right place,
+              <br className="hidden sm:block" />
+              not just the first available listing.
             </h2>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step) => (
+            {TENANT_POINTS.map((step) => (
               <div
                 key={step.n}
                 className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-100"
@@ -200,6 +228,15 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/areas"
+              className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
+            >
+              Find my area
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -213,23 +250,21 @@ export default function HomePage() {
                 Area Match
               </p>
               <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-                Know the suburb before
-                <br className="hidden sm:block" />
-                you view a property.
+                Find the right area first.
               </h2>
               <p className="mb-8 text-base leading-relaxed text-slate-500">
-                Where you live matters as much as what you live in. PropTrust
-                compares suburbs by budget, commute time, safety, lifestyle
-                amenities and social fit — so you narrow the right area first.
+                Most people start by searching for a property. PropTrust
+                suggests starting with the suburb. Area Match helps you
+                understand which areas fit your budget, commute, lifestyle, and
+                priorities before you start applying.
               </p>
               <ul className="mb-8 space-y-3">
                 {[
-                  "Budget and rental value per suburb",
-                  "Commute time to your workplace",
-                  "Safety and crime index",
-                  "Proximity to restaurants, gyms and open space",
-                  "Public transport access",
-                  "Area personality and social fit",
+                  "Budget and rent ranges",
+                  "Commute estimates",
+                  "Safety signals",
+                  "Amenities, transport, and green space",
+                  "Lifestyle fit",
                 ].map((item) => (
                   <li
                     key={item}
@@ -241,11 +276,16 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link
-                href="/area-match"
+                href="/areas"
                 className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                Explore areas
+                Try Area Match
               </Link>
+              <p className="mt-5 text-xs leading-relaxed text-slate-400">
+                Area Match is a guide, not a guarantee. Scores are based on
+                available data and your preferences. Always visit an area before
+                committing.
+              </p>
             </div>
 
             {/* Visual: suburb comparison */}
@@ -287,61 +327,38 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 5. PROPERTY MATCH ─────────────────────────────────────────────────── */}
+      {/* ── 5. FOR LANDLORDS ──────────────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-20 md:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            {/* Visual: property card mock */}
+            {/* Visual: landlord summary */}
             <div className="order-2 lg:order-1">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#0f172a]">
-                      3-bed apartment, Sea Point
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      R14,500 per month · Available now
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-800">
-                    82% match
-                  </span>
-                </div>
-                <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full w-[82%] rounded-full bg-green-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Portfolio overview
+                </p>
+                <div className="space-y-3">
                   {[
-                    { label: "Budget fit", value: "Good" },
-                    { label: "Commute", value: "22 min" },
-                    { label: "Area match", value: "Strong" },
-                    { label: "Approval odds", value: "High" },
+                    { label: "Tenant screening", status: "3 applications" },
+                    { label: "Rent received this month", status: "2 of 3" },
+                    { label: "Open maintenance requests", status: "1 open" },
+                    { label: "Documents stored", status: "12 files" },
                   ].map((row) => (
-                    <div key={row.label} className="rounded-xl bg-slate-50 px-3 py-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        {row.label}
-                      </p>
-                      <p className="mt-1 text-sm font-bold text-[#0f172a]">
-                        {row.value}
-                      </p>
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"
+                    >
+                      <p className="text-sm text-slate-600">{row.label}</p>
+                      <span className="text-xs font-semibold text-slate-700">
+                        {row.status}
+                      </span>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-5 opacity-40">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#0f172a]">
-                      2-bed flat, Gardens
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      R12,000 per month · Available 1 Aug
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
-                    61% match
-                  </span>
+                <div className="mt-5 rounded-xl bg-[#0f172a] px-4 py-3 text-center">
+                  <p className="text-xs font-bold text-white">
+                    R99/month · No agent commission
+                  </p>
                 </div>
               </div>
             </div>
@@ -349,113 +366,116 @@ export default function HomePage() {
             {/* Copy */}
             <div className="order-1 lg:order-2">
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                Property Match
+                For Landlords
               </p>
               <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-                Ranked by fit,
+                Manage rentals without paying
                 <br className="hidden sm:block" />
-                not by newest listing.
+                away your margin.
               </h2>
-              <p className="mb-6 text-base leading-relaxed text-slate-500">
-                Other portals sort by newest listing. PropTrust ranks by fit —
-                budget, commute, area and how likely you are to be approved.
-              </p>
-              <p className="mb-8 text-base leading-relaxed text-slate-500">
-                Every ranking is built from your profile. As your preferences
-                change, so does your list.
-              </p>
-              <Link
-                href="/browse"
-                className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                Browse properties
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6. RENTAL PROFILE ─────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            {/* Copy */}
-            <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                Rental Profile
-              </p>
-              <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-                Apply once.
-                <br className="hidden sm:block" />
-                Use everywhere.
-              </h2>
-              <p className="mb-8 text-base leading-relaxed text-slate-500">
-                Upload your ID, income and bank statements once. Reuse your
-                profile for every application — no repeated paperwork, no
-                starting from scratch each time.
-              </p>
               <div className="mb-8 space-y-5">
-                {[
-                  {
-                    title: "SA ID verification",
-                    desc: "Your identity confirmed once and stored securely.",
-                  },
-                  {
-                    title: "Income and affordability",
-                    desc: "Bank statements reviewed and summarised so landlords understand your position.",
-                  },
-                  {
-                    title: "Portable references",
-                    desc: "Past landlord references travel with your profile.",
-                  },
-                ].map((item) => (
-                  <div key={item.title} className="flex items-start gap-4">
+                {LANDLORD_POINTS.map((point) => (
+                  <div key={point.title} className="flex items-start gap-4">
                     <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1e40af]" />
                     <div>
                       <p className="text-sm font-bold text-[#0f172a]">
-                        {item.title}
+                        {point.title}
                       </p>
                       <p className="mt-0.5 text-sm leading-relaxed text-slate-500">
-                        {item.desc}
+                        {point.desc}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
               <Link
-                href="/register"
+                href="/for-landlords"
                 className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                Create free profile
+                Set up my portfolio
               </Link>
-              <p className="mt-3 text-xs text-slate-400">
-                Free for tenants. Always.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. TRUST ──────────────────────────────────────────────────────────── */}
+      <section className="bg-white px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Copy */}
+            <div>
+              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
+                Trust and Privacy
               </p>
+              <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
+                Built around privacy
+                <br className="hidden sm:block" />
+                and direct access.
+              </h2>
+              <div className="mb-8 space-y-6">
+                {TRUST_POINTS.map((point) => (
+                  <div key={point.title} className="flex items-start gap-4">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1e40af]" />
+                    <div>
+                      <p className="text-sm font-bold text-[#0f172a]">
+                        {point.title}
+                      </p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-slate-500">
+                        {point.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Link
+                href="/trust"
+                className="text-sm font-semibold text-[#1e40af] underline-offset-2 hover:underline"
+              >
+                Read our Trust and Security page
+              </Link>
             </div>
 
-            {/* Visual: profile card */}
+            {/* Visual: trust attributes */}
             <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-6 lg:p-8">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#1e40af] text-sm font-bold text-white">
-                  AC
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#0f172a]">Aisha C.</p>
-                  <p className="text-xs text-slate-400">Rental profile · Verified</p>
-                </div>
-                <span className="ml-auto shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-800">
-                  Ready to apply
-                </span>
-              </div>
-              <div className="space-y-2">
-                {PROFILE_ROWS.map((row) => (
+              <p className="mb-6 text-xs font-bold uppercase tracking-widest text-slate-400">
+                How data is handled
+              </p>
+              <div className="space-y-4">
+                {[
+                  {
+                    label: "Document sharing",
+                    value: "Tenant-controlled",
+                    color: "text-green-700",
+                  },
+                  {
+                    label: "Storage",
+                    value: "Secure and encrypted",
+                    color: "text-green-700",
+                  },
+                  {
+                    label: "Agent access",
+                    value: "None",
+                    color: "text-green-700",
+                  },
+                  {
+                    label: "POPIA approach",
+                    value: "Aligned",
+                    color: "text-green-700",
+                  },
+                  {
+                    label: "Data deletion",
+                    value: "On request",
+                    color: "text-slate-600",
+                  },
+                ].map((row) => (
                   <div
                     key={row.label}
                     className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm"
                   >
                     <p className="text-sm text-slate-600">{row.label}</p>
-                    <span className="text-xs font-bold text-green-700">
-                      {row.status}
+                    <span className={`text-xs font-bold ${row.color}`}>
+                      {row.value}
                     </span>
                   </div>
                 ))}
@@ -465,35 +485,52 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 7. LANDLORD STRIP ─────────────────────────────────────────────────── */}
+      {/* ── 7. PRICING TEASER ─────────────────────────────────────────────────── */}
       <section className="bg-[#0f172a] px-6 py-16">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-xl">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-blue-400">
-                For landlords
+          <p className="mb-8 text-center text-xs font-bold uppercase tracking-widest text-blue-400">
+            Pricing
+          </p>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Tenant card */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-300">
+                For Tenants
               </p>
-              <h2 className="text-2xl font-extrabold text-white md:text-3xl">
-                Are you a landlord?
-              </h2>
-              <p className="mt-3 text-base leading-relaxed text-slate-400">
-                PropTrust gives landlords the tools to screen tenants, track
-                rent and manage properties — without relying on a rental agent.
-                From R99/month.
+              <p className="mb-1 text-3xl font-extrabold text-white">Free</p>
+              <p className="mb-6 text-sm text-slate-400">
+                Create a rental profile, match areas, and apply to properties at
+                no cost.
               </p>
-            </div>
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
               <Link
-                href="/solutions/landlords"
-                className="rounded-full border-2 border-white/30 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-white/60 hover:bg-white/5"
+                href="/register"
+                className="block rounded-xl border border-white/20 py-3 text-center text-sm font-bold text-white transition hover:bg-white/10"
               >
-                For landlords
+                Create profile
               </Link>
+            </div>
+
+            {/* Landlord card */}
+            <div className="rounded-2xl border border-[#1e40af] bg-[#1e3a8a]/40 p-8">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-300">
+                For Landlords
+              </p>
+              <p className="mb-1 text-3xl font-extrabold text-white">
+                From R99
+                <span className="text-lg font-normal text-blue-300">
+                  {" "}
+                  per month
+                </span>
+              </p>
+              <p className="mb-6 text-sm text-slate-400">
+                Manage properties, screen tenants, store documents, and track
+                rent.
+              </p>
               <Link
                 href="/pricing"
-                className="rounded-full bg-[#3b82f6] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-blue-500"
+                className="block rounded-xl bg-[#3b82f6] py-3 text-center text-sm font-bold text-white transition hover:bg-blue-500"
               >
-                See pricing
+                View pricing
               </Link>
             </div>
           </div>
@@ -538,20 +575,22 @@ export default function HomePage() {
       <section className="bg-[#1e40af] px-6 py-24 text-center">
         <div className="mx-auto max-w-xl">
           <h2 className="text-4xl font-extrabold text-white md:text-5xl">
-            Get rental-ready today.
+            Ready to get started?
           </h2>
-          <p className="mx-auto mt-5 text-lg leading-relaxed text-blue-100">
-            Start with your area. See what matches. Apply with one profile.
-          </p>
-          <div className="mt-10">
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
-              href="/area-match"
-              className="inline-block rounded-full bg-white px-10 py-4 text-base font-extrabold text-[#1e40af] shadow-lg transition hover:bg-blue-50 active:scale-95"
+              href="/areas"
+              className="inline-block rounded-full bg-white px-8 py-4 text-base font-extrabold text-[#1e40af] shadow-lg transition hover:bg-blue-50 active:scale-95"
             >
-              Find my best area
+              Find my area
+            </Link>
+            <Link
+              href="/for-landlords"
+              className="inline-block rounded-full border-2 border-white/40 px-8 py-4 text-base font-bold text-white transition hover:border-white hover:bg-white/10 active:scale-95"
+            >
+              Set up my landlord profile
             </Link>
           </div>
-          <p className="mt-5 text-sm text-blue-200">Free for tenants. Always.</p>
         </div>
       </section>
 

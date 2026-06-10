@@ -190,8 +190,6 @@ export function NavBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isDual = roles.is_landlord && roles.is_tenant;
-
   // Close mobile menu on route change
   useEffect(() => {
     setMenuOpen(false);
