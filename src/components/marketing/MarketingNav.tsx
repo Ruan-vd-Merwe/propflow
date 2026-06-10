@@ -9,126 +9,39 @@ type NavSection =
   | { type: "link"; label: string; href: string };
 
 const NAV: NavSection[] = [
-  { type: "link", label: "Browse", href: "/browse" },
-  { type: "link", label: "Area Match", href: "/area-match" },
   {
     type: "dropdown",
-    label: "Sell / Rent Out",
-    items: [
-      {
-        label: "Seller Listing Assistant",
-        href: "/sell/listing-assistant",
-        desc: "Pricing, photos, viewings and enquiries",
-      },
-      {
-        label: "Verified Property Pack",
-        href: "/sell/property-pack",
-        desc: "Build a complete disclosure package",
-      },
-      {
-        label: "Savings Calculator",
-        href: "/sell/savings-calculator",
-        desc: "See how much you save vs. an agent",
-      },
-      {
-        label: "For Landlords",
-        href: "/solutions/landlords",
-        desc: "Manage properties without a rental agent",
-      },
-    ],
-  },
-  {
-    type: "dropdown",
-    label: "Buy / Rent",
-    items: [
-      {
-        label: "Buyer Due Diligence",
-        href: "/buy/due-diligence",
-        desc: "Checklists, calculators and red flags",
-      },
-      {
-        label: "Offer-to-Purchase Guide",
-        href: "/buy/offer-to-purchase",
-        desc: "Prepare your OTP for your conveyancer",
-      },
-      {
-        label: "Communication Centre",
-        href: "/enquiry",
-        desc: "Ask questions, request docs, submit interest",
-      },
-      {
-        label: "For Tenants",
-        href: "/solutions/tenants",
-        desc: "Find a home that fits your life",
-      },
-    ],
-  },
-  {
-    type: "dropdown",
-    label: "Solutions",
-    items: [
-      {
-        label: "Professionals Marketplace",
-        href: "/professionals",
-        desc: "Conveyancers, inspectors, valuers and more",
-      },
-      {
-        label: "How Scoring Works",
-        href: "/how-scoring-works",
-        desc: "How we match properties to tenants",
-      },
-      {
-        label: "All Features",
-        href: "/features",
-        desc: "Every tool in one place",
-      },
-    ],
-  },
-  { type: "link", label: "Pricing", href: "/pricing" },
-];
-
-const MOBILE_NAV_LINKS = [
-  { label: "Browse Properties", href: "/browse" },
-  { label: "Area Match", href: "/area-match" },
-  { label: "Seller Assistant", href: "/sell/listing-assistant" },
-  { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
-  { label: "Professionals", href: "/professionals" },
-  { label: "Savings Calculator", href: "/sell/savings-calculator" },
-  { label: "Features", href: "/features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Contact", href: "/contact" },
-];
-
-const SOLUTIONS_ITEMS: NavLink[] = [
-  {
-    label: "Seller Listing Assistant",
-    href: "/sell/listing-assistant",
-    desc: "Pricing, photos, viewings and enquiries",
-  },
-  {
-    label: "Buyer Due Diligence",
-    href: "/buy/due-diligence",
-    desc: "Checklists, calculators and red flags",
-  },
-  {
-    label: "Professionals Marketplace",
-    href: "/professionals",
-    desc: "Conveyancers, inspectors, valuers and more",
-  },
-  {
-    label: "Savings Calculator",
-    href: "/sell/savings-calculator",
-    desc: "See how much you save vs. an agent",
-  },
-  {
     label: "For Tenants",
-    href: "/solutions/tenants",
-    desc: "Find a home that fits your life",
+    items: [
+      { label: "Find my area", href: "/areas", desc: "Match suburbs by budget, commute, and lifestyle" },
+      { label: "Browse properties", href: "/browse", desc: "View available rental listings" },
+      { label: "Rental profiles", href: "/for-tenants", desc: "Create and manage your rental profile" },
+      { label: "How it works", href: "/for-tenants#how-it-works", desc: "How PropTrust works for tenants" },
+    ],
   },
   {
+    type: "dropdown",
     label: "For Landlords",
-    href: "/solutions/landlords",
-    desc: "Manage properties without a rental agent",
+    items: [
+      { label: "Manage properties", href: "/for-landlords", desc: "Property management tools" },
+      { label: "Tenant screening", href: "/features#screening", desc: "Review verified tenant applications" },
+      { label: "Portfolio finance", href: "/portfolio", desc: "Track yield, cash flow, and bond payments" },
+      { label: "List a property", href: "/register?type=landlord", desc: "Add your property to PropTrust" },
+    ],
+  },
+  { type: "link", label: "Area Match", href: "/areas" },
+  { type: "link", label: "Pricing", href: "/pricing" },
+  {
+    type: "dropdown",
+    label: "Resources",
+    items: [
+      { label: "SA Rental Law Guide", href: "/resources/rental-law", desc: "Know your rights and obligations" },
+      { label: "Tenant Screening Guide", href: "/resources/screening", desc: "How to screen tenants effectively" },
+      { label: "FAQ", href: "/resources/faq", desc: "Common questions answered" },
+      { label: "Trust and Security", href: "/trust", desc: "How we handle your data" },
+      { label: "About", href: "/about", desc: "What PropTrust is and who it serves" },
+      { label: "Blog", href: "/resources/blog", desc: "Property news and guides" },
+    ],
   },
 ];
 
@@ -286,7 +199,6 @@ function DesktopDropdown({
 export default function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -303,7 +215,6 @@ export default function MarketingNav() {
 
   function closeMobile() {
     setMobileOpen(false);
-    setOpenSection(null);
   }
 
   return (
@@ -340,19 +251,17 @@ export default function MarketingNav() {
 
           {/* Right buttons */}
           <div className="flex items-center gap-2">
-            {/* Login — always visible; compact on mobile */}
             <Link
               href="/login"
               className="rounded-lg border-[1.5px] border-[#0f172a] px-3 py-1.5 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:px-4 lg:py-2"
             >
               Login
             </Link>
-            {/* Find my area — desktop only */}
             <Link
-              href="/area-match"
+              href="/register"
               className="hidden rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 lg:block"
             >
-              Find my area
+              Get started
             </Link>
             {/* Hamburger — mobile only */}
             <button
@@ -365,7 +274,7 @@ export default function MarketingNav() {
           </div>
         </div>
 
-        {/* Mobile menu — always in DOM, animated via inline max-height */}
+        {/* Mobile menu */}
         <div
           className="lg:hidden"
           style={{
@@ -375,26 +284,33 @@ export default function MarketingNav() {
           }}
         >
           <div className="border-t border-[#f1f5f9] bg-white">
-            {/* Solutions expandable row */}
-            <div className="border-b border-[#f1f5f9]">
-              <button
-                onClick={() =>
-                  setOpenSection((p) => (p === "Solutions" ? null : "Solutions"))
-                }
-                className="flex w-full items-center justify-between px-6 text-base font-medium text-slate-900 transition hover:bg-slate-50"
-                style={{ minHeight: 52 }}
-              >
-                Solutions
-                <IconChevron open={openSection === "Solutions"} />
-              </button>
-              {openSection === "Solutions" && (
-                <div className="bg-slate-50 pb-2 pt-1">
-                  {SOLUTIONS_ITEMS.map((item) => (
+            {/* Render each nav section */}
+            {NAV.map((section) => {
+              if (section.type === "link") {
+                return (
+                  <Link
+                    key={section.label}
+                    href={section.href}
+                    onClick={closeMobile}
+                    className="flex w-full items-center border-b border-[#f1f5f9] px-6 text-base font-medium text-slate-900 transition hover:bg-slate-50"
+                    style={{ minHeight: 52 }}
+                  >
+                    {section.label}
+                  </Link>
+                );
+              }
+
+              return (
+                <div key={section.label} className="border-b border-[#f1f5f9]">
+                  <p className="px-6 pt-4 pb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                    {section.label}
+                  </p>
+                  {section.items.map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}
                       onClick={closeMobile}
-                      className="flex flex-col px-8 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                      className="flex flex-col px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       {item.label}
                       {item.desc && (
@@ -405,21 +321,8 @@ export default function MarketingNav() {
                     </Link>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Flat nav links */}
-            {MOBILE_NAV_LINKS.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={closeMobile}
-                className="flex w-full items-center border-b border-[#f1f5f9] px-6 text-base font-medium text-slate-900 transition hover:bg-slate-50"
-                style={{ minHeight: 52 }}
-              >
-                {item.label}
-              </Link>
-            ))}
+              );
+            })}
 
             {/* CTA buttons */}
             <div className="px-4 pb-8 pt-5" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -429,7 +332,7 @@ export default function MarketingNav() {
                 className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
                 style={{ height: 48, background: "#1e40af", fontSize: 15 }}
               >
-                Get Started
+                Get started
               </Link>
               <Link
                 href="/login"
@@ -449,7 +352,7 @@ export default function MarketingNav() {
         </div>
       </header>
 
-      {/* Backdrop — closes menu when tapping outside */}
+      {/* Backdrop */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"

@@ -3,41 +3,46 @@ import { NavLogo } from "./MarketingNav";
 
 const COLS = [
   {
-    title: "Sell Privately",
+    title: "For Tenants",
     links: [
-      { label: "Seller Listing Assistant", href: "/sell/listing-assistant" },
-      { label: "Verified Property Pack", href: "/sell/property-pack" },
-      { label: "Savings Calculator", href: "/sell/savings-calculator" },
-      { label: "For Landlords", href: "/solutions/landlords" },
-    ],
-  },
-  {
-    title: "Buy Privately",
-    links: [
-      { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
-      { label: "Offer-to-Purchase Guide", href: "/buy/offer-to-purchase" },
-      { label: "Communication Centre", href: "/enquiry" },
-      { label: "For Tenants", href: "/solutions/tenants" },
-    ],
-  },
-  {
-    title: "Browse",
-    links: [
+      { label: "Area Match", href: "/areas" },
       { label: "Browse properties", href: "/browse" },
-      { label: "Area Match", href: "/area-match" },
-      { label: "Professionals", href: "/professionals" },
-      { label: "Features", href: "/features" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "Create rental profile", href: "/register" },
+      { label: "How it works", href: "/for-tenants" },
     ],
   },
   {
-    title: "Resources",
+    title: "For Landlords",
     links: [
-      { label: "SA Rental Law Guide", href: "/resources/rental-law" },
-      { label: "FAQ", href: "/resources/faq" },
-      { label: "How Scoring Works", href: "/how-scoring-works" },
-      { label: "About us", href: "/about" },
+      { label: "Manage properties", href: "/for-landlords" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "List a property", href: "/register?type=landlord" },
+      { label: "Portfolio", href: "/portfolio" },
+      { label: "Seller Assistant", href: "/sell/listing-assistant" },
+      { label: "Savings Calculator", href: "/sell/savings-calculator" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
+      { label: "Blog", href: "/resources/blog" },
+      { label: "Features", href: "/features" },
+      { label: "Professionals", href: "/professionals" },
+      { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
+      { label: "Careers", href: "#" },
+    ],
+  },
+  {
+    title: "Legal and Trust",
+    links: [
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Trust and Security", href: "/trust" },
+      { label: "POPIA approach", href: "/trust#popia" },
+      { label: "FAQ", href: "/resources/faq" },
+      { label: "How scoring works", href: "/how-scoring-works" },
     ],
   },
 ];
@@ -51,7 +56,7 @@ export default function MarketingFooter() {
           <div>
             <NavLogo white />
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              Sell or rent privately, but safely — with verified documents, guided due diligence, and professional handover. No estate agent required.
+              Connect tenants and landlords directly. No agent required. Built for South Africa.
             </p>
             <div className="mt-5 space-y-1">
               <p className="text-sm text-slate-500">hello@proptrust.co.za</p>
@@ -86,7 +91,7 @@ export default function MarketingFooter() {
             &copy; 2026 PropTrust (Pty) Ltd &middot; proptrust.co.za
           </p>
           <p className="text-xs text-slate-600">
-            POPIA Compliant &middot; Made in South Africa
+            POPIA-aligned &middot; Made in South Africa
           </p>
         </div>
       </div>
