@@ -383,6 +383,40 @@ export default function AreasPage() {
       </section>
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+
+        {/* How Area Match works */}
+        <div className="mb-10 rounded-2xl border border-slate-200 bg-white p-7">
+          <h2 className="mb-3 text-base font-bold text-[#0f172a]">
+            How Area Match works
+          </h2>
+          <p className="mb-5 text-sm leading-relaxed text-slate-500">
+            Area Match is a guide to help you shortlist suburbs. Scores are
+            based on your preferences, available rental information, commute
+            considerations, amenities, and area signals. It should support your
+            decision, not replace visiting the area and doing your own checks.
+          </p>
+          <div className="mb-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              "Budget and typical rental ranges",
+              "Commute to your work location",
+              "Safety signals from available data",
+              "Transport access and walkability",
+              "Nearby amenities: grocery, gym, restaurants, coffee shops, and green space",
+              "Lifestyle fit based on your preferences",
+            ].map((item) => (
+              <div key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1e40af]" />
+                {item}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            Area data is a mix of curated signals, user preferences, and
+            available rental information. Data coverage varies by suburb. Scores
+            are indicative only.
+          </p>
+        </div>
+
         {/* Controls */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Strategy selector */}
