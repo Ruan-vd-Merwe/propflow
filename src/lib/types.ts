@@ -449,6 +449,14 @@ export type PropertyWithFinance = Property & {
   rates_monthly_cents: number | null;
   insurance_monthly_cents: number | null;
   management_fee_pct: number | null;
+  // Location fields added in migration_secure_documents.sql
+  suburb: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  area_news_enabled: boolean;
 };
 
 export type PropertyExpense = {

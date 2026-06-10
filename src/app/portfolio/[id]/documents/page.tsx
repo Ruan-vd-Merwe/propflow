@@ -1,13 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
-import { SetupForm } from "./SetupForm";
-import { LocationForm } from "./LocationForm";
-import type { PropertyWithFinance, Tenant } from "@/lib/types";
+import { PropertyDocumentsClient } from "./PropertyDocumentsClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function PropertySetupPage({
+export default async function PropertyDocumentsPage({
   params,
 }: {
   params: { id: string };
@@ -18,23 +16,22 @@ export default async function PropertySetupPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_landlord")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_landlord) redirect("/dashboard");
+
   const { data: property } = await supabase
     .from("properties")
-    .select("*")
+    .select("id, name, address")
     .eq("id", params.id)
     .eq("owner_id", user.id)
     .single();
 
   if (!property) notFound();
-
-  // Load tenants to calculate current monthly rent for live preview
-  const { data: tenantsRaw } = await supabase
-    .from("tenants")
-    .select("id, monthly_rent")
-    .eq("property_id", property.id);
-
-  const tenants: Pick<Tenant, "id" | "monthly_rent">[] = tenantsRaw ?? [];
-  const totalRentCents = tenants.reduce((s, t) => s + t.monthly_rent, 0);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -49,29 +46,23 @@ export default async function PropertySetupPage({
             href={`/portfolio/${params.id}`}
             className="hover:text-slate-900"
           >
-            {(property as PropertyWithFinance).name}
+            {property.name}
           </a>
           <span>/</span>
-          <span className="text-slate-900">Financial Setup</span>
+          <span className="text-slate-900">Documents</span>
         </nav>
 
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">
-            Financial Setup
+            Property Documents
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {(property as PropertyWithFinance).address}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{property.address}</p>
         </div>
 
-        <SetupForm
-          property={property as PropertyWithFinance}
-          totalRentCents={totalRentCents}
+        <PropertyDocumentsClient
+          propertyId={params.id}
+          ownerId={user.id}
         />
-
-        <div className="mt-8">
-          <LocationForm property={property as PropertyWithFinance} />
-        </div>
       </main>
     </div>
   );
