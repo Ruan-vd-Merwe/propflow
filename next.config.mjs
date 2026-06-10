@@ -7,6 +7,30 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["pdf-parse"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/for-tenants",
+        destination: "/solutions/tenants",
+        permanent: false,
+      },
+      {
+        source: "/for-tenants/:path*",
+        destination: "/solutions/tenants/:path*",
+        permanent: false,
+      },
+      {
+        source: "/for-landlords",
+        destination: "/solutions/landlords",
+        permanent: false,
+      },
+      {
+        source: "/for-landlords/:path*",
+        destination: "/solutions/landlords/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

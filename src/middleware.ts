@@ -48,6 +48,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/areas" ||
     pathname === "/how-scoring-works" ||
     pathname === "/unsubscribe" ||
+    pathname === "/trust" ||
+    pathname === "/for-tenants" ||
+    pathname === "/for-landlords" ||
+    pathname.startsWith("/browse") ||
     pathname.startsWith("/solutions/") ||
     pathname.startsWith("/resources/") ||
     // App public routes
