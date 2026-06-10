@@ -817,11 +817,26 @@ export function BrowseListing({
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
             <IconHouse className="mx-auto mb-4 h-12 w-12 text-slate-300" />
             <p className="text-base font-semibold text-slate-700">
-              No properties listed yet
+              No listings available yet
             </p>
             <p className="mt-2 text-sm text-slate-400">
-              Check back soon as new listings are added.
+              PropTrust is growing its verified property network. Check back
+              soon.
             </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Link
+                href="/areas"
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+              >
+                Find my area
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                I am a landlord — list a property
+              </Link>
+            </div>
           </div>
         ) : paginated.length === 0 ? (
           /* Filters too narrow */
