@@ -12,12 +12,12 @@ type FormState = {
 };
 
 const SUBJECTS = [
-  "General enquiry",
-  "Landlord support",
-  "Tenant support",
-  "Pricing",
-  "Partnership",
-  "Press",
+  "I am a tenant with a question",
+  "I am a landlord with a question",
+  "I would like a product demo",
+  "I have a privacy or security question",
+  "I have a technical issue",
+  "Other",
 ];
 
 export default function ContactPage() {
@@ -183,6 +183,28 @@ export default function ContactPage() {
 
             {/* Right: form */}
             <div>
+              {/* Demo CTA */}
+              <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-6">
+                <p className="mb-1 text-sm font-bold text-[#0f172a]">
+                  Are you a landlord or property manager?
+                </p>
+                <p className="mb-4 text-sm text-slate-500">
+                  We can walk you through the platform.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      subject: "I would like a product demo",
+                    }))
+                  }
+                  className="rounded-xl bg-[#1e40af] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800"
+                >
+                  Request a demo
+                </button>
+              </div>
+
               {submitted ? (
                 <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border border-green-200 bg-green-50 p-10 text-center">
                   <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-green-500">
@@ -295,6 +317,11 @@ export default function ContactPage() {
                   </div>
                 </form>
               )}
+
+              <p className="mt-5 text-xs text-slate-400">
+                We are based in Cape Town, South Africa. We aim to respond
+                within 1 to 2 business days, Monday to Friday.
+              </p>
             </div>
           </div>
         </div>

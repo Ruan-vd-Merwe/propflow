@@ -98,26 +98,24 @@ export default function AboutPage() {
               </p>
             </div>
 
-            {/* Stats card */}
+            {/* Platform summary card */}
             <div className="rounded-3xl bg-[#f8fafc] p-10">
-              <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-5">
                 {[
-                  { value: "60+", label: "Properties on the platform" },
-                  { value: "R0", label: "Agent commission required" },
-                  { value: "2023", label: "Year we started building" },
-                  { value: "100%", label: "South African built" },
+                  { label: "Agent commission required", value: "None" },
+                  { label: "Built for", value: "South Africa" },
+                  { label: "Free for tenants", value: "Always" },
+                  { label: "Landlord plans from", value: "R99/month" },
                 ].map((s) => (
-                  <div key={s.label}>
-                    <p className="text-3xl font-extrabold text-[#0f172a]">
-                      {s.value}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">{s.label}</p>
+                  <div
+                    key={s.label}
+                    className="flex items-center justify-between border-b border-[#e2e8f0] pb-5 last:border-0 last:pb-0"
+                  >
+                    <p className="text-sm text-slate-500">{s.label}</p>
+                    <p className="font-bold text-[#0f172a]">{s.value}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-8 border-t border-[#e2e8f0] pt-6 text-xs text-slate-400">
-                Launch benchmarks and product targets. Final figures may vary.
-              </p>
             </div>
           </div>
         </div>
