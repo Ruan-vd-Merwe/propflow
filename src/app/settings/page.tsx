@@ -341,6 +341,9 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Email and auth diagnostics */}
+        <EmailStatusCard />
+
         {/* WhatsApp integration */}
         <WhatsAppStatusCard />
 
@@ -502,6 +505,164 @@ function WhatsAppStatusCard() {
           >
             View Twilio WhatsApp setup guide →
           </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type EmailStatus = {
+  resendConfigured: boolean;
+  fromEmail: string | null;
+  siteUrl: string;
+  confirmRedirectUrl: string;
+  resetRedirectUrl: string;
+};
+
+function EmailStatusCard() {
+  const [status, setStatus] = useState<EmailStatus | null>(null);
+  const [resendingConfirm, setResendingConfirm] = useState(false);
+  const [confirmMsg, setConfirmMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/email/status")
+      .then((r) => r.json())
+      .then((d: EmailStatus) => setStatus(d))
+      .catch(() =>
+        setStatus({
+          resendConfigured: false,
+          fromEmail: null,
+          siteUrl: "",
+          confirmRedirectUrl: "",
+          resetRedirectUrl: "",
+        }),
+      );
+  }, []);
+
+  async function resendConfirmation() {
+    setResendingConfirm(true);
+    setConfirmMsg(null);
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (res.ok) {
+        setConfirmMsg({ ok: true, msg: "Confirmation email resent. Check your inbox." });
+      } else {
+        setConfirmMsg({ ok: false, msg: json.error ?? "Failed to resend." });
+      }
+    } catch {
+      setConfirmMsg({ ok: false, msg: "Network error." });
+    } finally {
+      setResendingConfirm(false);
+    }
+  }
+
+  async function sendTestEmail() {
+    setSendingTest(true);
+    setTestMsg(null);
+    try {
+      const res = await fetch("/api/email/test", { method: "POST" });
+      const json = (await res.json()) as { error?: string; to?: string };
+      if (res.ok) {
+        setTestMsg({ ok: true, msg: `Test email sent to ${json.to ?? "your address"}.` });
+      } else {
+        setTestMsg({ ok: false, msg: json.error ?? "Send failed." });
+      }
+    } catch {
+      setTestMsg({ ok: false, msg: "Network error." });
+    } finally {
+      setSendingTest(false);
+    }
+  }
+
+  return (
+    <div className="card p-6">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-base font-bold text-slate-900">Email &amp; Auth</h2>
+      </div>
+
+      {status === null ? (
+        <p className="text-sm text-slate-400">Checking configuration…</p>
+      ) : (
+        <div className="space-y-4">
+          {/* URL info */}
+          <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
+            <div className="mb-1 flex gap-2">
+              <span className="w-36 text-xs font-medium text-slate-400">Site URL</span>
+              <span className="font-mono text-xs text-slate-700">{status.siteUrl || "—"}</span>
+            </div>
+            <div className="mb-1 flex gap-2">
+              <span className="w-36 text-xs font-medium text-slate-400">Confirm redirect</span>
+              <span className="font-mono text-xs text-slate-700">{status.confirmRedirectUrl || "—"}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-36 text-xs font-medium text-slate-400">Reset redirect</span>
+              <span className="font-mono text-xs text-slate-700">{status.resetRedirectUrl || "—"}</span>
+            </div>
+          </div>
+
+          {/* Resend status */}
+          <div className="flex items-center gap-2">
+            {status.resendConfigured ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                Resend configured
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                Using Supabase email
+              </span>
+            )}
+            {status.fromEmail && (
+              <span className="text-xs text-slate-500">{status.fromEmail}</span>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={resendConfirmation}
+              disabled={resendingConfirm}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              {resendingConfirm ? "Sending…" : "Resend confirmation email"}
+            </button>
+            {status.resendConfigured && (
+              <button
+                onClick={sendTestEmail}
+                disabled={sendingTest}
+                className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+              >
+                {sendingTest ? "Sending…" : "Send test email"}
+              </button>
+            )}
+          </div>
+
+          {confirmMsg && (
+            <p className={`text-sm ${confirmMsg.ok ? "text-green-700" : "text-red-600"}`}>
+              {confirmMsg.msg}
+            </p>
+          )}
+          {testMsg && (
+            <p className={`text-sm ${testMsg.ok ? "text-green-700" : "text-red-600"}`}>
+              {testMsg.msg}
+            </p>
+          )}
+
+          {!status.resendConfigured && (
+            <p className="text-xs text-slate-400">
+              Add <span className="font-mono">RESEND_API_KEY</span> and{" "}
+              <span className="font-mono">RESEND_FROM_EMAIL</span> to enable custom
+              transactional email via Resend.
+            </p>
+          )}
         </div>
       )}
     </div>

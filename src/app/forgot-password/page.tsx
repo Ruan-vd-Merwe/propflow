@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default function ForgotPasswordPage() {
   const supabase = createClient();
@@ -17,13 +18,10 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
 
-    // Supabase dashboard → Authentication → URL Configuration:
-    // Site URL = https://proptrust.co.za
-    // Redirect URLs must include https://proptrust.co.za/**
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
       {
-        redirectTo: "https://proptrust.co.za/auth/reset-password",
+        redirectTo: `${getSiteUrl()}/auth/reset-password`,
       },
     );
 

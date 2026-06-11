@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   const { email } = await request.json();
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: "https://proptrust.co.za/auth/callback",
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 

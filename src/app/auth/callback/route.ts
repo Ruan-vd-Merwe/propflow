@@ -4,13 +4,17 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  // Only allow relative paths starting with / to prevent open-redirect
+  const rawNext = searchParams.get("next") ?? "";
+  const safeNext =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
   const supabase = createClient();
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       return NextResponse.redirect(
-        new URL("/login?error=expired", request.url),
+        new URL("/login?error=auth_callback_failed", request.url),
       );
     }
   }
@@ -68,6 +72,12 @@ export async function GET(request: Request) {
           console.error("tenant_profiles insert failed:", e);
         }
       }
+    }
+
+    // Honour caller-supplied next path (e.g. from magic link or resend flow),
+    // otherwise fall back to role-based default
+    if (safeNext) {
+      return NextResponse.redirect(new URL(safeNext, request.url));
     }
 
     // Redirect: dual-role or landlord → onboarding; tenant-only → tenant profile

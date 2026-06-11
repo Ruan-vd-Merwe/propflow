@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 function LoginForm() {
   const router = useRouter();
@@ -54,7 +55,7 @@ function LoginForm() {
       type: "signup",
       email: unconfirmedEmail,
       options: {
-        emailRedirectTo: "https://proptrust.co.za/auth/callback",
+        emailRedirectTo: `${getSiteUrl()}/auth/callback`,
       },
     });
     setResendLoading(false);

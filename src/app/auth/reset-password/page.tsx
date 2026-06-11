@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -17,24 +17,60 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    const code = searchParams.get("code");
-    if (!code) {
-      setError("Invalid or expired reset link. Please request a new one.");
-      return;
-    }
+  // Guard against React Strict Mode double-invocation consuming the one-time code twice
+  const exchangedRef = useRef(false);
 
-    supabase.auth
-      .exchangeCodeForSession(code)
-      .then(({ error: exchangeError }) => {
-        if (exchangeError) {
+  useEffect(() => {
+    if (exchangedRef.current) return;
+    exchangedRef.current = true;
+
+    // Listen for the Supabase PASSWORD_RECOVERY event.
+    // This fires after a successful exchangeCodeForSession (PKCE flow)
+    // or after the client auto-processes a hash-based recovery token.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setReady(true);
+        setError(null);
+      }
+    });
+
+    const code = searchParams.get("code");
+
+    if (code) {
+      // PKCE flow: exchange the one-time code for a recovery session.
+      // On success, onAuthStateChange fires PASSWORD_RECOVERY → setReady(true).
+      // On failure (expired / already used), show the error.
+      supabase.auth
+        .exchangeCodeForSession(code)
+        .then(({ error: err }) => {
+          if (err) {
+            setError(
+              "This reset link has expired or already been used. Please request a new one.",
+            );
+          }
+          // Success is handled by onAuthStateChange above
+        });
+    } else {
+      // No PKCE code in URL.
+      // Check whether there is already an active session (e.g. the user
+      // refreshed the page after a successful exchange, or the Supabase
+      // client processed a hash-based recovery token automatically).
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setReady(true);
+        } else {
           setError(
             "This reset link has expired or already been used. Please request a new one.",
           );
-        } else {
-          setReady(true);
         }
       });
+    }
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
@@ -108,7 +144,7 @@ function ResetPasswordForm() {
                 Redirecting you to your dashboard…
               </p>
             </div>
-          ) : !ready && error ? (
+          ) : error && !ready ? (
             <div className="text-center">
               <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
@@ -118,6 +154,12 @@ function ResetPasswordForm() {
                 className="mt-4 block text-sm font-semibold text-slate-900 hover:underline"
               >
                 Request a new reset link
+              </Link>
+              <Link
+                href="/login"
+                className="mt-2 block text-sm text-slate-500 hover:underline"
+              >
+                Back to sign in
               </Link>
             </div>
           ) : !ready ? (
