@@ -370,29 +370,42 @@ export default function SettingsPage() {
   );
 }
 
-function WhatsAppStatusCard() {
-  const [sending, setSending] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
+type WaStatus = {
+  configured: boolean;
+  missing: string[];
+  fromNumber: string | null;
+};
 
-  // We detect configuration via a server hint — in the browser we just
-  // show the UI; the actual env vars are only readable server-side.
-  // For the status badge we check via the test endpoint.
-  const isConfigured =
-    typeof window !== "undefined"
-      ? null // unknown until tested
-      : false;
+function WhatsAppStatusCard() {
+  const [waStatus, setWaStatus] = useState<WaStatus | null>(null);
+  const [testPhone, setTestPhone] = useState("");
+  const [sending, setSending] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/whatsapp/status")
+      .then((r) => r.json())
+      .then((d: WaStatus) => setWaStatus(d))
+      .catch(() => setWaStatus({ configured: false, missing: ["Unable to reach server"], fromNumber: null }));
+  }, []);
 
   async function sendTest() {
     setSending(true);
     setTestResult(null);
     try {
-      const res = await fetch("/api/whatsapp/test", { method: "POST" });
-      const json = await res.json();
-      setTestResult(
-        res.ok ? "Test message sent successfully." : json.error ?? "Failed",
-      );
+      const res = await fetch("/api/whatsapp/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: testPhone.trim() || undefined }),
+      });
+      const json = (await res.json()) as { error?: string; to?: string };
+      if (res.ok) {
+        setTestResult({ ok: true, msg: `Test message sent to ${json.to ?? testPhone}.` });
+      } else {
+        setTestResult({ ok: false, msg: json.error ?? "Send failed." });
+      }
     } catch {
-      setTestResult("Network error.");
+      setTestResult({ ok: false, msg: "Network error." });
     } finally {
       setSending(false);
     }
@@ -401,104 +414,96 @@ function WhatsAppStatusCard() {
   return (
     <div className="card p-6">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-base font-bold text-slate-900">
-          WhatsApp Integration
-        </h2>
+        <h2 className="text-base font-bold text-slate-900">WhatsApp Integration</h2>
       </div>
 
-      {isConfigured === false ? (
-        <NotConfigured />
-      ) : (
-        <>
-          {/* Show both states; the connected one shows when Twilio is set */}
-          <ConfiguredSection
-            sending={sending}
-            testResult={testResult}
-            onTest={sendTest}
-          />
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <NotConfigured />
+      {/* Status badge */}
+      {waStatus === null ? (
+        <p className="text-sm text-slate-400">Checking configuration…</p>
+      ) : waStatus.configured ? (
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              WhatsApp connected
+            </span>
           </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function ConfiguredSection({
-  sending,
-  testResult,
-  onTest,
-}: {
-  sending: boolean;
-  testResult: string | null;
-  onTest: () => void;
-}) {
-  const from =
-    process.env.NEXT_PUBLIC_TWILIO_WHATSAPP_DISPLAY ?? "whatsapp:+14155238886";
-  return (
-    <div>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-          WhatsApp connected
-        </span>
-      </div>
-      <p className="mb-3 text-sm text-slate-600">
-        Sending from: <span className="font-mono text-xs">{from}</span>
-      </p>
-      <button
-        onClick={onTest}
-        disabled={sending}
-        className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
-      >
-        {sending ? "Sending…" : "Send test message"}
-      </button>
-      {testResult && <p className="mt-2 text-sm text-slate-600">{testResult}</p>}
-    </div>
-  );
-}
-
-function NotConfigured() {
-  return (
-    <div>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          WhatsApp not configured
-        </span>
-      </div>
-      <p className="mb-3 text-sm text-slate-600">
-        To enable WhatsApp messaging to your tenants, follow these steps:
-      </p>
-      <ol className="mb-4 space-y-1.5 text-sm text-slate-600">
-        <li>
-          1. Sign up at{" "}
+          {waStatus.fromNumber && (
+            <p className="mb-4 text-sm text-slate-600">
+              Sending from: <span className="font-mono text-xs">{waStatus.fromNumber}</span>
+            </p>
+          )}
+          <div className="mb-3">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              Test phone number
+            </label>
+            <input
+              type="tel"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="e.g. 0746020084 or leave blank to use profile number"
+              className="input-field w-full max-w-sm"
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              SA format: 0XXXXXXXXX or +27XXXXXXXXX. The number must have joined the Twilio
+              sandbox first.
+            </p>
+          </div>
+          <button
+            onClick={sendTest}
+            disabled={sending}
+            className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+          >
+            {sending ? "Sending…" : "Send test WhatsApp"}
+          </button>
+          {testResult && (
+            <p className={`mt-2 text-sm ${testResult.ok ? "text-green-700" : "text-red-600"}`}>
+              {testResult.msg}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              WhatsApp not configured
+            </span>
+          </div>
+          {waStatus.missing.length > 0 && (
+            <p className="mb-3 text-sm text-slate-600">
+              Missing environment variables:{" "}
+              <span className="font-mono text-xs text-red-700">{waStatus.missing.join(", ")}</span>
+            </p>
+          )}
+          <p className="mb-3 text-sm text-slate-600">
+            To enable WhatsApp messaging to your tenants:
+          </p>
+          <ol className="mb-4 space-y-1.5 text-sm text-slate-600">
+            <li>
+              1. Sign up at{" "}
+              <a href="https://www.twilio.com" target="_blank" rel="noreferrer" className="font-medium text-blue-700 hover:underline">
+                twilio.com
+              </a>
+            </li>
+            <li>2. Enable the WhatsApp Sandbox in your Twilio console</li>
+            <li>3. Add these variables to your Vercel project and redeploy:</li>
+          </ol>
+          <div className="mb-4 rounded-xl bg-slate-900 px-4 py-3 font-mono text-xs text-slate-300">
+            <div>TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxx</div>
+            <div>TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxx</div>
+            <div>TWILIO_WHATSAPP_FROM=whatsapp:+14155238886</div>
+          </div>
           <a
-            href="https://www.twilio.com"
+            href="https://www.twilio.com/docs/whatsapp"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-blue-700 hover:underline"
+            className="text-sm font-semibold text-blue-700 hover:underline"
           >
-            twilio.com
+            View Twilio WhatsApp setup guide →
           </a>
-        </li>
-        <li>2. Enable the WhatsApp Sandbox in your Twilio console</li>
-        <li>3. Add these environment variables to your Vercel project:</li>
-      </ol>
-      <div className="mb-4 rounded-xl bg-slate-900 px-4 py-3 font-mono text-xs text-slate-300">
-        <div>TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxx</div>
-        <div>TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxx</div>
-        <div>TWILIO_WHATSAPP_FROM=whatsapp:+14155238886</div>
-      </div>
-      <a
-        href="https://www.twilio.com/docs/whatsapp"
-        target="_blank"
-        rel="noreferrer"
-        className="text-sm font-semibold text-blue-700 hover:underline"
-      >
-        View Twilio WhatsApp setup guide →
-      </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -154,13 +154,21 @@ export default function RegisterPage() {
     }
   }
 
+  function getCallbackUrl() {
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      (typeof window !== "undefined" ? window.location.origin : "https://proptrust.co.za");
+    return `${base}/auth/callback`;
+  }
+
   async function handleResend() {
     setResendLoading(true);
     setResendMessage(null);
     const { error: err } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: "https://proptrust.co.za/auth/callback" },
+      options: { emailRedirectTo: getCallbackUrl() },
     });
     setResendLoading(false);
     setResendMessage(
@@ -207,7 +215,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: "https://proptrust.co.za/auth/callback",
+        emailRedirectTo: getCallbackUrl(),
         data: metadata,
       },
     });
