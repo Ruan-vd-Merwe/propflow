@@ -52,17 +52,21 @@ function ResetPasswordForm() {
         // success → handled by onAuthStateChange
       });
     } else {
-      // No code in URL. Either a hash-based implicit recovery (older Supabase
-      // projects) which the client processes automatically, or the user landed
-      // here directly. Check for an existing session.
+      // No code in URL. Normal path: /auth/callback exchanged the code
+      // server-side and set a session cookie before redirecting here.
+      // Also handles hash-based recovery tokens (older Supabase projects)
+      // which the client auto-processes and fires PASSWORD_RECOVERY.
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) {
-          // Give the onAuthStateChange listener a tick to fire first (hash flow)
+        if (session) {
+          // Session established server-side by /auth/callback — show form.
+          setState("ready");
+        } else {
+          // Give onAuthStateChange a tick to fire PASSWORD_RECOVERY in case
+          // the client is still processing a hash-based recovery token.
           setTimeout(() => {
             setState((prev) => (prev === "checking" ? "expired" : prev));
           }, 500);
         }
-        // session exists → onAuthStateChange fired already (or will)
       });
     }
 

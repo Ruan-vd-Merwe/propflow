@@ -27,7 +27,8 @@ export function getSiteUrl(): string {
 
 /** Full URL for the auth callback, with an optional next path. */
 export function getAuthCallbackUrl(next = "/dashboard"): string {
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(safeNext)}`;
 }
 
