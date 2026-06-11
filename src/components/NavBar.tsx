@@ -172,8 +172,9 @@ export function NavBar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [roles, setRoles] = useState<UserRoles>({ is_landlord: true, is_tenant: false });
 
-  const navRef  = useRef<HTMLElement>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
+  const navRef         = useRef<HTMLElement>(null);
+  const moreRef        = useRef<HTMLDivElement>(null);
+  const menuOverlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -196,19 +197,32 @@ export function NavBar() {
     setMoreOpen(false);
   }, [pathname]);
 
-  // Close mobile menu on outside click
+  // Lock body scroll while mobile menu is open
   useEffect(() => {
     if (!menuOpen) return;
-    function onOutside(e: MouseEvent | TouchEvent) {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onOutside);
-    document.addEventListener("touchstart", onOutside);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("mousedown", onOutside);
-      document.removeEventListener("touchstart", onOutside);
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
+  // Close mobile menu on outside pointer-down (only when target is outside nav + overlay)
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onOutside(e: PointerEvent) {
+      const target = e.target as Node;
+      if (
+        navRef.current?.contains(target) ||
+        menuOverlayRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", onOutside);
+    return () => {
+      document.removeEventListener("pointerdown", onOutside);
     };
   }, [menuOpen]);
 
@@ -257,7 +271,7 @@ export function NavBar() {
   const primaryLinks = roles.is_landlord ? PRIMARY_LANDLORD : PRIMARY_TENANT;
 
   return (
-    <nav ref={navRef} className="relative border-b border-slate-200 bg-white">
+    <nav ref={navRef} className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       {/* ── Top bar ──────────────────────────────────────────────────── */}
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5">
 
@@ -411,134 +425,135 @@ export function NavBar() {
         </div>
       </div>
 
-      {/* ── Mobile dropdown ───────────────────────────────────────────── */}
-      <div
-        className={`overflow-hidden border-t border-slate-100 bg-white transition-[max-height] duration-300 ease-in-out sm:hidden ${
-          menuOpen ? "max-h-screen" : "max-h-0"
-        }`}
-      >
-        <ul className="divide-y divide-slate-100 pb-2">
-          {/* Primary links */}
-          {primaryLinks.map(({ href, label }) => {
-            const active = isActive(href);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-[48px] items-center px-6 py-3 text-sm font-medium transition ${
-                    active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {label}
-                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
-                </Link>
-              </li>
-            );
-          })}
+      {/* ── Mobile overlay — fixed so it never pushes page content ─────── */}
+      {menuOpen && (
+        <div
+          ref={menuOverlayRef}
+          className="fixed bottom-0 left-0 right-0 top-[61px] z-40 overflow-y-auto overscroll-contain border-t border-slate-100 bg-white pb-24 sm:hidden"
+        >
+          <ul className="divide-y divide-slate-100">
+            {/* Primary links */}
+            {primaryLinks.map(({ href, label }) => {
+              const active = isActive(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex min-h-[48px] items-center px-6 py-3 text-sm font-medium transition ${
+                      active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {label}
+                    {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
+                  </Link>
+                </li>
+              );
+            })}
 
-          {/* Property Management section — landlord only */}
-          {roles.is_landlord && (
-            <>
-              <li className="bg-slate-50 px-6 py-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Property Management
-                </p>
-              </li>
-              {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => {
-                const active = isActive(href);
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      onClick={() => setMenuOpen(false)}
-                      className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                        active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
-                      <span>{label}</span>
-                      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
-                    </Link>
-                  </li>
-                );
-              })}
-            </>
-          )}
+            {/* Property Management section — landlord only */}
+            {roles.is_landlord && (
+              <>
+                <li className="bg-slate-50 px-6 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Property Management
+                  </p>
+                </li>
+                {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
+                        <span>{label}</span>
+                        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </>
+            )}
 
-          {/* Tenants and Matching */}
-          <li className="bg-blue-50 px-6 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-              Tenants and Matching
-            </p>
-          </li>
-          {MORE_TENANT_MATCHING.map(({ href, label, Icon }) => {
-            if (label === "My Matches" && !roles.is_tenant) return null;
-            const active = isActive(href);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                    active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
-                  <span>{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-
-          {/* Account section */}
-          <li className="bg-slate-50 px-6 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
-          </li>
-          {MORE_ACCOUNT.map(({ href, label, Icon }) => {
-            const active = isActive(href);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                    active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
-                  <span>{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-          {roles.is_tenant && (
-            <li>
-              <Link
-                href="/tenant/profile"
-                onClick={() => setMenuOpen(false)}
-                className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                  isActive("/tenant/profile") ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <IconPeople className={`h-5 w-5 shrink-0 ${isActive("/tenant/profile") ? "text-slate-900" : "text-slate-400"}`} />
-                <span>My Profile</span>
-              </Link>
+            {/* Tenants and Matching */}
+            <li className="bg-blue-50 px-6 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+                Tenants and Matching
+              </p>
             </li>
-          )}
+            {MORE_TENANT_MATCHING.map(({ href, label, Icon }) => {
+              if (label === "My Matches" && !roles.is_tenant) return null;
+              const active = isActive(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                      active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
+                    <span>{label}</span>
+                  </Link>
+                </li>
+              );
+            })}
 
-          {/* Sign out */}
-          <li>
-            <button
-              onClick={handleSignOut}
-              className="flex min-h-[48px] w-full items-center gap-4 px-6 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
-            >
-              <IconSignOut className="h-5 w-5 shrink-0 text-red-500" />
-              <span>Sign out</span>
-            </button>
-          </li>
-        </ul>
-      </div>
+            {/* Account section */}
+            <li className="bg-slate-50 px-6 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
+            </li>
+            {MORE_ACCOUNT.map(({ href, label, Icon }) => {
+              const active = isActive(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                      active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
+                    <span>{label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+            {roles.is_tenant && (
+              <li>
+                <Link
+                  href="/tenant/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                    isActive("/tenant/profile") ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <IconPeople className={`h-5 w-5 shrink-0 ${isActive("/tenant/profile") ? "text-slate-900" : "text-slate-400"}`} />
+                  <span>My Profile</span>
+                </Link>
+              </li>
+            )}
+
+            {/* Sign out */}
+            <li>
+              <button
+                onClick={handleSignOut}
+                className="flex min-h-[48px] w-full items-center gap-4 px-6 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
+              >
+                <IconSignOut className="h-5 w-5 shrink-0 text-red-500" />
+                <span>Sign out</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
     </nav>
   );
 }
