@@ -33,16 +33,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Validate numeric fields
+    // Validate integer / bigint fields
     const numericFields = [
       "purchase_price_cents",
       "current_value_cents",
       "bond_original_amount_cents",
       "bond_monthly_payment_cents",
       "bond_term_years",
+      "bond_remaining_months",
       "levy_monthly_cents",
       "rates_monthly_cents",
       "insurance_monthly_cents",
+      "monthly_rent_cents",
+      "rental_due_day",
+      "deposit_amount_cents",
     ];
     const update: Record<string, unknown> = {};
 
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Float / text fields
+    // Float fields
     if ("bond_interest_rate_pct" in body) {
       const v = body["bond_interest_rate_pct"];
       if (v === null) {
@@ -78,15 +82,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Text fields
     if ("bond_bank" in body) {
       update["bond_bank"] =
         typeof body["bond_bank"] === "string" ? body["bond_bank"] : null;
     }
 
-    if ("bond_start_date" in body) {
-      const v = body["bond_start_date"];
-      update["bond_start_date"] =
-        typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    if ("bond_account_number" in body) {
+      const v = body["bond_account_number"];
+      update["bond_account_number"] = typeof v === "string" ? v : null;
+    }
+
+    // Date fields
+    const dateFields = [
+      "bond_start_date",
+      "purchase_date",
+      "lease_start_date",
+      "lease_end_date",
+    ];
+    for (const field of dateFields) {
+      if (field in body) {
+        const v = body[field];
+        update[field] =
+          typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+      }
     }
 
     if (Object.keys(update).length === 0) {

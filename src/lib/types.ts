@@ -438,6 +438,7 @@ export type BodyCorpFlag = {
 
 export type PropertyWithFinance = Property & {
   purchase_price_cents: number | null;
+  purchase_date: string | null;
   current_value_cents: number | null;
   bond_bank: string | null;
   bond_original_amount_cents: number | null;
@@ -445,10 +446,17 @@ export type PropertyWithFinance = Property & {
   bond_interest_rate_pct: number | null;
   bond_start_date: string | null;
   bond_term_years: number | null;
+  bond_remaining_months: number | null;
+  bond_account_number: string | null;
   levy_monthly_cents: number | null;
   rates_monthly_cents: number | null;
   insurance_monthly_cents: number | null;
   management_fee_pct: number | null;
+  monthly_rent_cents: number | null;
+  rental_due_day: number | null;
+  deposit_amount_cents: number | null;
+  lease_start_date: string | null;
+  lease_end_date: string | null;
   // Location fields added in migration_secure_documents.sql
   suburb: string | null;
   city: string | null;
