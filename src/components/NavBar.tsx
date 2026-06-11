@@ -134,10 +134,11 @@ const MORE_PROPERTY_MGMT: { href: string; label: string; Icon: React.FC<{ classN
 ];
 
 // "More" dropdown — Tenants and Matching
+// Points to authenticated app routes — public /browse and /areas remain accessible to guests
 const MORE_TENANT_MATCHING: { href: string; label: string; Icon: React.FC<{ className?: string }> }[] = [
-  { href: "/browse",          label: "Browse Properties", Icon: IconSearch   },
+  { href: "/tenant/browse",   label: "Browse Properties", Icon: IconSearch   },
   { href: "/tenant/profile",  label: "My Matches",        Icon: IconSparkles },
-  { href: "/areas",           label: "Find by Area",      Icon: IconHouse    },
+  { href: "/tenant/areas",    label: "Find by Area",      Icon: IconHouse    },
 ];
 
 // "More" dropdown — Account
@@ -149,7 +150,7 @@ const MORE_ACCOUNT: { href: string; label: string; Icon: React.FC<{ className?: 
 // Tenant-only primary links
 const PRIMARY_TENANT: { href: string; label: string }[] = [
   { href: "/dashboard",      label: "Dashboard"  },
-  { href: "/browse",         label: "Browse"     },
+  { href: "/tenant/browse",  label: "Browse"     },
   { href: "/tenant/profile", label: "My Profile" },
 ];
 
