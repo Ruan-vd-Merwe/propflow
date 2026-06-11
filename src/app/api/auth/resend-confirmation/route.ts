@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { getSiteUrl } from "@/lib/site-url";
+import { getAuthCallbackUrl } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   const { email } = await request.json();
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      emailRedirectTo: getAuthCallbackUrl("/dashboard"),
     },
   });
 
