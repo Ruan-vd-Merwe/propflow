@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getSiteUrl } from "@/lib/site-url";
+import { getResetPasswordUrl } from "@/lib/site-url";
 
 export default function ForgotPasswordPage() {
   const supabase = createClient();
@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
       {
-        redirectTo: `${getSiteUrl()}/auth/reset-password`,
+        redirectTo: getResetPasswordUrl(),
       },
     );
 
@@ -79,8 +79,10 @@ export default function ForgotPasswordPage() {
               <p className="mt-2 text-sm text-slate-500">
                 We sent a password reset link to{" "}
                 <span className="font-medium text-slate-700">{email}</span>.
-                Check your spam folder if it doesn&apos;t arrive within a
-                minute.
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                Open the newest email only — reset links are single-use and
+                expire after one hour. Check spam if it doesn&apos;t arrive.
               </p>
             </div>
           ) : (

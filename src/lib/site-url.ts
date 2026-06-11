@@ -1,22 +1,20 @@
 /**
- * Returns the canonical site URL for use in auth redirect links.
+ * Site URL helpers — use these everywhere auth redirect URLs are needed.
  * Works in both server and client contexts.
- *
- * Priority:
- *   1. NEXT_PUBLIC_SITE_URL env var (set this in production + local)
- *   2. VERCEL_URL (auto-set by Vercel for preview deployments, server-only)
- *   3. window.location.origin (client-side fallback)
- *   4. http://localhost:3000 (final fallback for SSR without env vars)
  */
+
 export function getSiteUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL; // backward-compat fallback
+
   if (configured && configured.trim().length > 0) {
     return configured.replace(/\/$/, "");
   }
 
-  // Server-side only: Vercel auto-populates this on preview deployments
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  // Server-side only: Vercel auto-populates VERCEL_URL on preview deployments
+  if (process.env.VERCEL_URL && process.env.VERCEL_URL.trim().length > 0) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/$/, "");
   }
 
   // Client-side fallback — always correct for the current environment
@@ -25,4 +23,15 @@ export function getSiteUrl(): string {
   }
 
   return "http://localhost:3000";
+}
+
+/** Full URL for the auth callback, with an optional next path. */
+export function getAuthCallbackUrl(next = "/dashboard"): string {
+  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+}
+
+/** Full URL for the password-reset landing page. */
+export function getResetPasswordUrl(): string {
+  return `${getSiteUrl()}/reset-password`;
 }

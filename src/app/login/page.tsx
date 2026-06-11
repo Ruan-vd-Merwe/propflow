@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getSiteUrl } from "@/lib/site-url";
+import { getAuthCallbackUrl } from "@/lib/site-url";
 
 function LoginForm() {
   const router = useRouter();
@@ -55,7 +55,7 @@ function LoginForm() {
       type: "signup",
       email: unconfirmedEmail,
       options: {
-        emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+        emailRedirectTo: getAuthCallbackUrl("/dashboard"),
       },
     });
     setResendLoading(false);
@@ -89,6 +89,29 @@ function LoginForm() {
           <h1 className="text-2xl font-bold text-slate-900">PropTrust</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
         </div>
+
+        {/* Password reset success banner */}
+        {searchParams.get("reset") === "success" && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <p className="font-semibold">Password updated.</p>
+            <p className="mt-0.5">Sign in with your new password.</p>
+          </div>
+        )}
+
+        {/* Auth callback error banners */}
+        {(errorParam === "auth_callback_failed" ||
+          errorParam === "missing_auth_code") && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">That link didn&apos;t work.</p>
+            <p className="mt-0.5">
+              It may have expired or already been used. Try signing in or{" "}
+              <Link href="/forgot-password" className="font-medium underline">
+                request a new reset link
+              </Link>
+              .
+            </p>
+          </div>
+        )}
 
         {/* From register banner */}
         {searchParams.get("from") === "register" && (

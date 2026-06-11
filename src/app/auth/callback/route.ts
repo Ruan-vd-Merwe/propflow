@@ -1,22 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+function getSafeNext(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  // Only allow relative paths starting with / to prevent open-redirect
-  const rawNext = searchParams.get("next") ?? "";
-  const safeNext =
-    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const safeNext = getSafeNext(requestUrl.searchParams.get("next"));
   const supabase = createClient();
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      return NextResponse.redirect(
-        new URL("/login?error=auth_callback_failed", request.url),
-      );
-    }
+  if (!code) {
+    return NextResponse.redirect(
+      new URL("/login?error=missing_auth_code", request.url),
+    );
+  }
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    return NextResponse.redirect(
+      new URL("/login?error=auth_callback_failed", request.url),
+    );
   }
 
   const {

@@ -38,7 +38,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
-    pathname.startsWith("/auth/") || // /auth/callback (email confirm) and /auth/reset-password
+    pathname === "/reset-password" || // password reset landing page (must be public for Supabase redirect)
+    pathname.startsWith("/auth/") || // /auth/callback
     // Marketing pages
     pathname === "/features" ||
     pathname === "/pricing" ||

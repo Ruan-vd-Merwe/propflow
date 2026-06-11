@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthCallbackUrl } from "@/lib/site-url";
 
 const PROVINCES = [
   "Eastern Cape",
@@ -154,21 +155,13 @@ export default function RegisterPage() {
     }
   }
 
-  function getCallbackUrl() {
-    const base =
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      process.env.NEXT_PUBLIC_APP_URL ??
-      (typeof window !== "undefined" ? window.location.origin : "https://proptrust.co.za");
-    return `${base}/auth/callback`;
-  }
-
   async function handleResend() {
     setResendLoading(true);
     setResendMessage(null);
     const { error: err } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: getCallbackUrl() },
+      options: { emailRedirectTo: getAuthCallbackUrl("/dashboard") },
     });
     setResendLoading(false);
     setResendMessage(
@@ -215,7 +208,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: getCallbackUrl(),
+        emailRedirectTo: getAuthCallbackUrl("/dashboard"),
         data: metadata,
       },
     });

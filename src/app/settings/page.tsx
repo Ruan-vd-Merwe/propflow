@@ -663,6 +663,12 @@ function EmailStatusCard() {
               transactional email via Resend.
             </p>
           )}
+
+          <p className="text-xs text-slate-400">
+            Supabase Auth emails (signup confirmation, password reset) are sent
+            through Supabase SMTP settings. The email template must use{" "}
+            <span className="font-mono">{"{{ .ConfirmationURL }}"}</span>.
+          </p>
         </div>
       )}
     </div>

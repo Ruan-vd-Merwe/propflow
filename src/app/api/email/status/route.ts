@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { getSiteUrl } from "@/lib/site-url";
+import { getSiteUrl, getAuthCallbackUrl, getResetPasswordUrl } from "@/lib/site-url";
 
 export type EmailStatusResponse = {
   resendConfigured: boolean;
@@ -38,8 +38,8 @@ export async function GET() {
     resendConfigured,
     fromEmail: rawFrom ? maskEmail(rawFrom) : null,
     siteUrl,
-    confirmRedirectUrl: `${siteUrl}/auth/callback`,
-    resetRedirectUrl: `${siteUrl}/auth/reset-password`,
+    confirmRedirectUrl: getAuthCallbackUrl("/dashboard"),
+    resetRedirectUrl: getResetPasswordUrl(),
   };
 
   return NextResponse.json(body);
