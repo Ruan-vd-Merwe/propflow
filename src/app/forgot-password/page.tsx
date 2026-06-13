@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackUrl } from "@/lib/site-url";
 
 export default function ForgotPasswordPage() {
   const supabase = createClient();
@@ -13,25 +12,60 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function getResetErrorMessage(
+    err: { message?: string; status?: number },
+  ): string {
+    const msg = err.message?.toLowerCase() ?? "";
+
+    if (
+      msg.includes("rate limit") ||
+      msg.includes("too many") ||
+      err.status === 429
+    ) {
+      return "Too many reset attempts. Please wait a few minutes before trying again.";
+    }
+
+    if (
+      msg.includes("smtp") ||
+      msg.includes("email") ||
+      msg.includes("sending")
+    ) {
+      return (
+        "We could not send the reset email right now. " +
+        "Please try again in a moment or contact hello@proptrust.co.za for help."
+      );
+    }
+
+    if (msg.includes("not found") || msg.includes("no user")) {
+      return "__SHOW_SUCCESS__";
+    }
+
+    return "Something went wrong. Please try again or contact hello@proptrust.co.za.";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email,
-      {
-        redirectTo: getAuthCallbackUrl('/reset-password'),
-      },
-    );
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://proptrust.co.za/reset-password",
+    });
 
-    setLoading(false);
-
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setSent(true);
+    if (error) {
+      const msg = getResetErrorMessage(error);
+      if (msg === "__SHOW_SUCCESS__") {
+        setSent(true);
+        setLoading(false);
+        return;
+      }
+      setError(msg);
+      setLoading(false);
+      return;
     }
+
+    setSent(true);
+    setLoading(false);
   }
 
   return (
@@ -77,13 +111,20 @@ export default function ForgotPasswordPage() {
               </div>
               <p className="font-semibold text-slate-900">Check your email</p>
               <p className="mt-2 text-sm text-slate-500">
-                We sent a password reset link to{" "}
-                <span className="font-medium text-slate-700">{email}</span>.
+                If an account exists for{" "}
+                <span className="font-medium text-slate-700">{email}</span>, you
+                will receive a password reset link shortly. Check your spam
+                folder if you do not see it.
               </p>
               <p className="mt-2 text-sm text-slate-400">
-                Open the newest email only — reset links are single-use and
-                expire after one hour. Check spam if it doesn&apos;t arrive.
+                The link expires in 1 hour.
               </p>
+              <Link
+                href="/login"
+                className="mt-4 block text-sm font-semibold text-slate-900 hover:underline"
+              >
+                Back to sign in
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,6 +154,16 @@ export default function ForgotPasswordPage() {
               {error && (
                 <div className="rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
                   {error}
+                  <p className="mt-2 text-xs text-red-600">
+                    Still having trouble? Email us at{" "}
+                    <a
+                      href="mailto:hello@proptrust.co.za"
+                      className="underline"
+                    >
+                      hello@proptrust.co.za
+                    </a>{" "}
+                    and we will reset it for you manually.
+                  </p>
                 </div>
               )}
 

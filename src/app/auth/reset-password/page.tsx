@@ -61,9 +61,16 @@ function ResetPasswordForm() {
         if (session) {
           setReady(true);
         } else {
-          setError(
-            "This reset link has expired or already been used. Please request a new one.",
-          );
+          setTimeout(() => {
+            setReady((prev) => {
+              if (!prev) {
+                setError(
+                  "This reset link has expired or already been used. Please request a new one.",
+                );
+              }
+              return prev;
+            });
+          }, 1200);
         }
       });
     }
@@ -93,8 +100,9 @@ function ResetPasswordForm() {
     if (updateError) {
       setError(updateError.message);
     } else {
+      await supabase.auth.signOut();
       setDone(true);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      setTimeout(() => router.push("/login?reset=success"), 2000);
     }
   }
 

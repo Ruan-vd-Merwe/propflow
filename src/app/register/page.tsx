@@ -171,6 +171,29 @@ export default function RegisterPage() {
     );
   }
 
+  function parseSignUpError(msg: string): string {
+    const m = msg.toLowerCase();
+    if (m.includes("user already registered") || m.includes("already been registered") || m.includes("already registered")) {
+      return "An account with this email already exists. Try signing in or reset your password instead.";
+    }
+    if (m.includes("invalid email") || m.includes("email address is invalid") || m.includes("unable to validate email")) {
+      return "Please enter a valid email address.";
+    }
+    if (m.includes("password should be") || m.includes("password must be") || m.includes("too short")) {
+      return "Your password must be at least 8 characters.";
+    }
+    if (m.includes("sending email") || m.includes("smtp") || m.includes("email sending") || m.includes("error sending") || m.includes("failed to send")) {
+      return "We couldn't send your confirmation email right now. Please try again in a few minutes, or contact support@proptrust.co.za.";
+    }
+    if (m.includes("invalid redirect") || m.includes("redirect_to") || m.includes("unauthorized")) {
+      return "Signup is temporarily unavailable. Please try again later or contact support@proptrust.co.za.";
+    }
+    if (m.includes("rate limit") || m.includes("too many requests")) {
+      return "Too many signup attempts. Please wait a few minutes and try again.";
+    }
+    return msg;
+  }
+
   async function handleSubmit() {
     setLoading(true);
     setError(null);
@@ -204,7 +227,7 @@ export default function RegisterPage() {
       metadata.whatsapp_opted_in = whatsappOptIn;
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -213,11 +236,33 @@ export default function RegisterPage() {
       },
     });
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (!signUpError && data?.user?.identities?.length === 0) {
+      setError("EMAIL_EXISTS");
       setLoading(false);
       return;
     }
+
+    if (signUpError) {
+      const msg = signUpError.message?.toLowerCase() ?? "";
+      const isExisting =
+        msg.includes("already registered") ||
+        msg.includes("already taken") ||
+        msg.includes("already exists") ||
+        msg.includes("user already") ||
+        signUpError.status === 400 ||
+        signUpError.status === 422;
+
+      if (isExisting) {
+        setError("EMAIL_EXISTS");
+        setLoading(false);
+        return;
+      }
+
+      setError(parseSignUpError(signUpError.message));
+      setLoading(false);
+      return;
+    }
+
     setLoading(false);
     setShowConfirmation(true);
   }
@@ -511,11 +556,77 @@ export default function RegisterPage() {
                 </div>
               )}
             </div>
-            {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            {error === "EMAIL_EXISTS" ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#991b1b",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                  }}
+                >
+                  An account with this email address already exists.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "#1e40af",
+                      color: "white",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Sign in instead
+                  </a>
+                  <a
+                    href="/forgot-password"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      border: "1.5px solid #e2e8f0",
+                      color: "#374151",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      background: "white",
+                    }}
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 13,
+                  color: "#dc2626",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
                 {error}
               </div>
-            )}
+            ) : null}
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
@@ -613,11 +724,77 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-            {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            {error === "EMAIL_EXISTS" ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#991b1b",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                  }}
+                >
+                  An account with this email address already exists.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "#1e40af",
+                      color: "white",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Sign in instead
+                  </a>
+                  <a
+                    href="/forgot-password"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      border: "1.5px solid #e2e8f0",
+                      color: "#374151",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      background: "white",
+                    }}
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 13,
+                  color: "#dc2626",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
                 {error}
               </div>
-            )}
+            ) : null}
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
@@ -792,11 +969,77 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-            {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            {error === "EMAIL_EXISTS" ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#991b1b",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                  }}
+                >
+                  An account with this email address already exists.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "#1e40af",
+                      color: "white",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Sign in instead
+                  </a>
+                  <a
+                    href="/forgot-password"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      border: "1.5px solid #e2e8f0",
+                      color: "#374151",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      background: "white",
+                    }}
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 13,
+                  color: "#dc2626",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
                 {error}
               </div>
-            )}
+            ) : null}
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
@@ -918,11 +1161,77 @@ export default function RegisterPage() {
                 </div>
               </label>
             </div>
-            {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            {error === "EMAIL_EXISTS" ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#991b1b",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                  }}
+                >
+                  An account with this email address already exists.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "#1e40af",
+                      color: "white",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Sign in instead
+                  </a>
+                  <a
+                    href="/forgot-password"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      border: "1.5px solid #e2e8f0",
+                      color: "#374151",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      background: "white",
+                    }}
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 13,
+                  color: "#dc2626",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
                 {error}
               </div>
-            )}
+            ) : null}
             <div className="mt-6 flex gap-3">
               <button
                 type="button"

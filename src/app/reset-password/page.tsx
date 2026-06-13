@@ -65,7 +65,7 @@ function ResetPasswordForm() {
           // the client is still processing a hash-based recovery token.
           setTimeout(() => {
             setState((prev) => (prev === "checking" ? "expired" : prev));
-          }, 500);
+          }, 1200);
         }
       });
     }
