@@ -1,82 +1,151 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
-// Lazy init — avoids module-level throw when env var is absent at build time
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
-const FROM =
-  process.env.RESEND_AUTH_FROM_EMAIL ??
-  process.env.RESEND_FROM_EMAIL ??
-  "PropTrust <onboarding@resend.dev>";
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+type EmailType = "confirmation" | "password_reset" | "welcome";
 
 export async function POST(request: Request) {
-  let payload: { user: { email: string }; email_data: Record<string, string> };
-  try {
-    payload = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  const {
+    type,
+    email,
+    name,
+    confirmationUrl,
+    resetUrl,
+  }: {
+    type: EmailType;
+    email: string;
+    name?: string;
+    confirmationUrl?: string;
+    resetUrl?: string;
+  } = await request.json();
+
+  if (!email || !type) {
+    return NextResponse.json(
+      { error: "email and type required" },
+      { status: 400 },
+    );
   }
 
-  const { user, email_data } = payload;
-  const { token_hash, redirect_to, email_action_type } = email_data;
+  const baseStyle = `
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8fafc;
+    margin: 0;
+    padding: 40px 20px;
+  `;
 
-  const verifyUrl =
-    `${SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${email_action_type}` +
-    `&redirect_to=${encodeURIComponent(redirect_to)}`;
+  const cardStyle = `
+    max-width: 520px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid #e2e8f0;
+  `;
 
-  const btnStyle =
-    "background:#0f172a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-family:sans-serif;font-size:14px;font-weight:600";
+  const logoHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+      <div style="width:36px;height:36px;background:#0f172a;border-radius:8px;
+        display:flex;align-items:center;justify-content:center;">
+        <span style="color:white;font-weight:700;font-size:16px;">P</span>
+      </div>
+      <span style="font-weight:700;font-size:18px;color:#0f172a;">PropTrust</span>
+    </div>
+  `;
 
-  let subject: string;
-  let html: string;
+  let subject = "";
+  let html = "";
 
-  switch (email_action_type) {
-    case "signup":
-      subject = "Confirm your PropTrust account";
-      html = `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 16px">
-          <h2 style="color:#0f172a">Confirm your email address</h2>
-          <p style="color:#475569">Click the link below to confirm your email and activate your PropTrust account.</p>
-          <p><a href="${verifyUrl}" style="${btnStyle}">Confirm email address</a></p>
-          <p style="color:#94a3b8;font-size:13px">This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
-        </div>`;
-      break;
-    case "recovery":
-      subject = "Reset your PropTrust password";
-      html = `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 16px">
-          <h2 style="color:#0f172a">Reset your password</h2>
-          <p style="color:#475569">Click the link below to choose a new password for your PropTrust account.</p>
-          <p><a href="${verifyUrl}" style="${btnStyle}">Reset password</a></p>
-          <p style="color:#94a3b8;font-size:13px">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-        </div>`;
-      break;
-    case "email_change":
-      subject = "Confirm your new PropTrust email address";
-      html = `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 16px">
-          <h2 style="color:#0f172a">Confirm your new email address</h2>
-          <p style="color:#475569">Click the link below to confirm your new email address.</p>
-          <p><a href="${verifyUrl}" style="${btnStyle}">Confirm new email</a></p>
-          <p style="color:#94a3b8;font-size:13px">If you didn't request this change, you can safely ignore this email.</p>
-        </div>`;
-      break;
-    default:
-      subject = "PropTrust — action required";
-      html = `<p><a href="${verifyUrl}">Click here</a> to continue.</p>`;
+  if (type === "confirmation" && confirmationUrl) {
+    subject = "Confirm your PropTrust account";
+    html = `
+      <body style="${baseStyle}">
+        <div style="${cardStyle}">
+          ${logoHtml}
+          <h1 style="font-size:22px;font-weight:700;color:#0f172a;margin:0 0 12px;">
+            Confirm your account
+          </h1>
+          <p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 28px;">
+            Hi ${name ?? "there"}, welcome to PropTrust.
+            Click the button below to confirm your email address and activate your account.
+          </p>
+          <a href="${confirmationUrl}"
+            style="display:block;text-align:center;background:#1e40af;color:white;
+            padding:14px 28px;border-radius:10px;font-weight:700;font-size:16px;
+            text-decoration:none;margin-bottom:24px;">
+            Confirm my account
+          </a>
+          <p style="color:#94a3b8;font-size:13px;margin:0 0 8px;">Or copy this link:</p>
+          <p style="color:#3b82f6;font-size:12px;word-break:break-all;margin:0 0 24px;">
+            ${confirmationUrl}
+          </p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin-bottom:20px;">
+          <p style="color:#94a3b8;font-size:12px;margin:0;">
+            This link expires in 24 hours. If you did not create a PropTrust account,
+            you can ignore this email.
+          </p>
+        </div>
+        <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:24px;">
+          PropTrust · proptrust.co.za · Cape Town, South Africa
+        </p>
+      </body>
+    `;
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (type === "password_reset" && resetUrl) {
+    subject = "Reset your PropTrust password";
+    html = `
+      <body style="${baseStyle}">
+        <div style="${cardStyle}">
+          ${logoHtml}
+          <h1 style="font-size:22px;font-weight:700;color:#0f172a;margin:0 0 12px;">
+            Reset your password
+          </h1>
+          <p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 28px;">
+            We received a request to reset the password for your PropTrust account.
+            Click below to choose a new password.
+          </p>
+          <a href="${resetUrl}"
+            style="display:block;text-align:center;background:#1e40af;color:white;
+            padding:14px 28px;border-radius:10px;font-weight:700;font-size:16px;
+            text-decoration:none;margin-bottom:24px;">
+            Reset my password
+          </a>
+          <p style="color:#94a3b8;font-size:13px;margin:0 0 8px;">Or copy this link:</p>
+          <p style="color:#3b82f6;font-size:12px;word-break:break-all;margin:0 0 24px;">
+            ${resetUrl}
+          </p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin-bottom:20px;">
+          <p style="color:#94a3b8;font-size:12px;margin:0;">
+            This link expires in 1 hour. If you did not request a password reset,
+            you can ignore this email safely.
+          </p>
+        </div>
+        <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:24px;">
+          PropTrust · proptrust.co.za · Cape Town, South Africa
+        </p>
+      </body>
+    `;
+  }
+
+  if (!html) {
+    return NextResponse.json(
+      { error: "Invalid email type or missing URL" },
+      { status: 400 },
+    );
+  }
+
   const { error } = await resend.emails.send({
-    from: FROM,
-    to: [user.email],
+    from: "PropTrust <noreply@proptrust.co.za>",
+    to: email,
     subject,
     html,
   });
 
   if (error) {
-    console.error("[send-email hook]", error.name, error.message);
+    console.error("Resend error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({});
+  return NextResponse.json({ success: true });
 }

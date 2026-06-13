@@ -2,70 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient();
-
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function getResetErrorMessage(
-    err: { message?: string; status?: number },
-  ): string {
-    const msg = err.message?.toLowerCase() ?? "";
-
-    if (
-      msg.includes("rate limit") ||
-      msg.includes("too many") ||
-      err.status === 429
-    ) {
-      return "Too many reset attempts. Please wait a few minutes before trying again.";
-    }
-
-    if (
-      msg.includes("smtp") ||
-      msg.includes("email") ||
-      msg.includes("sending")
-    ) {
-      return (
-        "We could not send the reset email right now. " +
-        "Please try again in a moment or contact hello@proptrust.co.za for help."
-      );
-    }
-
-    if (msg.includes("not found") || msg.includes("no user")) {
-      return "__SHOW_SUCCESS__";
-    }
-
-    return "Something went wrong. Please try again or contact hello@proptrust.co.za.";
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://proptrust.co.za/reset-password",
-    });
-
-    if (error) {
-      const msg = getResetErrorMessage(error);
-      if (msg === "__SHOW_SUCCESS__") {
-        setSent(true);
-        setLoading(false);
-        return;
-      }
-      setError(msg);
+    try {
+      await fetch("/api/auth/password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      // Always show success regardless of result — never reveal if email exists
+      setSent(true);
+    } catch {
+      setSent(true);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSent(true);
-    setLoading(false);
   }
 
   return (
@@ -150,22 +109,6 @@ export default function ForgotPasswordPage() {
                   className="input-field"
                 />
               </div>
-
-              {error && (
-                <div className="rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
-                  {error}
-                  <p className="mt-2 text-xs text-red-600">
-                    Still having trouble? Email us at{" "}
-                    <a
-                      href="mailto:hello@proptrust.co.za"
-                      className="underline"
-                    >
-                      hello@proptrust.co.za
-                    </a>{" "}
-                    and we will reset it for you manually.
-                  </p>
-                </div>
-              )}
 
               <button
                 type="submit"
