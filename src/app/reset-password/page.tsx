@@ -1,266 +1,453 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserClient } from "@supabase/ssr";
 
-type State =
-  | "checking"   // verifying the link / exchange in progress
-  | "ready"      // recovery session confirmed — show password form
-  | "expired"    // link invalid, expired, or already used
-  | "submitting" // form submit in progress
-  | "success"    // password updated
-  | "error";     // password update failed
+type Status = "checking" | "ready" | "submitting" | "success" | "expired";
 
-function ResetPasswordForm() {
+export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
 
-  const [state, setState] = useState<State>("checking");
-  const [formError, setFormError] = useState<string | null>(null);
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      ),
+    [],
+  );
+
+  const [status, setStatus] = useState<Status>("checking");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-
-  // Prevent React Strict Mode from double-consuming the one-time PKCE code
-  const exchangedRef = useRef(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (exchangedRef.current) return;
-    exchangedRef.current = true;
+    let mounted = true;
 
-    // Set up listener BEFORE any async call so PASSWORD_RECOVERY is never missed
+    // Listen for PASSWORD_RECOVERY event FIRST before anything else —
+    // this fires when Supabase processes the hash token from the email link.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setState("ready");
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setStatus("ready");
       }
     });
 
-    const code = searchParams.get("code");
+    async function init() {
+      // Check for ?code= param (PKCE flow)
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
 
-    if (code) {
-      // PKCE flow: exchange the single-use code for a recovery session.
-      // On success Supabase fires PASSWORD_RECOVERY via onAuthStateChange above.
-      // On failure the code was expired or already used.
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          setState("expired");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
+          window.history.replaceState({}, "", "/reset-password");
+          if (mounted) setStatus("ready");
+          return;
         }
-        // success → handled by onAuthStateChange
-      });
-    } else {
-      // No code in URL. Normal path: /auth/callback exchanged the code
-      // server-side and set a session cookie before redirecting here.
-      // Also handles hash-based recovery tokens (older Supabase projects)
-      // which the client auto-processes and fires PASSWORD_RECOVERY.
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          // Session established server-side by /auth/callback — show form.
-          setState("ready");
-        } else {
-          // Give onAuthStateChange a tick to fire PASSWORD_RECOVERY in case
-          // the client is still processing a hash-based recovery token.
-          setTimeout(() => {
-            setState((prev) => (prev === "checking" ? "expired" : prev));
-          }, 1200);
-        }
-      });
+      }
+
+      // Check for existing session (e.g. hash token already processed)
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (data.session) {
+        setStatus("ready");
+        return;
+      }
+
+      // Give onAuthStateChange time to fire PASSWORD_RECOVERY
+      // for hash-based tokens from the email link
+      setTimeout(() => {
+        if (!mounted) return;
+        setStatus((prev) => (prev === "checking" ? "expired" : prev));
+      }, 2000);
     }
 
+    init();
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError(null);
+    setError(null);
 
-    if (password !== confirm) {
-      setFormError("Passwords do not match.");
-      return;
-    }
     if (password.length < 8) {
-      setFormError("Password must be at least 8 characters.");
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
       return;
     }
 
-    setState("submitting");
+    setStatus("submitting");
 
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      setState("error");
-      setFormError(error.message);
-    } else {
-      // Sign out the recovery session so the user starts fresh
-      await supabase.auth.signOut();
-      setState("success");
-      setTimeout(() => router.push("/login?reset=success"), 2000);
+      setStatus("ready");
+      setError(error.message);
+      return;
     }
+
+    setStatus("success");
+    await supabase.auth.signOut();
+
+    setTimeout(() => {
+      router.push("/login?reset=success");
+    }, 2000);
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900">
+  if (status === "checking") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f8fafc",
+        }}
+      >
+        <p style={{ color: "#64748b", fontSize: 15 }}>
+          Verifying your reset link...
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "expired") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f8fafc",
+          padding: "24px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 420,
+            width: "100%",
+            background: "white",
+            borderRadius: 16,
+            padding: 40,
+            border: "1px solid #e2e8f0",
+            textAlign: "center",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: "#0f172a",
+              marginBottom: 12,
+            }}
+          >
+            This link has expired
+          </h1>
+          <p
+            style={{
+              fontSize: 14,
+              color: "#64748b",
+              lineHeight: 1.6,
+              marginBottom: 28,
+            }}
+          >
+            Password reset links expire after 1 hour or after they have been
+            used once. Request a new one below.
+          </p>
+          <Link
+            href="/forgot-password"
+            style={{
+              display: "block",
+              padding: "13px 0",
+              background: "#1e40af",
+              color: "white",
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 15,
+              textDecoration: "none",
+              marginBottom: 12,
+            }}
+          >
+            Request a new reset link
+          </Link>
+          <Link
+            href="/login"
+            style={{
+              display: "block",
+              fontSize: 14,
+              color: "#64748b",
+              textDecoration: "none",
+            }}
+          >
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f8fafc",
+          padding: "24px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 420,
+            width: "100%",
+            background: "white",
+            borderRadius: 16,
+            padding: 40,
+            border: "1px solid #e2e8f0",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              background: "#dcfce7",
+              borderRadius: 99,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+            }}
+          >
             <svg
-              className="h-6 w-6 text-white"
+              width="24"
+              height="24"
               fill="none"
+              stroke="#16a34a"
+              strokeWidth={2.5}
               viewBox="0 0 24 24"
-              stroke="currentColor"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h1
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: "#0f172a",
+              marginBottom: 8,
+            }}
+          >
+            Password updated
+          </h1>
+          <p style={{ fontSize: 14, color: "#64748b" }}>
+            Redirecting you to sign in...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ready or submitting — show the form
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f8fafc",
+        padding: "24px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 420,
+          width: "100%",
+          background: "white",
+          borderRadius: 16,
+          padding: 40,
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 32,
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              background: "#0f172a",
+              borderRadius: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="white"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">PropTrust</h1>
-          <p className="mt-1 text-sm text-slate-500">Set a new password</p>
+          <span style={{ fontWeight: 700, fontSize: 18, color: "#0f172a" }}>
+            PropTrust
+          </span>
         </div>
 
-        <div className="card p-6">
-          {/* Checking */}
-          {state === "checking" && (
-            <p className="text-center text-sm text-slate-500">
-              Verifying reset link…
-            </p>
-          )}
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: "#0f172a",
+            marginBottom: 8,
+          }}
+        >
+          Set a new password
+        </h1>
+        <p
+          style={{
+            fontSize: 14,
+            color: "#64748b",
+            marginBottom: 28,
+            lineHeight: 1.6,
+          }}
+        >
+          Choose a strong password for your account.
+        </p>
 
-          {/* Expired / invalid */}
-          {state === "expired" && (
-            <div className="text-center">
-              <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                This reset link has expired or already been used. Please
-                request a new one.
-              </div>
-              <Link
-                href="/forgot-password"
-                className="block text-sm font-semibold text-slate-900 hover:underline"
-              >
-                Request a new reset link
-              </Link>
-              <Link
-                href="/login"
-                className="mt-2 block text-sm text-slate-500 hover:underline"
-              >
-                Back to sign in
-              </Link>
-            </div>
-          )}
-
-          {/* Success */}
-          {state === "success" && (
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg
-                  className="h-6 w-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="font-semibold text-slate-900">Password updated!</p>
-              <p className="mt-2 text-sm text-slate-500">
-                Redirecting you to sign in…
-              </p>
-            </div>
-          )}
-
-          {/* Password form (ready, submitting, error) */}
-          {(state === "ready" ||
-            state === "submitting" ||
-            state === "error") && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  New password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirm"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Confirm new password
-                </label>
-                <input
-                  id="confirm"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="••••••••"
-                  className="input-field"
-                />
-              </div>
-
-              {formError && (
-                <div className="rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
-                  {formError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={state === "submitting"}
-                className="btn-primary mt-2"
-              >
-                {state === "submitting" ? "Updating…" : "Set new password"}
-              </button>
-            </form>
-          )}
-        </div>
-
-        {state !== "success" && (
-          <p className="mt-4 text-center text-sm text-slate-500">
-            <Link
-              href="/login"
-              className="font-semibold text-slate-900 hover:underline"
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: 6,
+              }}
             >
-              Back to sign in
-            </Link>
-          </p>
-        )}
+              New password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimum 8 characters"
+              autoComplete="new-password"
+              required
+              style={{
+                width: "100%",
+                padding: "11px 14px",
+                borderRadius: 8,
+                border: "1.5px solid #e2e8f0",
+                fontSize: 15,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: 6,
+              }}
+            >
+              Confirm new password
+            </label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Repeat your password"
+              autoComplete="new-password"
+              required
+              style={{
+                width: "100%",
+                padding: "11px 14px",
+                borderRadius: 8,
+                border: "1.5px solid #e2e8f0",
+                fontSize: 15,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          {error && (
+            <div
+              style={{
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: "#dc2626",
+                marginBottom: 16,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={status === "submitting" || !password || !confirm}
+            style={{
+              width: "100%",
+              padding: "13px 0",
+              background: "#1e40af",
+              color: "white",
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 16,
+              border: "none",
+              cursor:
+                status === "submitting" ? "not-allowed" : "pointer",
+              opacity:
+                status === "submitting" || !password || !confirm ? 0.6 : 1,
+            }}
+          >
+            {status === "submitting" ? "Updating..." : "Update password"}
+          </button>
+        </form>
       </div>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
   );
 }
