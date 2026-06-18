@@ -263,39 +263,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Supabase email confirmations are disabled — account is immediately active.
-    // We generate our own token and send a confirmation email via Resend.
-    if (data?.user) {
-      try {
-        const token = crypto.randomUUID();
-
-        await supabase.from("email_confirmations").insert({
-          user_id: data.user.id,
-          token,
-          email,
-          expires_at: new Date(
-            Date.now() + 24 * 60 * 60 * 1000,
-          ).toISOString(),
-        });
-
-        const confirmUrl = `https://proptrust.co.za/auth/confirm?token=${token}`;
-
-        await fetch("/api/auth/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "confirmation",
-            email,
-            name: fullName,
-            confirmationUrl: confirmUrl,
-          }),
-        });
-      } catch (err) {
-        console.error("Failed to send confirmation email:", err);
-        // Don't block the user — account is already active
-      }
-    }
-
     setLoading(false);
     setShowConfirmation(true);
   }
