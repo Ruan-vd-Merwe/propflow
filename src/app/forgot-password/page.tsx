@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -13,16 +14,14 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      await fetch("/api/auth/password-reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const supabase = createClient();
+      await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      // Always show success regardless of result — never reveal if email exists
-      setSent(true);
     } catch {
-      setSent(true);
+      // Intentionally swallowed — never reveal whether the email exists
     } finally {
+      setSent(true);
       setLoading(false);
     }
   }

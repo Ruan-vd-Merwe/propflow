@@ -3,21 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 
 type Status = "checking" | "ready" | "submitting" | "success" | "expired";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      ),
-    [],
-  );
+  const supabase = useMemo(() => createClient(), []);
 
   const [status, setStatus] = useState<Status>("checking");
   const [password, setPassword] = useState("");
@@ -39,29 +32,60 @@ export default function ResetPasswordPage() {
     });
 
     async function init() {
-      // Check for ?code= param (PKCE flow)
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
 
+      // Supabase sends hash-encoded errors when the OTP was already used/expired
+      // (e.g. #error=access_denied&error_code=otp_expired after a scanner prefetch)
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const hashErrorCode = hashParams.get("error_code");
+
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[reset-password]", {
+          hasCode: !!code,
+          hasHash: window.location.hash.length > 1,
+          hashErrorCode: hashErrorCode ?? null,
+        });
+      }
+
+      if (hashErrorCode) {
+        window.history.replaceState({}, "", "/reset-password");
+        if (mounted) setStatus("expired");
+        return;
+      }
+
+      // PKCE flow: exchange the one-time code for a recovery session
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
+        // Strip the code from the URL immediately — prevents re-use on refresh
+        window.history.replaceState({}, "", "/reset-password");
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[reset-password] exchangeCodeForSession:", error ? error.message : "ok");
+        }
         if (!error) {
-          window.history.replaceState({}, "", "/reset-password");
+          // onAuthStateChange will also fire PASSWORD_RECOVERY, but set ready
+          // here immediately so the form appears without waiting for the event
           if (mounted) setStatus("ready");
           return;
         }
+        // Exchange failed (code expired, already used, or verifier mismatch)
+        if (mounted) setStatus("expired");
+        return;
       }
 
-      // Check for existing session (e.g. hash token already processed)
+      // No code — check for an existing recovery session (e.g. after page refresh)
       const { data } = await supabase.auth.getSession();
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[reset-password] getSession; sessionFound:", !!data.session);
+      }
       if (!mounted) return;
       if (data.session) {
         setStatus("ready");
         return;
       }
 
-      // Give onAuthStateChange time to fire PASSWORD_RECOVERY
-      // for hash-based tokens from the email link
+      // Last-resort timeout: give onAuthStateChange time to fire PASSWORD_RECOVERY
+      // in case the Supabase client processes a hash token asynchronously
       setTimeout(() => {
         if (!mounted) return;
         setStatus((prev) => (prev === "checking" ? "expired" : prev));
