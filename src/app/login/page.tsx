@@ -4,7 +4,6 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackUrl } from "@/lib/site-url";
 
 function LoginForm() {
   const router = useRouter();
@@ -18,14 +17,12 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [sendingCode, setSendingCode] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setUnconfirmedEmail(null);
-    setResendMessage(null);
     setLoading(true);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -47,23 +44,20 @@ function LoginForm() {
     router.refresh();
   }
 
-  async function handleResend() {
+  async function handleSendCode() {
     if (!unconfirmedEmail) return;
-    setResendLoading(true);
-    setResendMessage(null);
-    const { error: resendError } = await supabase.auth.resend({
-      type: "signup",
-      email: unconfirmedEmail,
-      options: {
-        emailRedirectTo: getAuthCallbackUrl("/dashboard"),
-      },
-    });
-    setResendLoading(false);
-    if (resendError) {
-      setResendMessage("Failed to resend. Please try again.");
-    } else {
-      setResendMessage("Email resent. Check your inbox.");
+    setSendingCode(true);
+    try {
+      await fetch("/api/auth/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: unconfirmedEmail }),
+      });
+    } catch {
+      // Best-effort — the confirm-email page has its own resend
     }
+    setSendingCode(false);
+    router.push(`/confirm-email?email=${encodeURIComponent(unconfirmedEmail)}`);
   }
 
   return (
@@ -95,6 +89,14 @@ function LoginForm() {
           <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
             <p className="font-semibold">Password updated.</p>
             <p className="mt-0.5">Sign in with your new password.</p>
+          </div>
+        )}
+
+        {/* Email confirmed banner */}
+        {searchParams.get("reset") === "confirmed" && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <p className="font-semibold">Email confirmed.</p>
+            <p className="mt-0.5">Sign in to get started.</p>
           </div>
         )}
 
@@ -211,24 +213,16 @@ function LoginForm() {
             {unconfirmedEmail && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
                 <p>
-                  Please confirm your email first. Check your inbox or spam
-                  folder.
+                  Please confirm your email first.
                 </p>
                 <button
                   type="button"
-                  onClick={handleResend}
-                  disabled={resendLoading}
+                  onClick={handleSendCode}
+                  disabled={sendingCode}
                   className="mt-2 font-semibold underline disabled:opacity-50"
                 >
-                  {resendLoading ? "Sending…" : "Resend confirmation email"}
+                  {sendingCode ? "Sending code…" : "Send confirmation code"}
                 </button>
-                {resendMessage && (
-                  <p
-                    className={`mt-1 ${resendMessage.startsWith("Email resent") ? "text-green-700" : "text-red-600"}`}
-                  >
-                    {resendMessage}
-                  </p>
-                )}
               </div>
             )}
 

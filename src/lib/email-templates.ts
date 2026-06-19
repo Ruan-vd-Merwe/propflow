@@ -506,6 +506,33 @@ export function introductionToLandlordEmail(d: IntroductionEmailData): {
   return { subject, html: baseLayout("#3b82f6", content) };
 }
 
+// ─── Email confirmation code ─────────────────────────────────────────────────
+
+export function confirmationCodeEmail(code: string): {
+  subject: string;
+  html: string;
+} {
+  const subject = `${code} is your PropTrust confirmation code`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
+      Confirm your email address
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      Enter this code on the confirmation page to activate your PropTrust account:
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0"
+      style="width:100%;background:#f0f9ff;border:2px solid #bfdbfe;border-radius:12px;margin:0 0 24px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#1e40af;font-family:'Courier New',monospace;">${code}</span>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 8px;font-size:14px;color:#64748b;line-height:1.5;">
+      This code expires in 1 hour. If you didn't create a PropTrust account, you can safely ignore this email.
+    </p>
+  `;
+  return { subject, html: baseLayout("#2563eb", content) };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function formatAmountRand(cents: number): string {
