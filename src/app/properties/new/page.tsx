@@ -876,7 +876,7 @@ export default function NewPropertyPage() {
                           Keep private
                         </span>
                         <p className="text-xs text-slate-500">
-                          Only you can see this property. Tenants won't find it
+                          Only you can see this property. Tenants won&apos;t find it
                           in search.
                         </p>
                       </div>
