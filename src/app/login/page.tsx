@@ -99,16 +99,28 @@ function LoginForm() {
         )}
 
         {/* Auth callback error banners */}
-        {(errorParam === "auth_callback_failed" ||
-          errorParam === "missing_auth_code") && (
+        {errorParam === "missing_auth_code" && (
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p className="font-semibold">That link didn&apos;t work.</p>
+            <p className="font-semibold">Invalid confirmation link.</p>
             <p className="mt-0.5">
-              It may have expired or already been used. Try signing in or{" "}
-              <Link href="/forgot-password" className="font-medium underline">
-                request a new reset link
-              </Link>
-              .
+              The link is missing required information. Please{" "}
+              <Link href="/register" className="font-medium underline">
+                sign up again
+              </Link>{" "}
+              to receive a new confirmation email.
+            </p>
+          </div>
+        )}
+        {errorParam === "auth_callback_failed" && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">That link has expired or already been used.</p>
+            <p className="mt-0.5">
+              Confirmation links are single-use and expire after 24 hours. Sign
+              in below if your account is active, or{" "}
+              <Link href="/register" className="font-medium underline">
+                sign up again
+              </Link>{" "}
+              to get a new link.
             </p>
           </div>
         )}
