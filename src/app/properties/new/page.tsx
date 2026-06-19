@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import type { PropertyStatus } from "@/lib/types";
 
 const PROVINCES = [
   "Eastern Cape",
@@ -66,14 +67,24 @@ const LIFESTYLE_TAGS = [
   { value: "dog_walking", label: "Dog walking routes" },
 ];
 
-type Step = 1 | 2 | 3;
+type ListingMode = "vacant" | "occupied";
+type Step = 0 | 1 | 2 | 3;
+type VisibilityChoice = "private" | "available_from";
 
-function StepBar({ current }: { current: Step }) {
-  const steps = ["Property details", "Rental details", "Photos"];
+function StepBar({
+  current,
+  mode,
+}: {
+  current: Step;
+  mode: ListingMode | null;
+}) {
+  if (current === 0) return null;
+  const step2Label = mode === "occupied" ? "Current lease" : "Rental details";
+  const steps = ["Property details", step2Label, "Photos"];
   return (
     <div className="mb-8 flex items-center justify-center gap-0">
       {steps.map((label, i) => {
-        const num = (i + 1) as Step;
+        const num = (i + 1) as 1 | 2 | 3;
         const done = num < current;
         const active = num === current;
         return (
@@ -112,7 +123,8 @@ export default function NewPropertyPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
+  const [mode, setMode] = useState<ListingMode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -127,7 +139,7 @@ export default function NewPropertyPage() {
   const [province, setProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
 
-  // Step 2
+  // Step 2 — shared
   const [rent, setRent] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
   const [leaseLength, setLeaseLength] = useState("");
@@ -139,6 +151,12 @@ export default function NewPropertyPage() {
   const [areaTags, setAreaTags] = useState<string[]>([]);
   const [lifestyleTags, setLifestyleTags] = useState<string[]>([]);
   const [description, setDescription] = useState("");
+
+  // Step 2 — occupied-only
+  const [deposit, setDeposit] = useState("");
+  const [leaseEndDate, setLeaseEndDate] = useState("");
+  const [visibilityChoice, setVisibilityChoice] =
+    useState<VisibilityChoice>("private");
 
   // Step 3
   const [photos, setPhotos] = useState<File[]>([]);
@@ -154,6 +172,18 @@ export default function NewPropertyPage() {
     setPhotos((prev) => prev.filter((_, idx) => idx !== i));
   }
 
+  function handleLeaseEndChange(value: string) {
+    setLeaseEndDate(value);
+    if (value) setAvailableFrom(value);
+  }
+
+  function resolveStatus(): PropertyStatus {
+    if (mode === "occupied") {
+      return visibilityChoice === "available_from" ? "available_from" : "occupied";
+    }
+    return "available";
+  }
+
   async function handleSubmit() {
     setLoading(true);
     setError(null);
@@ -165,6 +195,9 @@ export default function NewPropertyPage() {
       router.push("/login");
       return;
     }
+
+    const status = resolveStatus();
+    const isListed = status === "available" || status === "available_from";
 
     const { data: prop, error: propErr } = await supabase
       .from("properties")
@@ -186,7 +219,12 @@ export default function NewPropertyPage() {
         property_tags: propertyTags,
         area_tags: areaTags,
         lifestyle_tags: lifestyleTags,
-        is_listed: true,
+        is_listed: isListed,
+        status,
+        deposit_amount_cents: deposit
+          ? Math.round(parseFloat(deposit) * 100)
+          : null,
+        lease_end_date: mode === "occupied" && leaseEndDate ? leaseEndDate : null,
         photos: [],
       })
       .select()
@@ -230,7 +268,11 @@ export default function NewPropertyPage() {
     }
 
     setLoading(false);
-    setToast("Property listed successfully!");
+    const msg =
+      mode === "occupied" && visibilityChoice === "private"
+        ? "Property added successfully!"
+        : "Property listed successfully!";
+    setToast(msg);
     setTimeout(() => router.push(`/properties/${prop.id}`), 1200);
   }
 
@@ -277,11 +319,88 @@ export default function NewPropertyPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Add a property</h1>
           <p className="mt-1 text-sm text-slate-500">
-            List your property on PropTrust in 3 steps
+            {step === 0
+              ? "What would you like to do?"
+              : mode === "occupied"
+                ? "Add your property to PropTrust in 3 steps"
+                : "List your property on PropTrust in 3 steps"}
           </p>
         </div>
 
-        <StepBar current={step} />
+        <StepBar current={step} mode={mode} />
+
+        {/* ── Step 0: Choose mode ── */}
+        {step === 0 && (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("vacant");
+                setStep(1);
+              }}
+              className="card flex w-full items-start gap-4 p-5 text-left transition hover:ring-2 hover:ring-blue-700"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <span className="text-sm font-bold text-slate-900">
+                  List a property for rent
+                </span>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  The property is vacant or becoming available — list it for
+                  tenants to find.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMode("occupied");
+                setStep(1);
+              }}
+              className="card flex w-full items-start gap-4 p-5 text-left transition hover:ring-2 hover:ring-blue-700"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <span className="text-sm font-bold text-slate-900">
+                  Add a property I already rent out
+                </span>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  You have a sitting tenant — track the lease and optionally
+                  list it for when the lease ends.
+                </p>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* ── Step 1 ── */}
         {step === 1 && (
@@ -423,14 +542,26 @@ export default function NewPropertyPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              disabled={!name.trim() || !address.trim()}
-              onClick={() => setStep(2)}
-              className="btn-primary mt-6 disabled:opacity-50"
-            >
-              Continue →
-            </button>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(0);
+                  setMode(null);
+                }}
+                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={!name.trim() || !address.trim()}
+                onClick={() => setStep(2)}
+                className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
+              >
+                Continue →
+              </button>
+            </div>
           </div>
         )}
 
@@ -438,12 +569,12 @@ export default function NewPropertyPage() {
         {step === 2 && (
           <div className="card p-6">
             <h2 className="mb-5 text-lg font-bold text-slate-900">
-              Rental details
+              {mode === "occupied" ? "Current lease" : "Rental details"}
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Monthly rent
+                  {mode === "occupied" ? "Current monthly rent" : "Monthly rent"}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
@@ -460,40 +591,83 @@ export default function NewPropertyPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Available from
-                </label>
-                <input
-                  type="date"
-                  className="input-field"
-                  value={availableFrom}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setAvailableFrom(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Lease length preference
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {LEASE_OPTS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setLeaseLength(opt.value)}
-                      className={`rounded-xl border py-2.5 text-sm font-medium transition ${
-                        leaseLength === opt.value
-                          ? "border-blue-700 bg-blue-700 text-white"
-                          : "border-slate-200 text-slate-600 hover:border-slate-400"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+              {/* Occupied-only: deposit */}
+              {mode === "occupied" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Deposit held
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+                      R
+                    </span>
+                    <input
+                      type="number"
+                      className="input-field pl-7"
+                      placeholder="12 000"
+                      min={0}
+                      value={deposit}
+                      onChange={(e) => setDeposit(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Occupied-only: lease end date */}
+              {mode === "occupied" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Lease end date
+                  </label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={leaseEndDate}
+                    onChange={(e) => handleLeaseEndChange(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Vacant-only: available from */}
+              {mode === "vacant" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Available from
+                  </label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={availableFrom}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Vacant-only: lease length preference */}
+              {mode === "vacant" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Lease length preference
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {LEASE_OPTS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setLeaseLength(opt.value)}
+                        className={`rounded-xl border py-2.5 text-sm font-medium transition ${
+                          leaseLength === opt.value
+                            ? "border-blue-700 bg-blue-700 text-white"
+                            : "border-slate-200 text-slate-600 hover:border-slate-400"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Floor size */}
               <div>
@@ -675,6 +849,92 @@ export default function NewPropertyPage() {
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
+
+              {/* Occupied-only: visibility choice */}
+              {mode === "occupied" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Visibility
+                  </label>
+                  <div className="space-y-2">
+                    <label
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition ${
+                        visibilityChoice === "private"
+                          ? "border-slate-800 bg-slate-50"
+                          : "border-slate-200 hover:border-slate-400"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="visibility"
+                        className="mt-0.5"
+                        checked={visibilityChoice === "private"}
+                        onChange={() => setVisibilityChoice("private")}
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-900">
+                          Keep private
+                        </span>
+                        <p className="text-xs text-slate-500">
+                          Only you can see this property. Tenants won't find it
+                          in search.
+                        </p>
+                      </div>
+                    </label>
+                    <label
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition ${
+                        visibilityChoice === "available_from"
+                          ? "border-slate-800 bg-slate-50"
+                          : "border-slate-200 hover:border-slate-400"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="visibility"
+                        className="mt-0.5"
+                        checked={visibilityChoice === "available_from"}
+                        onChange={() => setVisibilityChoice("available_from")}
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-900">
+                          List as available from{" "}
+                          {leaseEndDate
+                            ? new Date(leaseEndDate + "T00:00:00").toLocaleDateString(
+                                "en-ZA",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            : "lease end date"}
+                        </span>
+                        <p className="text-xs text-slate-500">
+                          Tenants can see the listing and plan to move in after
+                          the current lease ends.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {visibilityChoice === "available_from" && (
+                    <div className="mt-3">
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                        Available from
+                      </label>
+                      <input
+                        type="date"
+                        className="input-field"
+                        value={availableFrom}
+                        onChange={(e) => setAvailableFrom(e.target.value)}
+                      />
+                      <p className="mt-1 text-xs text-slate-400">
+                        Pre-filled from lease end date — adjust if needed.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex gap-3">
@@ -801,7 +1061,11 @@ export default function NewPropertyPage() {
                 onClick={handleSubmit}
                 className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
               >
-                {loading ? "Saving…" : "List property →"}
+                {loading
+                  ? "Saving…"
+                  : mode === "occupied"
+                    ? "Add property →"
+                    : "List property →"}
               </button>
             </div>
 

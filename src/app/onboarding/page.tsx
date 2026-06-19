@@ -196,6 +196,7 @@ export default function OnboardingPage() {
         available_from: availableFrom || null,
         description: description || null,
         is_listed: isListed,
+        status: isListed ? "available" : "draft",
         photos: [],
       })
       .select()

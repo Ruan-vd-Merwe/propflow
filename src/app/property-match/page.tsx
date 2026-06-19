@@ -71,7 +71,7 @@ export default async function PropertyMatchPage() {
   const { data: rawProps } = await supabase
     .from("properties")
     .select("*")
-    .eq("is_listed", true)
+    .in("status", ["available", "available_from"])
     .order("created_at", { ascending: false })
     .limit(60);
 

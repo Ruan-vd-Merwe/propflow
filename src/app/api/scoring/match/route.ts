@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (property_ids?.length) {
     query = query.in("id", property_ids);
   } else {
-    query = query.eq("is_listed", true).limit(100);
+    query = query.in("status", ["available", "available_from"]).limit(100);
   }
 
   const { data: properties } = await query;

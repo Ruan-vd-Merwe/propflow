@@ -16,7 +16,7 @@ export default async function TenantBrowsePage() {
   const { data: rawProps } = await supabase
     .from("properties")
     .select("*")
-    .eq("is_listed", true)
+    .in("status", ["available", "available_from"])
     .order("created_at", { ascending: false })
     .limit(100);
 

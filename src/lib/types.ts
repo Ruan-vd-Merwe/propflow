@@ -23,6 +23,13 @@ export type Property = {
   created_at: string;
 };
 
+export type PropertyStatus =
+  | "draft"
+  | "available"
+  | "available_from"
+  | "occupied"
+  | "archived";
+
 // Extended property with marketplace fields (all nullable for backward compat)
 export type PropertyListing = Property & {
   property_type: "apartment" | "house" | "townhouse" | "room" | null;
@@ -33,6 +40,7 @@ export type PropertyListing = Property & {
   province: string | null;
   description: string | null;
   is_listed: boolean;
+  status: PropertyStatus;
   photos: string[];
   // tag columns added in migration_property_tags.sql
   floor_size_m2: number | null;
@@ -516,5 +524,83 @@ export type BankTransactionRecord = {
   bank_reference: string | null;
   is_reconciled: boolean;
   source: "manual" | "statement" | "api";
+  created_at: string;
+};
+
+// ─── Body-corporate notice ingestion ─────────────────────────────────────────
+
+export type NoticeVerificationStatus = "verified" | "unverified";
+export type NoticeStatus = "received" | "extracted" | "failed";
+export type NoticeType =
+  | "agm"
+  | "special_levy"
+  | "levy_statement"
+  | "rules_change"
+  | "maintenance"
+  | "other";
+
+export type NoticeKeyDate = {
+  label: string;
+  date: string;
+};
+
+export type NoticeAmount = {
+  label: string;
+  amount: number;
+  currency: string;
+};
+
+export type NoticeExtraction = {
+  notice_type: NoticeType;
+  title: string;
+  summary: string;
+  key_dates: NoticeKeyDate[];
+  amounts: NoticeAmount[];
+  action_required: boolean;
+  deadline: string | null;
+};
+
+export type Notice = {
+  id: string;
+  property_id: string;
+  source_message_id: string;
+  sender_email: string;
+  subject: string | null;
+  verification_status: NoticeVerificationStatus;
+  raw_email_path: string | null;
+  pdf_path: string | null;
+  notice_type: NoticeType | null;
+  title: string | null;
+  summary: string | null;
+  key_dates: NoticeKeyDate[] | null;
+  amounts: NoticeAmount[] | null;
+  action_required: boolean | null;
+  deadline: string | null;
+  status: NoticeStatus;
+  extraction_error: string | null;
+  created_at: string;
+};
+
+export type NoticeSenderAllowlist = {
+  id: string;
+  property_id: string;
+  sender_pattern: string;
+  created_at: string;
+};
+
+export type OwnerNotificationType =
+  | "notice_received"
+  | "notice_extracted"
+  | "notice_unverified";
+
+export type OwnerNotification = {
+  id: string;
+  owner_id: string;
+  property_id: string;
+  type: OwnerNotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
   created_at: string;
 };

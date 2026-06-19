@@ -119,7 +119,7 @@ export default async function BrowsePropertyPage({
     .from("properties")
     .select("*")
     .eq("id", params.id)
-    .eq("is_listed", true)
+    .in("status", ["available", "available_from"])
     .single();
 
   if (!raw) notFound();
@@ -168,7 +168,7 @@ export default async function BrowsePropertyPage({
     .from("properties")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", property.owner_id)
-    .eq("is_listed", true);
+    .in("status", ["available", "available_from"]);
 
   const memberSince = ownerProf?.created_at
     ? new Date(ownerProf.created_at).getFullYear()
@@ -180,7 +180,7 @@ export default async function BrowsePropertyPage({
     const { data: simRaw } = await supabase
       .from("properties")
       .select("*")
-      .eq("is_listed", true)
+      .in("status", ["available", "available_from"])
       .neq("id", property.id)
       .eq(
         property.suburb ? "suburb" : "province",

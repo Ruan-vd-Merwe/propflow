@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     .from("properties")
     .select("*")
     .in("id", property_ids || [])
-    .eq("is_listed", true);
+    .in("status", ["available", "available_from"]);
 
   if (!properties?.length) return NextResponse.json({ results: [] });
 

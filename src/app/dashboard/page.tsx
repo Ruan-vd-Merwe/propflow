@@ -61,7 +61,7 @@ export default async function DashboardPage({
     const { data: listedProps } = await supabase
       .from("properties")
       .select("*")
-      .eq("is_listed", true)
+      .in("status", ["available", "available_from"])
       .limit(100);
     totalListedCount = (listedProps ?? []).length;
 
