@@ -225,7 +225,7 @@ export default function MarketingNav() {
         }`}
       >
         {/* Top bar */}
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-6 lg:py-3.5">
           <NavLogo />
 
           {/* Desktop nav */}
@@ -250,23 +250,23 @@ export default function MarketingNav() {
           </nav>
 
           {/* Right buttons */}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="rounded-lg border-[1.5px] border-[#0f172a] px-3 py-1.5 text-sm font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:px-4 lg:py-2"
-            >
-              Login
-            </Link>
+          <div className="flex items-center gap-1.5 lg:gap-2">
             <Link
               href="/register"
-              className="hidden rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 lg:block"
+              className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
             >
-              Get started
+              Register
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-md border-[1.5px] border-[#0f172a] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+            >
+              Login
             </Link>
             {/* Hamburger — mobile only */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
-              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
+              className="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-100 lg:hidden"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <IconClose /> : <IconMenu />}
