@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type UserRoles = { is_landlord: boolean; is_tenant: boolean };
+type UserRoles = { is_landlord: boolean; is_tenant: boolean; is_connector: boolean };
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -116,16 +116,31 @@ function IconChevronDown({ className }: { className?: string }) {
 
 // ─── Link data ────────────────────────────────────────────────────────────────
 
+type NavLink = { href: string; label: string };
+type MoreLink = NavLink & { Icon: React.FC<{ className?: string }> };
+
 // Primary links shown in the desktop top bar (max 4)
-const PRIMARY_LANDLORD: { href: string; label: string }[] = [
+const PRIMARY_LANDLORD: NavLink[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/tenants/browse", label: "Find Tenants" },
   { href: "/applications", label: "Applications" },
 ];
 
+const PRIMARY_TENANT: NavLink[] = [
+  { href: "/tenant/browse",  label: "Find Properties" },
+  { href: "/tenant/profile", label: "My Matches"      },
+  { href: "/tenant/areas",   label: "Find by Area"    },
+];
+
+const PRIMARY_CONNECTOR: NavLink[] = [
+  { href: "/connector/tasks",       label: "My Tasks"    },
+  { href: "/connector/inspections", label: "Inspections" },
+  { href: "/connector/earnings",    label: "Earnings"    },
+];
+
 // "More" dropdown — Property Management section (landlord-only)
-const MORE_PROPERTY_MGMT: { href: string; label: string; Icon: React.FC<{ className?: string }> }[] = [
+const MORE_PROPERTY_MGMT: MoreLink[] = [
   { href: "/documents",        label: "Documents",      Icon: IconDocument },
   { href: "/leases",           label: "Leases",         Icon: IconShield   },
   { href: "/queries",          label: "Queries",        Icon: IconChat     },
@@ -133,33 +148,50 @@ const MORE_PROPERTY_MGMT: { href: string; label: string; Icon: React.FC<{ classN
   { href: "/body-corporate",   label: "Body Corporate", Icon: IconBuilding },
 ];
 
-// "More" dropdown — Tenants and Matching
-// Points to authenticated app routes — public /browse and /areas remain accessible to guests
-const MORE_TENANT_MATCHING: { href: string; label: string; Icon: React.FC<{ className?: string }> }[] = [
-  { href: "/tenant/browse",   label: "Browse Properties", Icon: IconSearch   },
-  { href: "/tenant/profile",  label: "My Matches",        Icon: IconSparkles },
-  { href: "/tenant/areas",    label: "Find by Area",      Icon: IconHouse    },
+// "More" dropdown — Tenant rental search
+const MORE_TENANT_SEARCH: MoreLink[] = [
+  { href: "/tenant/browse",      label: "Browse Properties", Icon: IconSearch   },
+  { href: "/tenant/profile",     label: "My Matches",        Icon: IconSparkles },
+  { href: "/tenant/areas",       label: "Find by Area",      Icon: IconHouse    },
+  { href: "/tenant/preferences", label: "My Rental Search",  Icon: IconWrench   },
 ];
 
-// "More" dropdown — Account
-const MORE_ACCOUNT: { href: string; label: string; Icon: React.FC<{ className?: string }> }[] = [
+// "More" dropdown — Connector tasks
+const MORE_CONNECTOR_TASKS: MoreLink[] = [
+  { href: "/connector/tasks",       label: "My Tasks",    Icon: IconShoppingBag },
+  { href: "/connector/inspections", label: "Inspections", Icon: IconSearch      },
+  { href: "/connector/earnings",    label: "Earnings",    Icon: IconDocument    },
+  { href: "/connector/profile",     label: "My Profile",  Icon: IconPeople     },
+];
+
+// "More" dropdown — Account (shared)
+const MORE_ACCOUNT: MoreLink[] = [
   { href: "/services",    label: "Services",   Icon: IconShoppingBag },
   { href: "/settings",    label: "Settings",   Icon: IconCog         },
 ];
 
-// Tenant-only primary links
-const PRIMARY_TENANT: { href: string; label: string }[] = [
-  { href: "/dashboard",      label: "Dashboard"  },
-  { href: "/tenant/browse",  label: "Browse"     },
-  { href: "/tenant/profile", label: "My Profile" },
-];
+// Pick primary links based on role priority: landlord > connector > tenant
+function getPrimaryLinks(roles: UserRoles): NavLink[] {
+  if (roles.is_landlord) return PRIMARY_LANDLORD;
+  if (roles.is_connector) return PRIMARY_CONNECTOR;
+  if (roles.is_tenant) return PRIMARY_TENANT;
+  return PRIMARY_LANDLORD;
+}
+
+// Home route for the logo link
+function getHomeHref(roles: UserRoles): string {
+  if (roles.is_landlord) return "/dashboard";
+  if (roles.is_connector) return "/connector/tasks";
+  if (roles.is_tenant) return "/tenant/browse";
+  return "/dashboard";
+}
 
 // All links that live inside the "More" dropdown (for active-state detection)
 const MORE_HREFS = new Set([
   ...MORE_PROPERTY_MGMT.map((l) => l.href),
-  ...MORE_TENANT_MATCHING.map((l) => l.href),
+  ...MORE_TENANT_SEARCH.map((l) => l.href),
+  ...MORE_CONNECTOR_TASKS.map((l) => l.href),
   ...MORE_ACCOUNT.map((l) => l.href),
-  "/tenant/profile",
 ]);
 
 // ─── NavBar ──────────────────────────────────────────────────────────────────
@@ -171,7 +203,7 @@ export function NavBar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [roles, setRoles] = useState<UserRoles>({ is_landlord: true, is_tenant: false });
+  const [roles, setRoles] = useState<UserRoles>({ is_landlord: true, is_tenant: false, is_connector: false });
 
   const navRef         = useRef<HTMLElement>(null);
   const moreRef        = useRef<HTMLDivElement>(null);
@@ -182,7 +214,7 @@ export function NavBar() {
       if (!user) return;
       supabase
         .from("profiles")
-        .select("is_landlord, is_tenant")
+        .select("is_landlord, is_tenant, is_connector")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -269,7 +301,8 @@ export function NavBar() {
   const moreIsActive = Array.from(MORE_HREFS).some((href) => isActive(href));
 
   // Primary links depending on role
-  const primaryLinks = roles.is_landlord ? PRIMARY_LANDLORD : PRIMARY_TENANT;
+  const primaryLinks = getPrimaryLinks(roles);
+  const homeHref = getHomeHref(roles);
 
   return (
     <nav ref={navRef} className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -278,7 +311,7 @@ export function NavBar() {
 
         {/* Logo */}
         <Link
-          href="/dashboard"
+          href={homeHref}
           className="flex shrink-0 items-center gap-2"
           onClick={() => { setMenuOpen(false); setMoreOpen(false); }}
         >
@@ -308,63 +341,30 @@ export function NavBar() {
             </Link>
           ))}
 
-          {/* "More" dropdown — landlord and tenant users */}
-          {(roles.is_landlord || roles.is_tenant) && (
-            <div ref={moreRef} className="relative ml-0.5">
-              <button
-                type="button"
-                onClick={() => setMoreOpen((v) => !v)}
-                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                  moreIsActive || moreOpen
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                More
-                <IconChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-150 ${moreOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+          {/* "More" dropdown */}
+          <div ref={moreRef} className="relative ml-0.5">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                moreIsActive || moreOpen
+                  ? "bg-slate-100 text-slate-900"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              More
+              <IconChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-150 ${moreOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-              {/* Dropdown panel */}
-              {moreOpen && (
-                <div className="absolute right-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                  {/* Property Management — landlord only */}
-                  {roles.is_landlord && (
-                    <DropdownSection label="Property Management">
-                      {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => (
-                        <DropdownLink
-                          key={href}
-                          href={href}
-                          label={label}
-                          Icon={Icon}
-                          active={isActive(href)}
-                          onClose={() => setMoreOpen(false)}
-                        />
-                      ))}
-                    </DropdownSection>
-                  )}
-
-                  {/* Tenants and Matching — landlord always, tenant-only always */}
-                  <DropdownSection label="Tenants and Matching">
-                    {MORE_TENANT_MATCHING.map(({ href, label, Icon }) => {
-                      if (label === "My Matches" && !roles.is_tenant) return null;
-                      return (
-                        <DropdownLink
-                          key={href}
-                          href={href}
-                          label={label}
-                          Icon={Icon}
-                          active={isActive(href)}
-                          onClose={() => setMoreOpen(false)}
-                        />
-                      );
-                    })}
-                  </DropdownSection>
-
-                  {/* Account */}
-                  <DropdownSection label="Account">
-                    {MORE_ACCOUNT.map(({ href, label, Icon }) => (
+            {/* Dropdown panel */}
+            {moreOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                {/* Property Management — landlord only */}
+                {roles.is_landlord && (
+                  <DropdownSection label="Property Management">
+                    {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => (
                       <DropdownLink
                         key={href}
                         href={href}
@@ -374,27 +374,64 @@ export function NavBar() {
                         onClose={() => setMoreOpen(false)}
                       />
                     ))}
-                    {roles.is_tenant && (
+                  </DropdownSection>
+                )}
+
+                {/* Rental Search — tenant or dual-role */}
+                {roles.is_tenant && (
+                  <DropdownSection label="Rental Search">
+                    {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => (
                       <DropdownLink
-                        href="/tenant/profile"
-                        label="My Profile"
-                        Icon={IconPeople}
-                        active={isActive("/tenant/profile")}
+                        key={href}
+                        href={href}
+                        label={label}
+                        Icon={Icon}
+                        active={isActive(href)}
                         onClose={() => setMoreOpen(false)}
                       />
-                    )}
-                    <button
-                      onClick={handleSignOut}
-                      className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 hover:text-red-700"
-                    >
-                      <IconSignOut className="h-4 w-4 shrink-0 text-red-500" />
-                      Sign out
-                    </button>
+                    ))}
                   </DropdownSection>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+
+                {/* Connector — connector or multi-role */}
+                {roles.is_connector && (
+                  <DropdownSection label="Connector">
+                    {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => (
+                      <DropdownLink
+                        key={href}
+                        href={href}
+                        label={label}
+                        Icon={Icon}
+                        active={isActive(href)}
+                        onClose={() => setMoreOpen(false)}
+                      />
+                    ))}
+                  </DropdownSection>
+                )}
+
+                {/* Account */}
+                <DropdownSection label="Account">
+                  {MORE_ACCOUNT.map(({ href, label, Icon }) => (
+                    <DropdownLink
+                      key={href}
+                      href={href}
+                      label={label}
+                      Icon={Icon}
+                      active={isActive(href)}
+                      onClose={() => setMoreOpen(false)}
+                    />
+                  ))}
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 hover:text-red-700"
+                  >
+                    <IconSignOut className="h-4 w-4 shrink-0 text-red-500" />
+                    Sign out
+                  </button>
+                </DropdownSection>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right controls */}
@@ -452,7 +489,7 @@ export function NavBar() {
               );
             })}
 
-            {/* Property Management section — landlord only */}
+            {/* Property Management — landlord only */}
             {roles.is_landlord && (
               <>
                 <li className="bg-slate-50 px-6 py-2">
@@ -481,30 +518,61 @@ export function NavBar() {
               </>
             )}
 
-            {/* Tenants and Matching */}
-            <li className="bg-blue-50 px-6 py-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-                Tenants and Matching
-              </p>
-            </li>
-            {MORE_TENANT_MATCHING.map(({ href, label, Icon }) => {
-              if (label === "My Matches" && !roles.is_tenant) return null;
-              const active = isActive(href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                      active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
-                    }`}
-                  >
-                    <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
-                    <span>{label}</span>
-                  </Link>
+            {/* Rental Search — tenant only */}
+            {roles.is_tenant && (
+              <>
+                <li className="bg-blue-50 px-6 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+                    Rental Search
+                  </p>
                 </li>
-              );
-            })}
+                {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
+                        <span>{label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Connector tasks — connector only */}
+            {roles.is_connector && (
+              <>
+                <li className="bg-amber-50 px-6 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">
+                    Connector
+                  </p>
+                </li>
+                {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-amber-50 hover:text-amber-700"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-amber-600" : "text-slate-400"}`} />
+                        <span>{label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </>
+            )}
 
             {/* Account section */}
             <li className="bg-slate-50 px-6 py-2">
@@ -527,20 +595,6 @@ export function NavBar() {
                 </li>
               );
             })}
-            {roles.is_tenant && (
-              <li>
-                <Link
-                  href="/tenant/profile"
-                  onClick={() => setMenuOpen(false)}
-                  className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                    isActive("/tenant/profile") ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <IconPeople className={`h-5 w-5 shrink-0 ${isActive("/tenant/profile") ? "text-slate-900" : "text-slate-400"}`} />
-                  <span>My Profile</span>
-                </Link>
-              </li>
-            )}
 
             {/* Sign out */}
             <li>

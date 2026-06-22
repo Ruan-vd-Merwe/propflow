@@ -34,14 +34,25 @@ export default async function DashboardPage({
   if (!user) redirect("/login");
 
   // ── Profile (for dual-role detection) ────────────────────────────────────
-  const { data: profileRow } = await supabase
+  const { data: profileRow, error: profileErr } = await supabase
     .from("profiles")
     .select("is_landlord, is_tenant, full_name")
     .eq("id", user.id)
     .single();
 
-  const isLandlord = profileRow?.is_landlord ?? true;
-  const isTenant = profileRow?.is_tenant ?? false;
+  if (profileErr) {
+    console.error("[dashboard] profile read failed:", profileErr.message);
+  }
+
+  // Fall back to user_metadata when the profiles row is missing/unreadable,
+  // then to safe defaults (landlord=true) so the page always renders.
+  const meta = user.user_metadata ?? {};
+  const isLandlord = profileRow
+    ? profileRow.is_landlord
+    : !!(meta.is_landlord ?? (meta.user_type === "landlord" || true));
+  const isTenant = profileRow
+    ? profileRow.is_tenant
+    : !!(meta.is_tenant ?? meta.user_type === "tenant");
   const isDual = isLandlord && isTenant;
   const tab = isDual && searchParams.tab === "tenant" ? "tenant" : "landlord";
 

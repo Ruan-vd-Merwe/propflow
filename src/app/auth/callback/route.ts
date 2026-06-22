@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     const { isLandlord, isTenant, isConnector } = resolveRoleFlags(m);
 
     // Upsert profile with role flags
-    await supabase.from("profiles").upsert({
+    const { error: profileErr } = await supabase.from("profiles").upsert({
       id: user.id,
       full_name: m.full_name ?? user.email ?? "",
       email: user.email ?? "",
@@ -49,6 +49,16 @@ export async function GET(request: Request) {
       city: m.city ?? null,
       whatsapp_opted_in: m.whatsapp_opted_in ?? true,
     });
+
+    if (profileErr) {
+      console.error("[auth/callback] profiles upsert failed:", profileErr);
+      return NextResponse.redirect(
+        new URL(
+          `/login?error=profile_write_failed&message=${encodeURIComponent(profileErr.message)}`,
+          request.url,
+        ),
+      );
+    }
 
     // Create tenant_profiles row on first confirmation
     if (isTenant) {

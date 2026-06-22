@@ -95,6 +95,20 @@ export async function middleware(request: NextRequest) {
         new URL("/tenant/profile", request.url),
       );
     }
+
+    // Guard landlord-only routes for connector-only users
+    if (
+      isConnector &&
+      !isLandlord &&
+      !isTenant &&
+      (pathname === "/dashboard" ||
+        pathname.startsWith("/portfolio") ||
+        pathname === "/onboarding")
+    ) {
+      return NextResponse.redirect(
+        new URL("/connector/tasks", request.url),
+      );
+    }
   }
 
   return supabaseResponse;

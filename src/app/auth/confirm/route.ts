@@ -89,6 +89,11 @@ export async function GET(request: NextRequest) {
 
   if (profileErr) {
     console.error("[auth/confirm] profiles upsert failed:", profileErr);
+    const dest = new URL("/login", request.url);
+    dest.searchParams.set("error", "profile_write_failed");
+    dest.searchParams.set("message", profileErr.message);
+    response.headers.set("Location", dest.toString());
+    return response;
   }
 
   // Create tenant_profiles row from signup metadata
