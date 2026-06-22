@@ -1,3 +1,4 @@
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getPostAuthPath, resolveRoleFlags } from "@/lib/auth/roles";
 import { NextResponse } from "next/server";
@@ -9,21 +10,30 @@ function getSafeNext(raw: string | null): string | null {
 }
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-  const safeNext = getSafeNext(requestUrl.searchParams.get("next"));
-  const supabase = createClient();
+  const { searchParams } = new URL(request.url);
+  const token_hash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const safeNext = getSafeNext(searchParams.get("next"));
 
-  if (!code) {
+  if (!token_hash || !type) {
     return NextResponse.redirect(
-      new URL("/login?error=missing_auth_code", request.url),
+      new URL(
+        "/login?error=missing_confirmation_params",
+        request.url,
+      ),
     );
   }
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const supabase = createClient();
+  const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+
   if (error) {
+    console.error("[auth/confirm] verifyOtp failed:", error);
     return NextResponse.redirect(
-      new URL("/login?error=auth_callback_failed", request.url),
+      new URL(
+        `/login?error=confirmation_failed&message=${encodeURIComponent(error.message)}`,
+        request.url,
+      ),
     );
   }
 
@@ -35,7 +45,6 @@ export async function GET(request: Request) {
     const m = user.user_metadata ?? {};
     const { isLandlord, isTenant, isConnector } = resolveRoleFlags(m);
 
-    // Upsert profile with role flags
     await supabase.from("profiles").upsert({
       id: user.id,
       full_name: m.full_name ?? user.email ?? "",
@@ -44,13 +53,13 @@ export async function GET(request: Request) {
       is_tenant: isTenant,
       is_connector: isConnector,
       user_type: isLandlord ? "landlord" : isTenant ? "tenant" : "connector",
-      phone: m.phone ?? null,
-      province: m.province ?? null,
-      city: m.city ?? null,
+      phone: (m.phone as string) ?? null,
+      province: (m.province as string) ?? null,
+      city: (m.city as string) ?? null,
       whatsapp_opted_in: m.whatsapp_opted_in ?? true,
+      email_confirmed: true,
     });
 
-    // Create tenant_profiles row on first confirmation
     if (isTenant) {
       const { data: existing } = await supabase
         .from("tenant_profiles")
@@ -77,13 +86,11 @@ export async function GET(request: Request) {
             whatsapp_opted_in: m.whatsapp_opted_in ?? true,
           });
         } catch (e) {
-          console.error("tenant_profiles insert failed:", e);
+          console.error("[auth/confirm] tenant_profiles insert failed:", e);
         }
       }
     }
 
-    // Honour caller-supplied next path (e.g. from magic link or resend flow),
-    // otherwise fall back to role-based default
     if (safeNext) {
       return NextResponse.redirect(new URL(safeNext, request.url));
     }

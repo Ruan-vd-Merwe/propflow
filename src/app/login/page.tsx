@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getPostAuthPath, resolveRoleFlags } from "@/lib/auth/roles";
 
 function LoginForm() {
   const router = useRouter();
@@ -25,7 +26,7 @@ function LoginForm() {
     setUnconfirmedEmail(null);
     setLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -40,7 +41,9 @@ function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const m = data.user?.user_metadata ?? {};
+    const { isLandlord, isTenant } = resolveRoleFlags(m);
+    router.push(getPostAuthPath(isLandlord, isTenant));
     router.refresh();
   }
 

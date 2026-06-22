@@ -23,6 +23,7 @@ type Profile = {
   email: string;
   is_landlord: boolean;
   is_tenant: boolean;
+  is_connector: boolean;
   phone: string | null;
   province: string | null;
   city: string | null;
@@ -130,12 +131,13 @@ export default function SettingsPage() {
 
   if (!profile) return null;
 
-  const hasBoth = profile.is_landlord && profile.is_tenant;
-  const roleLabel = hasBoth
-    ? "Landlord & Tenant"
-    : profile.is_landlord
-      ? "Landlord"
-      : "Tenant";
+  const roles = [
+    profile.is_landlord && "Landlord",
+    profile.is_tenant && "Tenant",
+    profile.is_connector && "Connector",
+  ].filter(Boolean);
+  const hasBoth = roles.length > 1;
+  const roleLabel = roles.join(" & ") || "Tenant";
 
   return (
     <div className="min-h-screen bg-slate-50">

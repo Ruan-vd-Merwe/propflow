@@ -112,7 +112,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <Link
-                href="/register"
+                href="/register?role=tenant"
                 className="block rounded-xl border-2 border-[#0f172a] py-3.5 text-center text-sm font-bold text-[#0f172a] transition hover:bg-slate-50"
               >
                 Create profile
@@ -149,7 +149,7 @@ export default function PricingPage() {
                 every month, that becomes a subscription.
               </p>
               <Link
-                href="/register"
+                href="/register?role=owner"
                 className="block rounded-xl bg-[#1e40af] py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-700"
               >
                 List property
@@ -179,7 +179,7 @@ export default function PricingPage() {
                 Connectors are verified before taking paid tasks.
               </p>
               <Link
-                href="/register"
+                href="/register?role=connector"
                 className="block rounded-xl border-2 border-green-700 py-3.5 text-center text-sm font-bold text-green-700 transition hover:bg-green-50"
               >
                 Become a connector

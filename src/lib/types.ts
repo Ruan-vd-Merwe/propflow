@@ -1,6 +1,6 @@
 // ─── Existing types ───────────────────────────────────────────────────────────
 
-export type UserType = "landlord" | "tenant";
+export type UserType = "landlord" | "tenant" | "connector";
 
 export type Profile = {
   id: string;
@@ -9,6 +9,7 @@ export type Profile = {
   user_type: UserType | null;
   is_landlord: boolean;
   is_tenant: boolean;
+  is_connector: boolean;
   phone: string | null;
   province: string | null;
   city: string | null;

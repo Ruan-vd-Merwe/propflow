@@ -321,9 +321,17 @@ export default async function PropertyPage({
         </nav>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
-          <p className="mt-1 text-sm text-slate-500">{property.address}</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
+            <p className="mt-1 text-sm text-slate-500">{property.address}</p>
+          </div>
+          <Link
+            href={`/properties/${params.id}/edit`}
+            className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            Edit property
+          </Link>
         </div>
 
         {/* Photos */}

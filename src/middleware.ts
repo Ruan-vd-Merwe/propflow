@@ -39,7 +39,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/register" ||
     pathname === "/forgot-password" ||
     pathname === "/reset-password" || // password reset landing page (must be public for Supabase redirect)
-    pathname.startsWith("/auth/") || // /auth/callback
+    pathname === "/confirm-email" ||
+    pathname.startsWith("/auth/") || // /auth/callback, /auth/confirm
     // Marketing pages
     pathname === "/features" ||
     pathname === "/pricing" ||
@@ -66,10 +67,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirect authenticated users away from /login and /register
-  // (leave / alone so logged-in users can still view the marketing page)
-  if (user && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (user) {
+    const m = user.user_metadata ?? {};
+    const isLandlord = !!(m.is_landlord ?? m.user_type === "landlord");
+    const isTenant = !!(m.is_tenant ?? m.user_type === "tenant");
+    const isConnector = !!(m.is_connector ?? m.user_type === "connector");
+
+    // Redirect authenticated users away from /login and /register
+    if (pathname === "/login" || pathname === "/register") {
+      const dest =
+        isTenant && !isLandlord && !isConnector
+          ? "/tenant/profile"
+          : "/dashboard";
+      return NextResponse.redirect(new URL(dest, request.url));
+    }
+
+    // Guard landlord-only routes for tenant-only users
+    if (
+      isTenant &&
+      !isLandlord &&
+      !isConnector &&
+      (pathname === "/dashboard" ||
+        pathname.startsWith("/portfolio") ||
+        pathname === "/onboarding")
+    ) {
+      return NextResponse.redirect(
+        new URL("/tenant/profile", request.url),
+      );
+    }
   }
 
   return supabaseResponse;

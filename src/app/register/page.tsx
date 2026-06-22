@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -25,11 +25,26 @@ const EMPLOYMENT_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+const CONNECTOR_TASK_OPTIONS = [
+  "Property viewings",
+  "Move-in help",
+  "Tenant check-ins",
+  "Property check-ups",
+  "Local errands",
+  "Dog walking",
+  "Elderly support",
+  "Other local help",
+];
+
+const AVAILABILITY_OPTIONS = ["Weekdays", "Evenings", "Weekends", "Flexible"];
+
 type FlowStep =
   | "personal"
   | "landlord-details"
   | "tenant-prefs"
-  | "tenant-financial";
+  | "tenant-financial"
+  | "connector-area"
+  | "connector-about";
 
 function Logo() {
   return (
@@ -81,6 +96,7 @@ export default function RegisterPage() {
   // ── Role selection ─────────────────────────────────────────────────────────
   const [isLandlord, setIsLandlord] = useState(false);
   const [isTenant, setIsTenant] = useState(false);
+  const [isConnector, setIsConnector] = useState(false);
   const [roleChosen, setRoleChosen] = useState(false);
 
   // ── Flow step ──────────────────────────────────────────────────────────────
@@ -119,6 +135,25 @@ export default function RegisterPage() {
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
 
+  // ── Connector fields ──────────────────────────────────────────────────────
+  const [connectorArea, setConnectorArea] = useState("");
+  const [connectorProvince, setConnectorProvince] = useState("");
+  const [connectorTasks, setConnectorTasks] = useState<string[]>([]);
+  const [connectorAvailability, setConnectorAvailability] = useState<string[]>(
+    [],
+  );
+  const [connectorBio, setConnectorBio] = useState("");
+  const [connectorReference, setConnectorReference] = useState("");
+
+  // ── Pre-select role from URL ──────────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get("role");
+    if (role === "connector") setIsConnector(true);
+    if (role === "owner") setIsLandlord(true);
+    if (role === "tenant") setIsTenant(true);
+  }, []);
+
   // ── Helpers ────────────────────────────────────────────────────────────────
   function getFlowSteps(): FlowStep[] {
     const steps: FlowStep[] = ["personal"];
@@ -126,6 +161,10 @@ export default function RegisterPage() {
     if (isTenant) {
       steps.push("tenant-prefs");
       steps.push("tenant-financial");
+    }
+    if (isConnector) {
+      steps.push("connector-area");
+      steps.push("connector-about");
     }
     return steps;
   }
@@ -184,7 +223,8 @@ export default function RegisterPage() {
       full_name: fullName,
       is_landlord: isLandlord,
       is_tenant: isTenant,
-      user_type: isLandlord ? "landlord" : "tenant", // backwards compat
+      is_connector: isConnector,
+      user_type: isLandlord ? "landlord" : isTenant ? "tenant" : "connector",
       phone,
     };
 
@@ -208,12 +248,21 @@ export default function RegisterPage() {
         : null;
       metadata.whatsapp_opted_in = whatsappOptIn;
     }
+    if (isConnector) {
+      metadata.connector_area = connectorArea || null;
+      metadata.connector_province = connectorProvince || null;
+      metadata.connector_tasks = connectorTasks;
+      metadata.connector_availability = connectorAvailability;
+      metadata.connector_bio = connectorBio || null;
+      metadata.connector_reference = connectorReference || null;
+    }
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
 
@@ -266,25 +315,16 @@ export default function RegisterPage() {
   if (!roleChosen) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-3xl">
           <Logo />
-          <div className="mb-4 text-right text-sm text-slate-500">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-slate-900 hover:underline"
-            >
-              Sign in
-            </Link>
-          </div>
           <p className="mb-2 text-center text-base font-semibold text-slate-700">
             What are you signing up as?
           </p>
           <p className="mb-6 text-center text-sm text-slate-400">
-            You can select both — one account, two roles.
+            You can select more than one — one account, multiple roles.
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <button
               onClick={() => setIsLandlord((v) => !v)}
               className={`group flex flex-col items-center gap-4 rounded-2xl border-2 p-8 text-center transition ${
@@ -380,20 +420,75 @@ export default function RegisterPage() {
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => setIsConnector((v) => !v)}
+              className={`group flex flex-col items-center gap-4 rounded-2xl border-2 p-8 text-center transition ${
+                isConnector
+                  ? "border-amber-600 bg-amber-600 text-white shadow-lg"
+                  : "border-slate-200 bg-white hover:border-amber-400 hover:shadow-md"
+              }`}
+            >
+              <div
+                className={`flex h-16 w-16 items-center justify-center rounded-2xl transition ${
+                  isConnector
+                    ? "bg-amber-500"
+                    : "bg-slate-100 text-slate-700 group-hover:bg-amber-100"
+                }`}
+              >
+                <svg
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p
+                  className={`text-lg font-bold ${isConnector ? "text-white" : "text-slate-900"}`}
+                >
+                  I want to help locally
+                </p>
+                <p
+                  className={`mt-1 text-sm ${isConnector ? "text-amber-200" : "text-slate-500"}`}
+                >
+                  Earn by helping with viewings, check-ins, errands and local
+                  support
+                </p>
+              </div>
+              {isConnector && (
+                <span className="mt-auto text-sm font-bold text-amber-200">
+                  ✓ Selected
+                </span>
+              )}
+            </button>
           </div>
 
-          {(isLandlord || isTenant) && (
+          {(isLandlord || isTenant || isConnector) && (
             <button
               onClick={() => setRoleChosen(true)}
               className="mt-6 w-full rounded-xl bg-blue-700 py-3 text-sm font-bold text-white transition hover:bg-blue-800"
             >
-              {isLandlord && isTenant
-                ? "Continue with both roles →"
+              {[isLandlord, isTenant, isConnector].filter(Boolean).length > 1
+                ? `Continue with ${[isLandlord, isTenant, isConnector].filter(Boolean).length} roles →`
                 : "Continue →"}
             </button>
           )}
 
-          {!isLandlord && !isTenant && (
+          {!isLandlord && !isTenant && !isConnector && (
             <p className="mt-6 text-center text-sm text-slate-400">
               Select at least one role to continue
             </p>
@@ -1181,6 +1276,279 @@ export default function RegisterPage() {
               <button
                 type="button"
                 disabled={loading || !employmentStatus}
+                onClick={advance}
+                className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Creating account…" : "Create account"}
+              </button>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Connector: area and tasks ─────────────────────────────────────────────
+  if (currentFlowStep === "connector-area") {
+    const toggleTask = (task: string) => {
+      setConnectorTasks((prev) =>
+        prev.includes(task) ? prev.filter((t) => t !== task) : [...prev, task],
+      );
+    };
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
+        <div className="w-full max-w-md">
+          <Logo />
+          <StepDots steps={totalDots} current={flowStepIdx} />
+          <div className="card p-6">
+            <h2 className="mb-1 text-lg font-bold text-slate-900">
+              Where and how can you help?
+            </h2>
+            <p className="mb-5 text-sm text-slate-500">
+              Pick your area and the kinds of tasks you are interested in
+            </p>
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Province
+                  </label>
+                  <select
+                    className="input-field"
+                    value={connectorProvince}
+                    onChange={(e) => setConnectorProvince(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {PROVINCES.map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Area / suburb
+                  </label>
+                  <input
+                    className="input-field"
+                    placeholder="e.g. Sea Point"
+                    value={connectorArea}
+                    onChange={(e) => setConnectorArea(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-semibold text-slate-700">
+                  What can you help with?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {CONNECTOR_TASK_OPTIONS.map((task) => (
+                    <button
+                      key={task}
+                      type="button"
+                      onClick={() => toggleTask(task)}
+                      className={`rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition ${
+                        connectorTasks.includes(task)
+                          ? "border-amber-600 bg-amber-600 text-white"
+                          : "border-slate-200 text-slate-600 hover:border-slate-400"
+                      }`}
+                    >
+                      {task}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {error && error !== "EMAIL_EXISTS" && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] text-red-600">
+                {error}
+              </div>
+            )}
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={back}
+                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={advance}
+                className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Connector: about you ──────────────────────────────────────────────────
+  if (currentFlowStep === "connector-about") {
+    const toggleAvailability = (opt: string) => {
+      setConnectorAvailability((prev) =>
+        prev.includes(opt) ? prev.filter((a) => a !== opt) : [...prev, opt],
+      );
+    };
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
+        <div className="w-full max-w-md">
+          <Logo />
+          <StepDots steps={totalDots} current={flowStepIdx} />
+          <div className="card p-6">
+            <h2 className="mb-1 text-lg font-bold text-slate-900">
+              About you
+            </h2>
+            <p className="mb-5 text-sm text-slate-500">
+              A few details so people know who you are
+            </p>
+            <div className="space-y-5">
+              <div>
+                <p className="mb-2 text-sm font-semibold text-slate-700">
+                  When are you usually available?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABILITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => toggleAvailability(opt)}
+                      className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
+                        connectorAvailability.includes(opt)
+                          ? "border-amber-600 bg-amber-600 text-white"
+                          : "border-slate-200 text-slate-600 hover:border-slate-400"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Short bio
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={3}
+                  placeholder="A few words about yourself and why you want to help locally"
+                  value={connectorBio}
+                  onChange={(e) => setConnectorBio(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Reference{" "}
+                  <span className="text-slate-400">(optional)</span>
+                </label>
+                <input
+                  className="input-field"
+                  placeholder="Name and contact number"
+                  value={connectorReference}
+                  onChange={(e) => setConnectorReference(e.target.value)}
+                />
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-700">
+                  Connectors are verified before taking paid tasks.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  We will ask for ID verification after you sign up. This keeps
+                  everyone safe.
+                </p>
+              </div>
+            </div>
+            {error === "EMAIL_EXISTS" ? (
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginTop: 16,
+                  marginBottom: 0,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#991b1b",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                  }}
+                >
+                  An account with this email address already exists.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "#1e40af",
+                      color: "white",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Sign in instead
+                  </a>
+                  <a
+                    href="/forgot-password"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      border: "1.5px solid #e2e8f0",
+                      color: "#374151",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      background: "white",
+                    }}
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] text-red-600">
+                {error}
+              </div>
+            ) : null}
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={back}
+                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={loading}
                 onClick={advance}
                 className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
