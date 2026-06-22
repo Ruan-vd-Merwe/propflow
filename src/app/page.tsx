@@ -26,7 +26,7 @@ const CITIES = [
 
 const STRIP_ITEMS = [
   { label: "Free for tenants", desc: "No cost, no subscription" },
-  { label: "Landlords from R99/month", desc: "Fixed price, no commission" },
+  { label: "Pay only when it helps", desc: "Once-off fees or monthly, your choice" },
   { label: "No agent commission", desc: "Direct connection only" },
   { label: "South Africa", desc: "Built for the local market" },
 ];
@@ -357,7 +357,7 @@ export default function HomePage() {
                 </div>
                 <div className="mt-5 rounded-xl bg-[#0f172a] px-4 py-3 text-center">
                   <p className="text-xs font-bold text-white">
-                    R99/month · No agent commission
+                    Free to list · Pay per tool · No agent commission
                   </p>
                 </div>
               </div>
@@ -485,57 +485,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 7. PRICING TEASER ─────────────────────────────────────────────────── */}
-      <section className="bg-[#0f172a] px-6 py-16">
-        <div className="mx-auto max-w-5xl">
-          <p className="mb-8 text-center text-xs font-bold uppercase tracking-widest text-blue-400">
-            Pricing
-          </p>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {/* Tenant card */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-300">
-                For Tenants
-              </p>
-              <p className="mb-1 text-3xl font-extrabold text-white">Free</p>
-              <p className="mb-6 text-sm text-slate-400">
-                Create a rental profile, match areas, and apply to properties at
-                no cost.
-              </p>
-              <Link
-                href="/register"
-                className="block rounded-xl border border-white/20 py-3 text-center text-sm font-bold text-white transition hover:bg-white/10"
-              >
-                Create profile
-              </Link>
-            </div>
-
-            {/* Landlord card */}
-            <div className="rounded-2xl border border-[#1e40af] bg-[#1e3a8a]/40 p-8">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-blue-300">
-                For Landlords
-              </p>
-              <p className="mb-1 text-3xl font-extrabold text-white">
-                From R99
-                <span className="text-lg font-normal text-blue-300">
-                  {" "}
-                  per month
-                </span>
-              </p>
-              <p className="mb-6 text-sm text-slate-400">
-                Manage properties, screen tenants, store documents, and track
-                rent.
-              </p>
-              <Link
-                href="/pricing"
-                className="block rounded-xl bg-[#3b82f6] py-3 text-center text-sm font-bold text-white transition hover:bg-blue-500"
-              >
-                View pricing
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── 7. HOW PAYMENT WORKS ────────────────────────────────────────────── */}
+      <PricingSection />
 
       {/* ── SOCIAL PROOF ──────────────────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-20 md:py-24">
@@ -599,6 +550,239 @@ export default function HomePage() {
 
       <MarketingFooter />
     </div>
+  );
+}
+
+// ── How payment works ────────────────────────────────────────────────────────
+
+function PricingSection() {
+  const [costOpen, setCostOpen] = React.useState(false);
+
+  return (
+    <section className="bg-white px-6 py-20 md:py-28">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-14 text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
+            How payment works
+          </h2>
+          <p className="mt-4 text-base text-slate-500">
+            Free to start. Pay when real work gets done.
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Tenant */}
+          <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#1e40af]">
+              Tenant
+            </p>
+            <div className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              <span>Find Place</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Apply Once</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Move In</span>
+            </div>
+            <p className="mb-2 text-2xl font-extrabold text-[#0f172a]">Free</p>
+            <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
+              Create one rental profile and use it when you apply. No monthly
+              fee.
+            </p>
+            <Link
+              href="/register"
+              className="block rounded-xl border-2 border-[#0f172a] py-3 text-center text-sm font-bold text-[#0f172a] transition hover:bg-slate-50"
+            >
+              Create profile
+            </Link>
+          </div>
+
+          {/* Property Owner */}
+          <div className="flex flex-col rounded-2xl border border-[#1e40af]/30 bg-[#f8fafc] p-7 shadow-sm">
+            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#1e40af]">
+              Property Owner
+            </p>
+            <div className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              <span>List Property</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Choose Tenant</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Manage Rental</span>
+            </div>
+            <div className="mb-4 space-y-1.5">
+              <p className="text-sm text-slate-700">
+                <span className="font-bold">Free</span> to list
+              </p>
+              <p className="text-sm text-slate-700">
+                <span className="font-bold">Once-off fees</span> for specific
+                tools
+              </p>
+              <p className="text-sm text-slate-700">
+                <span className="font-bold">Monthly fee</span> only for ongoing
+                management
+              </p>
+            </div>
+            <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
+              Pay for the parts you use. If PropTrust helps manage the rental
+              every month, that becomes a subscription.
+            </p>
+            <Link
+              href="/register"
+              className="block rounded-xl bg-[#1e40af] py-3 text-center text-sm font-bold text-white transition hover:bg-blue-700"
+            >
+              List property
+            </Link>
+          </div>
+
+          {/* Local Connector */}
+          <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-green-700">
+              Local Connector
+            </p>
+            <div className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              <span>Meet People</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Help Nearby</span>
+              <span className="text-slate-300">&rarr;</span>
+              <span>Earn Per Job</span>
+            </div>
+            <p className="mb-2 text-2xl font-extrabold text-[#0f172a]">
+              Free to join
+            </p>
+            <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
+              Local people can help with viewings, check-ins, errands, and real
+              human support.
+            </p>
+            <p className="mb-6 text-xs text-slate-400">
+              Connectors are verified before taking paid tasks.
+            </p>
+            <Link
+              href="/register"
+              className="block rounded-xl border-2 border-green-700 py-3 text-center text-sm font-bold text-green-700 transition hover:bg-green-50"
+            >
+              Become a connector
+            </Link>
+          </div>
+        </div>
+
+        {/* Expandable: What might cost money? */}
+        <div className="mt-12 text-center">
+          <button
+            onClick={() => setCostOpen(!costOpen)}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-[#0f172a] shadow-sm transition hover:bg-slate-50"
+          >
+            What might cost money?
+            <svg
+              className={`h-4 w-4 text-slate-400 transition-transform ${costOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {costOpen && (
+            <div className="mt-8 grid gap-6 text-left md:grid-cols-3">
+              {/* Tenant breakdown */}
+              <div className="rounded-xl bg-[#f8fafc] p-6">
+                <p className="mb-4 text-sm font-bold text-[#0f172a]">Tenant</p>
+                <ul className="space-y-2.5 text-sm text-slate-600">
+                  {[
+                    "Free profile",
+                    "Free applications",
+                    "Free property matching",
+                    "No monthly tenant fee",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-2.5">
+                      <span className="text-green-600">&#10003;</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Property Owner breakdown */}
+              <div className="rounded-xl bg-[#f8fafc] p-6">
+                <p className="mb-4 text-sm font-bold text-[#0f172a]">
+                  Property Owner
+                </p>
+                <ul className="space-y-2.5 text-sm text-slate-600">
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-green-600">&#10003;</span>
+                    Free property listing
+                  </li>
+                  {[
+                    ["Tenant screening", "once-off fee"],
+                    ["Digital lease", "once-off fee"],
+                    ["Inspection or viewing help", "once-off fee"],
+                    ["Deposit support", "once-off/admin fee"],
+                    ["Rent collection", "small monthly or transaction fee"],
+                  ].map(([label, cost]) => (
+                    <li key={label} className="flex items-start gap-2.5">
+                      <span className="mt-0.5 text-slate-300">&middot;</span>
+                      <span>
+                        {label}{" "}
+                        <span className="text-slate-400">&mdash; {cost}</span>
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 text-[#1e40af]">&bull;</span>
+                    <span>
+                      Full property management{" "}
+                      <span className="text-slate-400">
+                        &mdash; monthly subscription
+                      </span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Local Connector breakdown */}
+              <div className="rounded-xl bg-[#f8fafc] p-6">
+                <p className="mb-4 text-sm font-bold text-[#0f172a]">
+                  Local Connector
+                </p>
+                <ul className="space-y-2.5 text-sm text-slate-600">
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-green-600">&#10003;</span>
+                    Free to join
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 text-slate-300">&middot;</span>
+                    Paid per completed task
+                  </li>
+                </ul>
+                <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Tasks could include
+                </p>
+                <ul className="space-y-1.5 text-sm text-slate-500">
+                  <li>Viewing a property for someone</li>
+                  <li>Meeting a tenant or owner</li>
+                  <li>Helping with move-in admin</li>
+                  <li>Checking on a property</li>
+                  <li>Walking a dog</li>
+                  <li>Helping an elderly person with a local errand</li>
+                  <li>Being a trusted person in the area</li>
+                </ul>
+                <p className="mt-5 text-sm italic text-slate-500">
+                  &ldquo;Sometimes people do not need another salesperson. They
+                  need a helpful person nearby.&rdquo;
+                </p>
+                <p className="mt-3 text-xs text-slate-400">
+                  Connectors are verified before taking paid tasks.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
