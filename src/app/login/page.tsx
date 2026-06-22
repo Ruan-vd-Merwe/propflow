@@ -19,6 +19,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
   const [sendingCode, setSendingCode] = useState(false);
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,20 +48,24 @@ function LoginForm() {
     router.refresh();
   }
 
-  async function handleSendCode() {
+  async function handleResendConfirmation() {
     if (!unconfirmedEmail) return;
     setSendingCode(true);
-    try {
-      await fetch("/api/auth/send-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: unconfirmedEmail }),
-      });
-    } catch {
-      // Best-effort — the confirm-email page has its own resend
-    }
+    setResendMsg(null);
+    const { error: resendErr } = await supabase.auth.resend({
+      type: "signup",
+      email: unconfirmedEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
+    });
     setSendingCode(false);
-    router.push(`/confirm-email?email=${encodeURIComponent(unconfirmedEmail)}`);
+    if (resendErr) {
+      console.error("[login] resend confirmation failed:", resendErr.message);
+      setResendMsg("Failed to resend. Please try again.");
+    } else {
+      setResendMsg("Confirmation link sent — check your inbox.");
+    }
   }
 
   return (
@@ -216,16 +221,21 @@ function LoginForm() {
             {unconfirmedEmail && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
                 <p>
-                  Please confirm your email first.
+                  Please confirm your email first. Check your inbox for a confirmation link.
                 </p>
                 <button
                   type="button"
-                  onClick={handleSendCode}
+                  onClick={handleResendConfirmation}
                   disabled={sendingCode}
                   className="mt-2 font-semibold underline disabled:opacity-50"
                 >
-                  {sendingCode ? "Sending code…" : "Send confirmation code"}
+                  {sendingCode ? "Sending…" : "Resend confirmation email"}
                 </button>
+                {resendMsg && (
+                  <p className={`mt-1 text-xs ${resendMsg.startsWith("Confirmation") ? "text-green-700" : "text-red-700"}`}>
+                    {resendMsg}
+                  </p>
+                )}
               </div>
             )}
 

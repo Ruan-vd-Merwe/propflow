@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -91,7 +90,6 @@ function StepDots({ steps, current }: { steps: number; current: number }) {
 
 export default function RegisterPage() {
   const supabase = createClient();
-  const router = useRouter();
 
   // ── Role selection ─────────────────────────────────────────────────────────
   const [isLandlord, setIsLandlord] = useState(false);
@@ -105,6 +103,8 @@ export default function RegisterPage() {
   // ── UI state ───────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signupDone, setSignupDone] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
 
   // ── Shared fields ──────────────────────────────────────────────────────────
   const [fullName, setFullName] = useState("");
@@ -293,22 +293,38 @@ export default function RegisterPage() {
       return;
     }
 
-    // Send OTP confirmation code via our own endpoint
-    try {
-      const res = await fetch("/api/auth/send-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, userId: data?.user?.id ?? null }),
-      });
-      if (!res.ok) {
-        console.error("[register] send-confirmation failed:", await res.text());
-      }
-    } catch (err) {
-      console.error("[register] send-confirmation threw:", err);
-    }
-
     setLoading(false);
-    router.push(`/confirm-email?email=${encodeURIComponent(email)}`);
+    setSignupEmail(email);
+    setSignupDone(true);
+  }
+
+  // ── Signup complete: check your inbox ───────────────────────────────────────
+  if (signupDone) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+            <svg className="h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-slate-900">Check your inbox</h2>
+          <p className="text-sm text-slate-500">
+            We sent a confirmation link to{" "}
+            <strong className="text-slate-900">{signupEmail}</strong>.
+            <br />
+            Click the link in the email to activate your account.
+          </p>
+          <p className="mt-6 text-sm text-slate-400">
+            Didn&apos;t receive it? Check your spam folder, or{" "}
+            <Link href="/login" className="font-semibold text-blue-700 hover:underline">
+              try signing in
+            </Link>{" "}
+            to resend.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // ── Step 0: Role selection ─────────────────────────────────────────────────
