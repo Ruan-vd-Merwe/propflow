@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  // Create tenant_profiles row from signup metadata
+  // Create bare tenant_profiles row — onboarding fills in the rest
   if (isTenant) {
     const { data: existing } = await supabase
       .from("tenant_profiles")
@@ -109,19 +109,7 @@ export async function GET(request: NextRequest) {
         .from("tenant_profiles")
         .insert({
           user_id: user.id,
-          sa_id_number: m.sa_id_number ?? null,
-          current_area: m.current_area ?? null,
-          current_province: m.current_province ?? null,
-          looking_in_area: m.looking_in_area ?? null,
-          looking_in_province: m.looking_in_province ?? null,
-          budget_min: m.budget_min ?? null,
-          budget_max: m.budget_max ?? null,
-          move_in_date: m.move_in_date ?? null,
-          lease_length_months: m.lease_length_months ?? null,
-          employment_status: m.employment_status ?? null,
-          monthly_income: m.monthly_income ?? null,
           is_visible: true,
-          whatsapp_opted_in: m.whatsapp_opted_in ?? true,
         });
 
       if (tenantErr) {

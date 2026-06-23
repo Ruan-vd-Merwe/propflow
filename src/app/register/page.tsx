@@ -16,13 +16,6 @@ const PROVINCES = [
   "Western Cape",
 ];
 const PROPERTY_COUNTS = ["1–5", "6–20", "20+"];
-const LEASE_LENGTHS = [6, 12, 24];
-const EMPLOYMENT_OPTIONS = [
-  { value: "employed", label: "Employed" },
-  { value: "self_employed", label: "Self-employed" },
-  { value: "student", label: "Student" },
-  { value: "other", label: "Other" },
-];
 
 const CONNECTOR_TASK_OPTIONS = [
   "Property viewings",
@@ -40,8 +33,6 @@ const AVAILABILITY_OPTIONS = ["Weekdays", "Evenings", "Weekends", "Flexible"];
 type FlowStep =
   | "personal"
   | "landlord-details"
-  | "tenant-prefs"
-  | "tenant-financial"
   | "connector-area"
   | "connector-about";
 
@@ -117,24 +108,6 @@ export default function RegisterPage() {
   const [city, setCity] = useState("");
   const [propertyCount, setPropertyCount] = useState("");
 
-  // ── Tenant step 1 ──────────────────────────────────────────────────────────
-  const [saId, setSaId] = useState("");
-
-  // ── Tenant step 2 ──────────────────────────────────────────────────────────
-  const [currentArea, setCurrentArea] = useState("");
-  const [currentProvince, setCurrentProvince] = useState("");
-  const [lookingArea, setLookingArea] = useState("");
-  const [lookingProvince, setLookingProvince] = useState("");
-  const [budgetMin, setBudgetMin] = useState(3000);
-  const [budgetMax, setBudgetMax] = useState(15000);
-  const [moveInDate, setMoveInDate] = useState("");
-  const [leaseLength, setLeaseLength] = useState<number>(12);
-
-  // ── Tenant step 3 ──────────────────────────────────────────────────────────
-  const [employmentStatus, setEmploymentStatus] = useState("");
-  const [monthlyIncome, setMonthlyIncome] = useState("");
-  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
-
   // ── Connector fields ──────────────────────────────────────────────────────
   const [connectorArea, setConnectorArea] = useState("");
   const [connectorProvince, setConnectorProvince] = useState("");
@@ -158,10 +131,6 @@ export default function RegisterPage() {
   function getFlowSteps(): FlowStep[] {
     const steps: FlowStep[] = ["personal"];
     if (isLandlord) steps.push("landlord-details");
-    if (isTenant) {
-      steps.push("tenant-prefs");
-      steps.push("tenant-financial");
-    }
     if (isConnector) {
       steps.push("connector-area");
       steps.push("connector-about");
@@ -231,22 +200,6 @@ export default function RegisterPage() {
     if (isLandlord) {
       metadata.province = province;
       metadata.city = city;
-    }
-    if (isTenant) {
-      metadata.sa_id_number = saId || null;
-      metadata.current_area = currentArea || null;
-      metadata.current_province = currentProvince || null;
-      metadata.looking_in_area = lookingArea || null;
-      metadata.looking_in_province = lookingProvince || null;
-      metadata.budget_min = budgetMin * 100;
-      metadata.budget_max = budgetMax * 100;
-      metadata.move_in_date = moveInDate || null;
-      metadata.lease_length_months = leaseLength;
-      metadata.employment_status = employmentStatus || null;
-      metadata.monthly_income = monthlyIncome
-        ? parseInt(monthlyIncome) * 100
-        : null;
-      metadata.whatsapp_opted_in = whatsappOptIn;
     }
     if (isConnector) {
       metadata.connector_area = connectorArea || null;
@@ -589,21 +542,6 @@ export default function RegisterPage() {
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
-              {isTenant && !isLandlord && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    SA ID number{" "}
-                    <span className="text-slate-400">(13 digits)</span>
-                  </label>
-                  <input
-                    className="input-field font-mono"
-                    placeholder="0000000000000"
-                    maxLength={13}
-                    value={saId}
-                    onChange={(e) => setSaId(e.target.value.replace(/\D/g, ""))}
-                  />
-                </div>
-              )}
             </div>
             {error === "EMAIL_EXISTS" ? (
               <div
@@ -686,11 +624,15 @@ export default function RegisterPage() {
               </button>
               <button
                 type="button"
-                disabled={!canContinue}
+                disabled={!canContinue || loading}
                 onClick={advance}
                 className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue →
+                {flowStepIdx === flowSteps.length - 1
+                  ? loading
+                    ? "Creating account…"
+                    : "Create my account"
+                  : "Continue →"}
               </button>
             </div>
           </div>
@@ -863,439 +805,6 @@ export default function RegisterPage() {
                     ? "Creating account…"
                     : "Create account"
                   : "Continue →"}
-              </button>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-sm text-slate-500">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-slate-900 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Tenant preferences ─────────────────────────────────────────────────────
-  if (currentFlowStep === "tenant-prefs") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
-        <div className="w-full max-w-md">
-          <Logo />
-          <StepDots steps={totalDots} current={flowStepIdx} />
-          <div className="card p-6">
-            <h2 className="mb-1 text-lg font-bold text-slate-900">
-              Rental preferences
-            </h2>
-            <p className="mb-5 text-sm text-slate-500">
-              Tell us what you are looking for
-            </p>
-            <div className="space-y-5">
-              <div>
-                <p className="mb-2 text-sm font-semibold text-slate-700">
-                  Where do you currently live?
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    className="input-field"
-                    placeholder="Area / suburb"
-                    value={currentArea}
-                    onChange={(e) => setCurrentArea(e.target.value)}
-                  />
-                  <select
-                    className="input-field"
-                    value={currentProvince}
-                    onChange={(e) => setCurrentProvince(e.target.value)}
-                  >
-                    <option value="">Province…</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-semibold text-slate-700">
-                  Where are you looking to rent?
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    className="input-field"
-                    placeholder="Area / suburb"
-                    value={lookingArea}
-                    onChange={(e) => setLookingArea(e.target.value)}
-                  />
-                  <select
-                    className="input-field"
-                    value={lookingProvince}
-                    onChange={(e) => setLookingProvince(e.target.value)}
-                  >
-                    <option value="">Province…</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
-                  Monthly budget
-                  <span className="font-normal text-slate-500">
-                    R{budgetMin.toLocaleString()} – R
-                    {budgetMax.toLocaleString()}
-                  </span>
-                </label>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 text-xs text-slate-400">Min</span>
-                    <input
-                      type="range"
-                      min={3000}
-                      max={50000}
-                      step={500}
-                      value={budgetMin}
-                      onChange={(e) =>
-                        setBudgetMin(
-                          Math.min(parseInt(e.target.value), budgetMax - 500),
-                        )
-                      }
-                      className="flex-1 accent-blue-700"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 text-xs text-slate-400">Max</span>
-                    <input
-                      type="range"
-                      min={3000}
-                      max={50000}
-                      step={500}
-                      value={budgetMax}
-                      onChange={(e) =>
-                        setBudgetMax(
-                          Math.max(parseInt(e.target.value), budgetMin + 500),
-                        )
-                      }
-                      className="flex-1 accent-blue-700"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  When do you need to move in?
-                </label>
-                <input
-                  type="date"
-                  className="input-field"
-                  value={moveInDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setMoveInDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Ideal lease length
-                </label>
-                <div className="flex gap-2">
-                  {LEASE_LENGTHS.map((l) => (
-                    <button
-                      key={l}
-                      type="button"
-                      onClick={() => setLeaseLength(l)}
-                      className={`flex-1 rounded-lg border py-2 text-sm font-medium transition ${
-                        leaseLength === l
-                          ? "border-blue-700 bg-blue-700 text-white"
-                          : "border-slate-200 text-slate-600 hover:border-slate-400"
-                      }`}
-                    >
-                      {l} months
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {error === "EMAIL_EXISTS" ? (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 10,
-                  padding: "16px 20px",
-                  marginTop: 16,
-                  marginBottom: 0,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 14,
-                    color: "#991b1b",
-                    fontWeight: 600,
-                    marginBottom: 12,
-                  }}
-                >
-                  An account with this email address already exists.
-                </p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <a
-                    href="/login"
-                    style={{
-                      display: "inline-block",
-                      padding: "8px 18px",
-                      background: "#1e40af",
-                      color: "white",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Sign in instead
-                  </a>
-                  <a
-                    href="/forgot-password"
-                    style={{
-                      display: "inline-block",
-                      padding: "8px 18px",
-                      border: "1.5px solid #e2e8f0",
-                      color: "#374151",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                      background: "white",
-                    }}
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-              </div>
-            ) : error ? (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 13,
-                  color: "#dc2626",
-                  marginTop: 16,
-                  marginBottom: 0,
-                }}
-              >
-                {error}
-              </div>
-            ) : null}
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={back}
-                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={advance}
-                className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
-              >
-                Continue →
-              </button>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-sm text-slate-500">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-slate-900 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Tenant financial ───────────────────────────────────────────────────────
-  if (currentFlowStep === "tenant-financial") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
-        <div className="w-full max-w-md">
-          <Logo />
-          <StepDots steps={totalDots} current={flowStepIdx} />
-          <div className="card p-6">
-            <h2 className="mb-1 text-lg font-bold text-slate-900">
-              Financial details
-            </h2>
-            <p className="mb-5 text-sm text-slate-500">
-              Helps landlords assess affordability. Kept private.
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Employment status
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {EMPLOYMENT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setEmploymentStatus(opt.value)}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                        employmentStatus === opt.value
-                          ? "border-blue-700 bg-blue-700 text-white"
-                          : "border-slate-200 text-slate-600 hover:border-slate-400"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Monthly net income
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
-                    R
-                  </span>
-                  <input
-                    type="number"
-                    className="input-field pl-7"
-                    placeholder="e.g. 25000"
-                    min={0}
-                    value={monthlyIncome}
-                    onChange={(e) => setMonthlyIncome(e.target.value)}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  Your income after tax. Never shared without permission.
-                </p>
-              </div>
-              {monthlyIncome && parseInt(monthlyIncome) > 0 && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Affordability preview
-                  </p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    Can comfortably afford up to{" "}
-                    <strong className="text-slate-900">
-                      R
-                      {Math.round(parseInt(monthlyIncome) / 3).toLocaleString()}
-                    </strong>{" "}
-                    /mo <span className="text-slate-400">(30% rule)</span>
-                  </p>
-                </div>
-              )}
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
-                <input
-                  type="checkbox"
-                  checked={whatsappOptIn}
-                  onChange={(e) => setWhatsappOptIn(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-green-600"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-green-800">
-                    💬 Receive WhatsApp notifications
-                  </p>
-                  <p className="mt-0.5 text-xs text-green-700">
-                    Rent reminders, maintenance &amp; introductions. Opt out
-                    anytime.
-                  </p>
-                </div>
-              </label>
-            </div>
-            {error === "EMAIL_EXISTS" ? (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 10,
-                  padding: "16px 20px",
-                  marginTop: 16,
-                  marginBottom: 0,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 14,
-                    color: "#991b1b",
-                    fontWeight: 600,
-                    marginBottom: 12,
-                  }}
-                >
-                  An account with this email address already exists.
-                </p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <a
-                    href="/login"
-                    style={{
-                      display: "inline-block",
-                      padding: "8px 18px",
-                      background: "#1e40af",
-                      color: "white",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Sign in instead
-                  </a>
-                  <a
-                    href="/forgot-password"
-                    style={{
-                      display: "inline-block",
-                      padding: "8px 18px",
-                      border: "1.5px solid #e2e8f0",
-                      color: "#374151",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                      background: "white",
-                    }}
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-              </div>
-            ) : error ? (
-              <div
-                style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 13,
-                  color: "#dc2626",
-                  marginTop: 16,
-                  marginBottom: 0,
-                }}
-              >
-                {error}
-              </div>
-            ) : null}
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={back}
-                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={loading || !employmentStatus}
-                onClick={advance}
-                className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Creating account…" : "Create account"}
               </button>
             </div>
           </div>

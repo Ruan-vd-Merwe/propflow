@@ -76,13 +76,16 @@ export async function middleware(request: NextRequest) {
     // Redirect authenticated users away from /login and /register
     if (pathname === "/login" || pathname === "/register") {
       const dest =
-        isTenant && !isLandlord && !isConnector
-          ? "/tenant/profile"
-          : "/dashboard";
+        isConnector && !isLandlord && !isTenant
+          ? "/connector/tasks"
+          : isTenant && !isLandlord
+            ? "/onboarding/preferences"
+            : "/dashboard";
       return NextResponse.redirect(new URL(dest, request.url));
     }
 
     // Guard landlord-only routes for tenant-only users
+    // Allow /onboarding/* for tenants (their post-signup flow)
     if (
       isTenant &&
       !isLandlord &&
@@ -92,7 +95,7 @@ export async function middleware(request: NextRequest) {
         pathname === "/onboarding")
     ) {
       return NextResponse.redirect(
-        new URL("/tenant/profile", request.url),
+        new URL("/onboarding/preferences", request.url),
       );
     }
 

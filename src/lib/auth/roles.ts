@@ -16,7 +16,7 @@ export function getPostAuthPath(
   isConnector?: boolean,
 ): string {
   if (isLandlord) return "/dashboard";
-  if (isTenant) return "/tenant/profile";
+  if (isTenant) return "/onboarding/preferences";
   if (isConnector) return "/connector/tasks";
   return "/onboarding";
 }
