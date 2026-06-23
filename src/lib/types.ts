@@ -55,6 +55,9 @@ export type PropertyListing = Property & {
 
 // ─── Marketplace ──────────────────────────────────────────────────────────────
 
+export type IncomeBand = "under_10k" | "10k_20k" | "20k_35k" | "35k_50k" | "50k_plus";
+export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+
 export type TenantProfile = {
   id: string;
   user_id: string;
@@ -68,10 +71,47 @@ export type TenantProfile = {
   move_in_date: string | null; // YYYY-MM-DD
   lease_length_months: number | null;
   employment_status: "employed" | "self_employed" | "student" | "other" | null;
-  monthly_income: number | null; // cents (net)
+  monthly_income: number | null; // cents (net) — legacy, prefer income_band
+  income_band: IncomeBand | null;
+  affordability_min_cents: number | null;
+  affordability_max_cents: number | null;
+  verification_status: VerificationStatus;
+  preferences_complete: boolean;
+  affordability_complete: boolean;
+  discoverable: boolean;
   is_visible: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type TenantSensitive = {
+  id: string;
+  user_id: string;
+  sa_id_number: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VerificationDocType = "payslip" | "bank_statement" | "proof_of_address" | "id_document";
+export type VerificationDocStatus = "uploaded" | "reviewing" | "accepted" | "rejected";
+
+export type TenantVerificationDocument = {
+  id: string;
+  tenant_id: string;
+  doc_type: VerificationDocType;
+  storage_path: string;
+  status: VerificationDocStatus;
+  uploaded_at: string;
+};
+
+export type ConsentType = "affordability" | "credit" | "discoverability";
+
+export type TenantConsent = {
+  id: string;
+  tenant_id: string;
+  consent_type: ConsentType;
+  consent_text_version: string;
+  granted_at: string;
 };
 
 export type IntroductionRequest = {
