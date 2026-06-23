@@ -391,7 +391,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
       {step === 2 && (
         <div className="card p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
-            Financial Details
+            Private Affordability Profile
           </h2>
 
           <div className="space-y-5">

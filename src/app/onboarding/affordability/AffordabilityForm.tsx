@@ -3,17 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  RENT_TO_INCOME_RATIO,
+  INCOME_BANDS,
+  deriveAffordability,
+} from "@/lib/affordability";
 import type { IncomeBand } from "@/lib/types";
-
-const RENT_TO_INCOME_RATIO = 0.3;
-
-const INCOME_BANDS: { value: IncomeBand; label: string; minCents: number; maxCents: number | null }[] = [
-  { value: "under_10k", label: "Under R10,000", minCents: 0, maxCents: 1000000 },
-  { value: "10k_20k", label: "R10,000 – R20,000", minCents: 1000000, maxCents: 2000000 },
-  { value: "20k_35k", label: "R20,000 – R35,000", minCents: 2000000, maxCents: 3500000 },
-  { value: "35k_50k", label: "R35,000 – R50,000", minCents: 3500000, maxCents: 5000000 },
-  { value: "50k_plus", label: "R50,000+", minCents: 5000000, maxCents: null },
-];
 
 const EMPLOYMENT_OPTIONS = [
   { value: "employed", label: "Employed" },
@@ -21,14 +16,6 @@ const EMPLOYMENT_OPTIONS = [
   { value: "student", label: "Student" },
   { value: "other", label: "Other" },
 ];
-
-function deriveAffordability(band: IncomeBand) {
-  const b = INCOME_BANDS.find((ib) => ib.value === band);
-  if (!b) return { min: 0, max: 0 };
-  const min = Math.round(b.minCents * RENT_TO_INCOME_RATIO);
-  const max = b.maxCents ? Math.round(b.maxCents * RENT_TO_INCOME_RATIO) : null;
-  return { min, max };
-}
 
 function fmtRand(cents: number) {
   return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
