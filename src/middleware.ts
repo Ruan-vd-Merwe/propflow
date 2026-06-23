@@ -79,13 +79,13 @@ export async function middleware(request: NextRequest) {
         isConnector && !isLandlord && !isTenant
           ? "/connector/tasks"
           : isTenant && !isLandlord
-            ? "/onboarding/preferences"
+            ? "/tenant/profile"
             : "/dashboard";
       return NextResponse.redirect(new URL(dest, request.url));
     }
 
     // Guard landlord-only routes for tenant-only users
-    // Allow /onboarding/* for tenants (their post-signup flow)
+    // Allow /onboarding/* sub-routes for tenants (their post-signup flow)
     if (
       isTenant &&
       !isLandlord &&
@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
         pathname === "/onboarding")
     ) {
       return NextResponse.redirect(
-        new URL("/onboarding/preferences", request.url),
+        new URL("/tenant/profile", request.url),
       );
     }
 

@@ -18,6 +18,21 @@ const EMPLOYMENT_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+const INCOME_BAND_LABELS: Record<string, string> = {
+  under_10k: "Under R10,000",
+  "10k_20k": "R10k – R20k",
+  "20k_35k": "R20k – R35k",
+  "35k_50k": "R35k – R50k",
+  "50k_plus": "R50,000+",
+};
+
+const VERIFICATION_BADGE: Record<string, { label: string; cls: string }> = {
+  unverified: { label: "Unverified", cls: "bg-slate-100 text-slate-500" },
+  pending: { label: "Verification pending", cls: "bg-amber-100 text-amber-700" },
+  verified: { label: "Property Protected", cls: "bg-green-100 text-green-700" },
+  rejected: { label: "Verification rejected", cls: "bg-red-100 text-red-700" },
+};
+
 function fmt(cents: number) {
   return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 }
@@ -109,11 +124,11 @@ export default async function TenantProfilePage({
     (i) => i.status === "pending",
   ).length;
 
-  // ── Profile completeness check ────────────────────────────────────────────
-  const isIncomplete =
-    !tenantProfile.looking_in_area ||
-    !tenantProfile.budget_max ||
-    !tenantProfile.employment_status;
+  // ── Onboarding state ────────────────────────────────────────────────────────
+  const prefsDone = tenantProfile.preferences_complete;
+  const affordDone = tenantProfile.affordability_complete;
+  const verStatus = tenantProfile.verification_status ?? "unverified";
+  const isIncomplete = !prefsDone || !affordDone;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -174,103 +189,70 @@ export default async function TenantProfilePage({
       )}
 
       <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* ── Onboarding prompt (shown until area + budget set) ────────── */}
-        {isIncomplete && (
-          <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a]">
-            <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
-              {/* Icon */}
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                <svg
-                  className="h-6 w-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-
-              {/* Text + steps */}
+        {/* ── Onboarding prompts based on step completion ─────────────── */}
+        {!prefsDone && (
+          <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a] p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex-1">
                 <p className="text-base font-bold text-white">
-                  Complete your profile to get matched
+                  Complete your preferences to see recommendations
                 </p>
                 <p className="mt-1 text-sm text-slate-400">
-                  Add your area, budget and preferences to start seeing
-                  personalised property recommendations.
+                  Tell us where you want to live and your budget so we can match
+                  you with suitable properties.
                 </p>
-
-                {/* Progress steps */}
-                <div className="mt-4 flex items-center gap-0">
-                  {[
-                    { label: "Account created", done: true },
-                    { label: "Add preferences", done: false, current: true },
-                    { label: "Browse matches", done: false },
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center">
-                      {i > 0 && (
-                        <div
-                          className={`mx-2 h-px w-8 sm:w-12 ${step.done ? "bg-green-500" : "bg-white/20"}`}
-                        />
-                      )}
-                      <div className="flex flex-col items-center gap-1">
-                        <div
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                            step.done
-                              ? "bg-green-500 text-white"
-                              : step.current
-                                ? "bg-blue-500 text-white"
-                                : "bg-white/10 text-slate-500"
-                          }`}
-                        >
-                          {step.done ? (
-                            <svg
-                              className="h-3.5 w-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={3}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          ) : (
-                            i + 1
-                          )}
-                        </div>
-                        <span
-                          className={`hidden text-[10px] sm:block ${
-                            step.done
-                              ? "text-green-400"
-                              : step.current
-                                ? "text-blue-400 font-semibold"
-                                : "text-slate-600"
-                          }`}
-                        >
-                          {step.label}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-
-              {/* CTA */}
-              <div className="shrink-0">
-                <CompleteProfileButton
-                  tenantProfile={tenantProfile}
-                  userId={user.id}
-                />
-              </div>
+              <Link
+                href="/onboarding/preferences"
+                className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                Add preferences
+              </Link>
             </div>
+          </div>
+        )}
+
+        {prefsDone && !affordDone && (
+          <div className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <p className="text-sm font-bold text-blue-900">
+                  Complete your affordability profile for better matches
+                </p>
+                <p className="mt-1 text-xs text-blue-700">
+                  We&apos;re showing recommendations based on your budget. Add your
+                  income range to see which properties you&apos;ll qualify for.
+                </p>
+              </div>
+              <Link
+                href="/onboarding/affordability"
+                className="shrink-0 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Add affordability
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Verification nudge — non-pushy, never a blocker */}
+        {prefsDone && affordDone && verStatus === "unverified" && (
+          <div className="mb-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+              <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-700">
+                Become Property Protected to rank higher in landlord searches
+              </p>
+            </div>
+            <Link
+              href="/onboarding/verification"
+              className="shrink-0 text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Verify now
+            </Link>
           </div>
         )}
 
@@ -293,6 +275,13 @@ export default async function TenantProfilePage({
                     ? "● Actively looking"
                     : "○ Not looking"}
                 </span>
+                {verStatus !== "unverified" && (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${VERIFICATION_BADGE[verStatus]?.cls ?? ""}`}
+                  >
+                    {VERIFICATION_BADGE[verStatus]?.label ?? verStatus}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-slate-500">{profile?.email}</p>
               {profile?.phone && (
@@ -359,10 +348,16 @@ export default async function TenantProfilePage({
                 }
               />
             )}
-            {tenantProfile.monthly_income && (
+            {tenantProfile.income_band && (
               <Stat
-                label="Monthly income"
-                value={`${fmt(tenantProfile.monthly_income)} net`}
+                label="Income range"
+                value={INCOME_BAND_LABELS[tenantProfile.income_band] ?? tenantProfile.income_band}
+              />
+            )}
+            {tenantProfile.affordability_max_cents && (
+              <Stat
+                label="Affordability"
+                value={`${tenantProfile.affordability_min_cents ? fmt(tenantProfile.affordability_min_cents) : "–"} – ${fmt(tenantProfile.affordability_max_cents)}/mo`}
               />
             )}
           </div>
@@ -437,12 +432,16 @@ export default async function TenantProfilePage({
           {scoredProperties.length === 0 ? (
             <div className="card p-8 text-center">
               <p className="text-slate-500">
-                No listed properties match your search yet.
+                {!prefsDone
+                  ? "Complete your preferences to see property recommendations."
+                  : "No listed properties match your search yet."}
               </p>
               <p className="mt-1 text-sm text-slate-400">
-                {isIncomplete
-                  ? "Complete your profile above to improve matches."
-                  : "Update your preferences or check back soon."}
+                {!prefsDone
+                  ? "We need your area and budget to start matching."
+                  : !affordDone
+                    ? "Completing your affordability profile will improve match accuracy."
+                    : "Update your preferences or check back soon."}
               </p>
             </div>
           ) : (
@@ -615,23 +614,3 @@ function VisibilityToggle({
   );
 }
 
-// Client island — "Complete your profile" button that opens the edit panel
-// We reuse EditPreferencesPanel to avoid a separate auto-open mechanism
-function CompleteProfileButton({
-  tenantProfile,
-  userId,
-}: {
-  tenantProfile: TenantProfile;
-  userId: string;
-}) {
-  return (
-    <div className="shrink-0">
-      <EditPreferencesPanel
-        tenantProfile={tenantProfile}
-        userId={userId}
-        label="Add my preferences"
-        white
-      />
-    </div>
-  );
-}
