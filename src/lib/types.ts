@@ -80,6 +80,10 @@ export type TenantProfile = {
   affordability_complete: boolean;
   discoverable: boolean;
   is_visible: boolean;
+  has_pets: boolean;
+  has_car: boolean;
+  furnished_preference: "furnished" | "unfurnished" | "no_preference" | null;
+  occupants: number | null;
   created_at: string;
   updated_at: string;
 };

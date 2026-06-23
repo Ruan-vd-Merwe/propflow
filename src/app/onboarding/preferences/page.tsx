@@ -40,6 +40,10 @@ export default async function PreferencesPage() {
               budgetMax: tp.budget_max ? tp.budget_max / 100 : 15000,
               moveInDate: tp.move_in_date ?? "",
               leaseLength: tp.lease_length_months ?? 12,
+              hasPets: tp.has_pets ?? false,
+              hasCar: tp.has_car ?? true,
+              furnishedPreference: tp.furnished_preference ?? "no_preference",
+              occupants: tp.occupants ?? null,
             }
           : null
       }

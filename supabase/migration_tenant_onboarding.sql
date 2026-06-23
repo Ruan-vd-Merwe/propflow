@@ -222,3 +222,11 @@ create policy "tenant_profiles_browse_safe"
 
 -- For backward compatibility, we keep is_visible working alongside discoverable
 -- (is_visible was the old toggle; discoverable is the new explicit opt-in).
+
+-- =====================================================================
+-- 8. ADDITIONAL PREFERENCE COLUMNS (Commit 4)
+-- =====================================================================
+
+alter table public.tenant_profiles
+  add column if not exists furnished_preference text check (furnished_preference in ('furnished', 'unfurnished', 'no_preference')),
+  add column if not exists occupants integer;

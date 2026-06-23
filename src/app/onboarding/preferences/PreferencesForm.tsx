@@ -18,6 +18,12 @@ const PROVINCES = [
 
 const LEASE_LENGTHS = [6, 12, 24];
 
+const FURNISHED_OPTIONS = [
+  { value: "furnished", label: "Furnished" },
+  { value: "unfurnished", label: "Unfurnished" },
+  { value: "no_preference", label: "No preference" },
+];
+
 interface PreferencesFormProps {
   userId: string;
   existing: {
@@ -29,6 +35,10 @@ interface PreferencesFormProps {
     budgetMax: number;
     moveInDate: string;
     leaseLength: number;
+    hasPets: boolean;
+    hasCar: boolean;
+    furnishedPreference: string;
+    occupants: number | null;
   } | null;
 }
 
@@ -48,6 +58,14 @@ export function PreferencesForm({ userId, existing }: PreferencesFormProps) {
   const [budgetMax, setBudgetMax] = useState(existing?.budgetMax ?? 15000);
   const [moveInDate, setMoveInDate] = useState(existing?.moveInDate ?? "");
   const [leaseLength, setLeaseLength] = useState(existing?.leaseLength ?? 12);
+  const [hasPets, setHasPets] = useState(existing?.hasPets ?? false);
+  const [hasCar, setHasCar] = useState(existing?.hasCar ?? true);
+  const [furnishedPreference, setFurnishedPreference] = useState(
+    existing?.furnishedPreference ?? "no_preference",
+  );
+  const [occupants, setOccupants] = useState<string>(
+    existing?.occupants != null ? String(existing.occupants) : "1",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +84,10 @@ export function PreferencesForm({ userId, existing }: PreferencesFormProps) {
         budget_max: budgetMax * 100,
         move_in_date: moveInDate || null,
         lease_length_months: leaseLength,
+        has_pets: hasPets,
+        has_car: hasCar,
+        furnished_preference: furnishedPreference,
+        occupants: occupants ? parseInt(occupants) : null,
         preferences_complete: true,
         updated_at: new Date().toISOString(),
       })
@@ -218,6 +240,99 @@ export function PreferencesForm({ userId, existing }: PreferencesFormProps) {
                 }`}
               >
                 {l} months
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Occupants */}
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+            Number of occupants
+          </label>
+          <select
+            className="input-field"
+            value={occupants}
+            onChange={(e) => setOccupants(e.target.value)}
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {n} {n === 1 ? "person" : "people"}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Pets */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-slate-700">
+            Do you have pets?
+          </label>
+          <div className="flex gap-2">
+            {[
+              { value: true, label: "Yes" },
+              { value: false, label: "No" },
+            ].map((opt) => (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => setHasPets(opt.value)}
+                className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition ${
+                  hasPets === opt.value
+                    ? "border-blue-700 bg-blue-700 text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Parking */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-slate-700">
+            Do you need parking?
+          </label>
+          <div className="flex gap-2">
+            {[
+              { value: true, label: "Yes" },
+              { value: false, label: "No" },
+            ].map((opt) => (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => setHasCar(opt.value)}
+                className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition ${
+                  hasCar === opt.value
+                    ? "border-blue-700 bg-blue-700 text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Furnished preference */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-slate-700">
+            Furnished or unfurnished?
+          </label>
+          <div className="flex gap-2">
+            {FURNISHED_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFurnishedPreference(opt.value)}
+                className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition ${
+                  furnishedPreference === opt.value
+                    ? "border-blue-700 bg-blue-700 text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {opt.label}
               </button>
             ))}
           </div>
