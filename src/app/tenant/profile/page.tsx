@@ -411,26 +411,8 @@ export default async function TenantProfilePage({
                 />
               </svg>
             </Link>
-            {(
-              (tenantProfile as Record<string, unknown>).lifestyle_interests as
-                | string[]
-                | null
-            )?.length ? (
-              <span className="ml-3 text-xs text-slate-400">
-                {(
-                  (tenantProfile as Record<string, unknown>)
-                    .lifestyle_interests as string[]
-                ).length +
-                  ((
-                    (tenantProfile as Record<string, unknown>)
-                      .property_interests as string[] | null
-                  )?.length ?? 0) +
-                  ((
-                    (tenantProfile as Record<string, unknown>)
-                      .area_interests as string[] | null
-                  )?.length ?? 0)}{" "}
-                preference tags saved
-              </span>
+            {prefsDone ? (
+              <span className="ml-3 text-xs text-slate-400">Preferences saved</span>
             ) : (
               <span className="ml-3 text-xs text-amber-600">
                 No preferences set — add some to improve your match scores
