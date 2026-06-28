@@ -215,7 +215,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: metadata,
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=%2Flogin%3Fconfirmed%3Dtrue`,
       },
     });
 

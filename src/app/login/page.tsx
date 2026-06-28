@@ -56,7 +56,7 @@ function LoginForm() {
       type: "signup",
       email: unconfirmedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=%2Flogin%3Fconfirmed%3Dtrue`,
       },
     });
     setSendingCode(false);
@@ -105,6 +105,31 @@ function LoginForm() {
           <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
             <p className="font-semibold">Email confirmed.</p>
             <p className="mt-0.5">Sign in to get started.</p>
+          </div>
+        )}
+
+        {/* Email confirmation success banner */}
+        {searchParams.get("confirmed") === "true" && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <p className="font-semibold">Email confirmed.</p>
+            <p className="mt-0.5">Please log in to get started.</p>
+          </div>
+        )}
+
+        {/* Email confirmation failure banners */}
+        {(errorParam === "confirmation_failed" ||
+          errorParam === "missing_confirmation_code") && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">
+              We could not confirm your email.
+            </p>
+            <p className="mt-0.5">
+              Please try again or{" "}
+              <Link href="/register" className="font-medium underline">
+                request a new confirmation email
+              </Link>
+              .
+            </p>
           </div>
         )}
 
