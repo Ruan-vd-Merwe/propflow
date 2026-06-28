@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createAnonClient } from "@/lib/supabase/anon";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { validateSAId } from "@/lib/id-validator";
 import {
   calcCreditScore,
@@ -13,6 +14,10 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    // Detect authenticated session without requiring it — anon submissions stay unchanged.
+    const { data: { user } } = await createServerClient().auth.getUser();
+    const authenticatedUid = user?.id ?? null;
+
     const body = await req.json();
 
     const {
@@ -128,6 +133,7 @@ export async function POST(req: NextRequest) {
       .from("tenant_applications")
       .insert({
         id: applicationId,
+        user_id: authenticatedUid,
         property_id,
         full_name,
         email,
