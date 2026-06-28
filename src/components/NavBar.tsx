@@ -128,9 +128,10 @@ const PRIMARY_LANDLORD: NavLink[] = [
 ];
 
 const PRIMARY_TENANT: NavLink[] = [
-  { href: "/tenant/browse",  label: "Find Properties" },
-  { href: "/tenant/profile", label: "My Matches"      },
-  { href: "/tenant/areas",   label: "Find by Area"    },
+  { href: "/tenant/dashboard",    label: "Dashboard"       },
+  { href: "/tenant/browse",       label: "Find Properties" },
+  { href: "/tenant/applications", label: "Applications"    },
+  { href: "/tenant/profile",      label: "My Profile"      },
 ];
 
 const PRIMARY_CONNECTOR: NavLink[] = [
@@ -148,12 +149,10 @@ const MORE_PROPERTY_MGMT: MoreLink[] = [
   { href: "/body-corporate",   label: "Body Corporate", Icon: IconBuilding },
 ];
 
-// "More" dropdown — Tenant rental search
+// "More" dropdown — Tenant rental search (items already in PRIMARY_TENANT excluded)
 const MORE_TENANT_SEARCH: MoreLink[] = [
-  { href: "/tenant/browse",      label: "Browse Properties", Icon: IconSearch   },
-  { href: "/tenant/profile",     label: "My Matches",        Icon: IconSparkles },
-  { href: "/tenant/areas",       label: "Find by Area",      Icon: IconHouse    },
-  { href: "/tenant/preferences", label: "My Rental Search",  Icon: IconWrench   },
+  { href: "/tenant/preferences", label: "My Rental Search", Icon: IconWrench },
+  { href: "/tenant/areas",       label: "Find by Area",     Icon: IconHouse  },
 ];
 
 // "More" dropdown — Connector tasks
@@ -184,10 +183,10 @@ function getPrimaryLinks(roles: UserRoles, pathname: string): NavLink[] {
 // Home route — matches the current surface for multi-role users
 function getHomeHref(roles: UserRoles, pathname: string): string {
   if (pathname.startsWith("/connector") && roles.is_connector) return "/connector/tasks";
-  if (pathname.startsWith("/tenant") && roles.is_tenant) return "/tenant/browse";
+  if (pathname.startsWith("/tenant") && roles.is_tenant) return "/tenant/dashboard";
   if (roles.is_landlord) return "/dashboard";
   if (roles.is_connector) return "/connector/tasks";
-  if (roles.is_tenant) return "/tenant/browse";
+  if (roles.is_tenant) return "/tenant/dashboard";
   return "/dashboard";
 }
 
@@ -209,7 +208,7 @@ type Surface = "landlord" | "tenant" | "connector";
 
 const SURFACE_LINKS: { surface: Surface; label: string; href: string; roleKey: keyof UserRoles }[] = [
   { surface: "landlord",  label: "My Properties", href: "/dashboard",       roleKey: "is_landlord"  },
-  { surface: "tenant",    label: "My Rentals",    href: "/tenant/browse",   roleKey: "is_tenant"    },
+  { surface: "tenant",    label: "My Rentals",    href: "/tenant/dashboard", roleKey: "is_tenant"   },
   { surface: "connector", label: "My Connector",  href: "/connector/tasks", roleKey: "is_connector" },
 ];
 
