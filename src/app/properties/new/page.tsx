@@ -188,6 +188,17 @@ export default function NewPropertyPage() {
     setLoading(true);
     setError(null);
 
+    if (!name.trim()) {
+      setError("Property name is required.");
+      setLoading(false);
+      return;
+    }
+    if (!rent || isNaN(parseFloat(rent)) || parseFloat(rent) <= 0) {
+      setError("Monthly rent is required.");
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -574,7 +585,8 @@ export default function NewPropertyPage() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  {mode === "occupied" ? "Current monthly rent" : "Monthly rent"}
+                  {mode === "occupied" ? "Current monthly rent" : "Monthly rent"}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
