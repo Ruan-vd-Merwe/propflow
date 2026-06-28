@@ -30,7 +30,7 @@ const INCOME_BAND_LABELS: Record<string, string> = {
 const VERIFICATION_BADGE: Record<string, { label: string; cls: string }> = {
   unverified: { label: "Unverified", cls: "bg-slate-100 text-slate-500" },
   pending: { label: "Verification pending", cls: "bg-amber-100 text-amber-700" },
-  verified: { label: "Property Protected", cls: "bg-green-100 text-green-700" },
+  verified: { label: "TrustScore ✓", cls: "bg-green-100 text-green-700" },
   rejected: { label: "Verification rejected", cls: "bg-red-100 text-red-700" },
 };
 
@@ -264,7 +264,7 @@ export default async function TenantProfilePage({
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-700">
-                Become Property Protected to rank higher in landlord searches
+                Get verified to rank higher in landlord searches
               </p>
             </div>
             <Link

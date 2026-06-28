@@ -132,7 +132,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           </svg>
         </div>
         <h2 className="text-xl font-bold text-slate-900">
-          {currentStatus === "verified" ? "You're Property Protected!" : "Verification in progress"}
+          {currentStatus === "verified" ? "Your TrustScore is verified!" : "Verification in progress"}
         </h2>
         <p className="mt-2 text-sm text-slate-500">
           {currentStatus === "verified"
@@ -160,7 +160,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           </svg>
         </div>
         <h2 className="text-xl font-bold text-slate-900">
-          Become Property Protected
+          TrustScore Verification
         </h2>
         <p className="mt-2 text-sm text-slate-500">
           Upload your ID and income documents once. Our team reviews them
@@ -197,7 +197,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
             onClick={() => setShowForm(true)}
             className="btn-primary flex-1"
           >
-            Become Property Protected
+            Build your TrustScore
           </button>
           <button
             type="button"
@@ -216,7 +216,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
     <div className="space-y-6">
       <div className="card p-6">
         <h2 className="mb-1 text-xl font-bold text-slate-900">
-          Property Protected Verification
+          TrustScore Verification
         </h2>
         <p className="mb-6 text-sm text-slate-500">
           Upload documents to verify your profile. All documents are stored
