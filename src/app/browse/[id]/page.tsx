@@ -477,7 +477,7 @@ export default async function BrowsePropertyPage({
                     </p>
                   </div>
                   <Link
-                    href={`/apply?property_id=${property.id}`}
+                    href={`/apply/${property.id}`}
                     className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
                   >
                     Apply for this property
@@ -490,7 +490,7 @@ export default async function BrowsePropertyPage({
               ) : isTenant && hasTenantProfile ? (
                 <>
                   <Link
-                    href={`/apply?property_id=${property.id}`}
+                    href={`/apply/${property.id}`}
                     className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
                   >
                     Apply for this property
