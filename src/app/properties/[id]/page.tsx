@@ -134,6 +134,7 @@ function TenantMatchCard({
       <IntroduceButton
         tenantId={tenantId}
         propertyId={propertyId}
+        tenantName={name}
         alreadyRequested={alreadyRequested}
       />
     </div>
@@ -353,13 +354,18 @@ export default async function PropertyPage({
         </div>
 
         {/* Tab nav */}
-        <div className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1">
+        <div
+          role="tablist"
+          className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1"
+        >
           <Link
             href={`/properties/${params.id}`}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+            role="tab"
+            aria-selected={tab === "tenants"}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
               tab === "tenants"
                 ? "bg-white shadow-sm text-slate-900"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-slate-500 hover:bg-white/60 hover:text-slate-700"
             }`}
           >
             Tenants
@@ -375,10 +381,12 @@ export default async function PropertyPage({
           </Link>
           <Link
             href={`/properties/${params.id}?tab=recommended`}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+            role="tab"
+            aria-selected={tab === "recommended"}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
               tab === "recommended"
                 ? "bg-white shadow-sm text-slate-900"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-slate-500 hover:bg-white/60 hover:text-slate-700"
             }`}
           >
             Recommended Tenants
