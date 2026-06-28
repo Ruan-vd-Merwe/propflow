@@ -163,8 +163,9 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           Become Property Protected
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Verify your profile to increase trust, improve rankings, and avoid
-          repeatedly uploading documents for every application.
+          Upload your ID and income documents once. Our team reviews them
+          privately — landlords see only your verified status, never the
+          documents themselves.
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
@@ -172,7 +173,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
             "Higher ranking in landlord searches",
             "Faster application approvals",
             "Better property recommendations",
-            "Reduced paperwork",
+            "No repeated paperwork per application",
           ].map((benefit) => (
             <div
               key={benefit}
@@ -185,7 +186,9 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
         </div>
 
         <p className="mt-4 text-xs text-slate-400">
-          Verification is optional. You can complete it later from your profile.
+          After uploading, our team reviews your documents within 1–2 business
+          days. Verification is optional — you can complete it later from your
+          profile.
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
