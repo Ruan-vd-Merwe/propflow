@@ -16,13 +16,13 @@ export interface ScoreBreakdownProps {
   >;
 }
 
+// deal_quality excluded: suburb_avg_rent is self-referential pending real data.
 const DIMENSIONS = [
   { key: "affordability", label: "Affordability" },
   { key: "property_fit", label: "Property Fit" },
   { key: "area_fit", label: "Area Fit" },
   { key: "lifestyle_fit", label: "Lifestyle Fit" },
   { key: "commute", label: "Commute" },
-  { key: "deal_quality", label: "Deal Quality" },
   { key: "safety", label: "Safety" },
   { key: "approval", label: "Approval" },
 ];

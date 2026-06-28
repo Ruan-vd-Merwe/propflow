@@ -13,7 +13,7 @@ const NAV: NavSection[] = [
     type: "dropdown",
     label: "For Tenants",
     items: [
-      { label: "Find my area", href: "/areas", desc: "Match suburbs by budget, commute, and lifestyle" },
+      { label: "Find my area", href: "/area-match", desc: "Match suburbs by budget, commute, and lifestyle" },
       { label: "Browse properties", href: "/browse", desc: "View available rental listings" },
       { label: "Rental profiles", href: "/for-tenants", desc: "Create and manage your rental profile" },
       { label: "How it works", href: "/for-tenants#how-it-works", desc: "How PropTrust works for tenants" },
@@ -27,9 +27,18 @@ const NAV: NavSection[] = [
       { label: "Tenant screening", href: "/features#screening", desc: "Review verified tenant applications" },
       { label: "Portfolio finance", href: "/portfolio", desc: "Track yield, cash flow, and bond payments" },
       { label: "List a property", href: "/register?type=landlord", desc: "Add your property to PropTrust" },
+      { label: "Investment Scores", href: "/investment-scores", desc: "Compare suburbs by yield, growth and risk" },
     ],
   },
-  { type: "link", label: "Area Match", href: "/areas" },
+  {
+    type: "dropdown",
+    label: "For Connectors",
+    items: [
+      { label: "Become a Connector", href: "/become-a-connector", desc: "Register your interest in helping locally" },
+      { label: "How it works", href: "/#connectors", desc: "Learn about the Connector community" },
+    ],
+  },
+  { type: "link", label: "Area Match", href: "/area-match" },
   { type: "link", label: "Pricing", href: "/pricing" },
   {
     type: "dropdown",

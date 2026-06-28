@@ -58,7 +58,11 @@ export default async function DashboardPage({
 
   // ── Tenant-tab data (only when dual-role and tenant tab active) ──────────
   let myTenantProfile: TenantProfile | null = null;
-  let myMatchedProperties: { property: PropertyListing; score: number }[] = [];
+  let myMatchedProperties: {
+    property: PropertyListing;
+    score: number;
+    match_reasons: string[];
+  }[] = [];
   let totalListedCount = 0;
 
   if (isDual && tab === "tenant") {
@@ -96,6 +100,7 @@ export default async function DashboardPage({
         .map((r) => ({
           property: propById.get(r.property_id!)! as PropertyListing,
           score: r.score,
+          match_reasons: r.match_reasons,
         }));
     }
   }
@@ -286,58 +291,6 @@ export default async function DashboardPage({
       <NavBar />
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {/* Role switcher — only shown for dual-role users */}
-        {isDual && (
-          <div className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1">
-            <Link
-              href="/dashboard"
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                tab === "landlord"
-                  ? "bg-white shadow-sm text-slate-900"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              My Properties
-            </Link>
-            <Link
-              href="/dashboard?tab=tenant"
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                tab === "tenant"
-                  ? "bg-white shadow-sm text-slate-900"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              My Rental Search
-            </Link>
-          </div>
-        )}
-
         {/* ── Tenant tab ──────────────────────────────────────────────────── */}
         {tab === "tenant" && (
           <div>
@@ -465,7 +418,7 @@ export default async function DashboardPage({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {myMatchedProperties.map(({ property: p, score }) => (
+                    {myMatchedProperties.map(({ property: p, score, match_reasons }) => (
                       <div
                         key={p.id}
                         className="card flex items-center gap-4 overflow-hidden p-0"
@@ -515,7 +468,7 @@ export default async function DashboardPage({
                             </p>
                           )}
                         </div>
-                        {/* Score + action */}
+                        {/* Score + reasons + action */}
                         <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
@@ -528,6 +481,16 @@ export default async function DashboardPage({
                           >
                             {score}/100
                           </span>
+                          {match_reasons.length > 0 && (
+                            <ul className="max-w-[180px] space-y-1 text-right">
+                              {match_reasons.slice(0, 3).map((r, i) => (
+                                <li key={i} className="flex items-start justify-end gap-1.5">
+                                  <span className="text-[11px] leading-snug text-green-700">{r}</span>
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                           <Link
                             href={`/browse/${p.id}`}
                             className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"

@@ -72,7 +72,7 @@ export default function TenantsPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/areas"
+                href="/area-match"
                 className="rounded-full bg-[#3b82f6] px-7 py-3.5 text-base font-bold text-white transition hover:bg-blue-500"
               >
                 Find my area
@@ -166,7 +166,7 @@ export default function TenantsPage() {
             Free for tenants. Always. Takes a few minutes to set up.
           </p>
           <Link
-            href="/areas"
+            href="/area-match"
             className="rounded-full bg-white px-8 py-4 text-base font-extrabold text-[#1e40af] transition hover:bg-blue-50"
           >
             Find my area

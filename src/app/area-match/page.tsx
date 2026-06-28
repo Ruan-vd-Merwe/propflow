@@ -587,16 +587,21 @@ function AreaCard({
               </p>
             </div>
             <div>
-              <p className="mb-1 text-xs font-bold text-slate-500">Safety</p>
+              <p className="mb-1 text-xs font-bold text-slate-500">
+                Safety signals
+              </p>
               <p className="text-sm leading-relaxed text-slate-700">
                 {area.safety_note}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400">
+                Based on curated local knowledge, not official crime statistics.
               </p>
             </div>
             <div className="space-y-2 border-t border-slate-200 pt-3">
               <BreakdownBar label="Budget" value={rec.breakdown.budget} />
               <BreakdownBar label="Lifestyle" value={rec.breakdown.lifestyle} />
               <BreakdownBar label="Transport" value={rec.breakdown.transport} />
-              <BreakdownBar label="Safety" value={rec.breakdown.safety} />
+              <BreakdownBar label="Safety signals" value={rec.breakdown.safety} />
               <BreakdownBar label="Commute" value={rec.breakdown.commute} />
             </div>
           </div>
@@ -672,9 +677,10 @@ function Results({
 
       {/* Disclaimer */}
       <p className="mt-8 text-center text-xs leading-relaxed text-slate-400">
-        Area recommendations are based on your preferences and estimated data.
-        Rent ranges are indicative. PropTrust does not guarantee availability or
-        exact rental prices.
+        Area Match is a guide to help you shortlist suburbs. Recommendations are
+        based on your preferences and estimated data. Rent ranges are indicative.
+        Safety signals are based on curated local knowledge, not official crime
+        statistics. Always visit an area before committing.
       </p>
 
       {/* Soft login nudge */}
@@ -752,12 +758,19 @@ export default function AreaMatchPage() {
             Area Match
           </p>
           <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            {isResultsPage ? "Your area recommendations" : "Where should you live?"}
+            {isResultsPage
+              ? "Your area recommendations"
+              : "Find neighbourhoods that fit your life."}
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-slate-400">
             {isResultsPage
               ? "Ranked by how well each area fits your budget, commute and lifestyle."
-              : "Answer four quick questions and PropTrust will rank Cape Town areas by how well they fit your life."}
+              : "Compare suburbs based on affordability, commute, amenities, lifestyle, rental activity and local signals — so you can choose where to live with more confidence."}
+          </p>
+          <p className="mx-auto mt-3 max-w-lg text-xs text-slate-500">
+            Area Match is a guide to help you shortlist suburbs. It should
+            support your decision, not replace visiting the area and doing your
+            own checks.
           </p>
         </div>
       </div>
@@ -768,7 +781,46 @@ export default function AreaMatchPage() {
           isResultsPage ? "mx-auto max-w-5xl" : "mx-auto max-w-2xl"
         }`}
       >
-        {!isResultsPage && <ProgressBar step={step} />}
+        {!isResultsPage && (
+          <>
+            <div className="mb-10 rounded-2xl border border-slate-200 bg-white p-7">
+              <h2 className="mb-3 text-base font-bold text-[#0f172a]">
+                How Area Match works
+              </h2>
+              <p className="mb-5 text-sm leading-relaxed text-slate-500">
+                Area Match helps you shortlist suburbs based on how well they
+                fit your lifestyle, budget and practical needs. We look at
+                rental activity, commute considerations, amenities, safety
+                signals and local area information to help you compare
+                neighbourhoods more easily.
+              </p>
+              <div className="mb-5 grid gap-2 sm:grid-cols-2">
+                {[
+                  "Budget and typical rental ranges",
+                  "Commute to your work location",
+                  "Safety signals from available data",
+                  "Transport access and walkability",
+                  "Nearby amenities and green space",
+                  "Lifestyle fit based on your priorities",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-2 text-sm text-slate-600"
+                  >
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1e40af]" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400">
+                Area data is a mix of curated signals, user preferences, and
+                available rental information. Data coverage varies by suburb.
+                Scores are indicative only.
+              </p>
+            </div>
+            <ProgressBar step={step} />
+          </>
+        )}
 
         {step === 1 && (
           <StepBudget inputs={inputs} onChange={patch} onNext={next} />

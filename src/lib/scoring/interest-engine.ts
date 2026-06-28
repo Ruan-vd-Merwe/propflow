@@ -759,13 +759,13 @@ export function generate_interest_match_reasons(
   insights: ScoreResult["insights"],
 ): string[] {
   const reasons: string[] = [];
+  // deal_quality excluded: suburb_avg_rent is self-referential pending real data.
   const order = [
     "affordability",
     "area_fit",
     "property_fit",
     "lifestyle_fit",
     "commute",
-    "deal_quality",
     "safety",
   ];
   for (const key of order) {
@@ -796,12 +796,6 @@ export function generate_interest_match_warnings(
   }
   if (insights.commute?.score !== undefined && insights.commute.score < 0.35) {
     warnings.push(insights.commute.message);
-  }
-  if (
-    insights.deal_quality?.score !== undefined &&
-    insights.deal_quality.score < 0.35
-  ) {
-    warnings.push(insights.deal_quality.message);
   }
   if (profile.has_pets && property.pets_allowed === false) {
     warnings.push("Pets are not permitted at this property.");
@@ -843,30 +837,32 @@ export function tenant_interest_match_model(
   const area_fit = area_fit_insight(profile, property);
   const lifestyle_fit = lifestyle_fit_insight(profile, property);
   const commute = commute_fit_insight(profile, property);
-  const deal_quality = tenant_deal_quality_insight(property);
   const safety = tenant_safety_insight(property);
   const approval = tenant_approval_insight(profile, property);
 
+  // deal_quality excluded from insights: suburb_avg_rent is self-referential
+  // until real suburb-average data is available; tenant_deal_quality_insight
+  // exists for future use once that data is populated.
   const insights: ScoreResult["insights"] = {
     affordability,
     property_fit,
     area_fit,
     lifestyle_fit,
     commute,
-    deal_quality,
     safety,
     approval,
   };
 
   const weights = { ...DEFAULT_WEIGHTS, ...(profile.importance_weights ?? {}) };
 
+  // deal_quality excluded: suburb_avg_rent is self-referential; weighted_sum
+  // auto-renormalizes over the remaining weights.
   const raw = weighted_sum([
     [affordability.score, weights.affordability],
     [property_fit.score, weights.property_fit],
     [area_fit.score, weights.area_fit],
     [lifestyle_fit.score, weights.lifestyle_fit],
     [commute.score, weights.commute],
-    [deal_quality.score, weights.deal_quality],
     [safety.score, weights.safety],
     [approval.score, weights.approval],
   ]);

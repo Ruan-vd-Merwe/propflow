@@ -360,7 +360,9 @@ export function EditPreferencesPanel({
                     Show my profile to landlords
                   </p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    Landlords can see and contact you when actively looking
+                    {visible
+                      ? "Your profile is visible to landlords and appears in their searches and matches."
+                      : "Browse freely — landlords can't see or contact you. Switch this on when you're ready to be discovered."}
                   </p>
                 </div>
                 <button

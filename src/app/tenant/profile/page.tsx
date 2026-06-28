@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { calculateMatchScore, matchColour } from "@/lib/matching";
+import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
+import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { EditPreferencesPanel } from "./EditPreferencesPanel";
 import type {
   TenantProfile,
@@ -38,18 +39,17 @@ function fmt(cents: number) {
 }
 
 function MatchBadge({ score }: { score: number }) {
-  const colour = matchColour(score);
   const cls =
-    colour === "green"
+    score >= 75
       ? "bg-green-100 text-green-800"
-      : colour === "amber"
+      : score >= 45
         ? "bg-amber-100 text-amber-800"
         : "bg-red-100 text-red-800";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}
     >
-      {score}% match
+      {score}/100
     </span>
   );
 }
@@ -106,11 +106,32 @@ export default async function TenantProfilePage({
     .order("created_at", { ascending: false })
     .limit(50);
 
-  const scoredProperties = ((rawProps ?? []) as PropertyListing[])
-    .map((p) => ({ property: p, score: calculateMatchScore(tenantProfile, p) }))
-    .filter(({ score }) => score.total > 0)
-    .sort((a, b) => b.score.total - a.score.total)
-    .slice(0, 12);
+  const tenantMappedProfile = mapTenantProfile(
+    tenantProfile as unknown as Record<string, unknown>,
+  );
+  const props = (rawProps ?? []) as PropertyListing[];
+  const scoredProperties = (() => {
+    if (props.length === 0) return [];
+    const propData = props.map((p) =>
+      mapProperty(p as unknown as Record<string, unknown>),
+    );
+    const results = rank_properties_for_tenant_interests(
+      propData,
+      tenantMappedProfile,
+    );
+    const propById = new Map(props.map((p) => [p.id, p]));
+    return results
+      .filter(
+        (r) =>
+          r.status === "ranked" && r.property_id && propById.has(r.property_id),
+      )
+      .slice(0, 12)
+      .map((r) => ({
+        property: propById.get(r.property_id!)! as PropertyListing,
+        score: r.score,
+        match_reasons: r.match_reasons,
+      }));
+  })();
 
   // ── Introduction requests ─────────────────────────────────────────────────
   const { data: introRaw } = await supabase
@@ -128,7 +149,6 @@ export default async function TenantProfilePage({
   const prefsDone = tenantProfile.preferences_complete;
   const affordDone = tenantProfile.affordability_complete;
   const verStatus = tenantProfile.verification_status ?? "unverified";
-  const isIncomplete = !prefsDone || !affordDone;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -446,7 +466,7 @@ export default async function TenantProfilePage({
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {scoredProperties.map(({ property: p, score }) => (
+              {scoredProperties.map(({ property: p, score, match_reasons }) => (
                 <Link
                   key={p.id}
                   href={`/browse/${p.id}`}
@@ -481,7 +501,7 @@ export default async function TenantProfilePage({
                       <p className="font-semibold leading-snug text-slate-900">
                         {p.name}
                       </p>
-                      <MatchBadge score={score.total} />
+                      <MatchBadge score={score} />
                     </div>
                     <p className="text-xs text-slate-500">
                       {p.suburb}
@@ -507,6 +527,16 @@ export default async function TenantProfilePage({
                         )}
                       </div>
                     </div>
+                    {match_reasons.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {match_reasons.slice(0, 3).map((r, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                            <span className="text-xs text-green-700">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <p className="mt-3 text-xs font-medium text-blue-600">
                       View score breakdown →
                     </p>
@@ -602,6 +632,11 @@ function VisibilityToggle({
       <input type="hidden" name="is_visible" value={String(!currentValue)} />
       <button
         type="submit"
+        title={
+          currentValue
+            ? "Your profile is visible to landlords and appears in their searches and matches."
+            : "Browse freely — landlords can't see or contact you. Switch this on when you're ready to be discovered."
+        }
         className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
           currentValue
             ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"

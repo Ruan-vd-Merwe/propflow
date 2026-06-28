@@ -48,11 +48,13 @@ export async function middleware(request: NextRequest) {
     pathname === "/about" ||
     pathname === "/area-match" ||
     pathname === "/areas" ||
+    pathname === "/investment-scores" ||
     pathname === "/how-scoring-works" ||
     pathname === "/unsubscribe" ||
     pathname === "/trust" ||
     pathname === "/for-tenants" ||
     pathname === "/for-landlords" ||
+    pathname === "/become-a-connector" ||
     pathname.startsWith("/browse") ||
     pathname.startsWith("/solutions/") ||
     pathname.startsWith("/resources/") ||

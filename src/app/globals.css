@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
   :root {
     --pt-blue: #1e40af;
     --pt-blue-lt: #3b82f6;

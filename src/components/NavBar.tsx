@@ -170,16 +170,21 @@ const MORE_ACCOUNT: MoreLink[] = [
   { href: "/settings",    label: "Settings",   Icon: IconCog         },
 ];
 
-// Pick primary links based on role priority: landlord > connector > tenant
-function getPrimaryLinks(roles: UserRoles): NavLink[] {
+// Pick primary links based on the page the user is currently on.
+// Multi-role users see the nav that matches their current surface.
+function getPrimaryLinks(roles: UserRoles, pathname: string): NavLink[] {
+  if (pathname.startsWith("/connector") && roles.is_connector) return PRIMARY_CONNECTOR;
+  if (pathname.startsWith("/tenant") && roles.is_tenant) return PRIMARY_TENANT;
   if (roles.is_landlord) return PRIMARY_LANDLORD;
   if (roles.is_connector) return PRIMARY_CONNECTOR;
   if (roles.is_tenant) return PRIMARY_TENANT;
   return PRIMARY_LANDLORD;
 }
 
-// Home route for the logo link
-function getHomeHref(roles: UserRoles): string {
+// Home route — matches the current surface for multi-role users
+function getHomeHref(roles: UserRoles, pathname: string): string {
+  if (pathname.startsWith("/connector") && roles.is_connector) return "/connector/tasks";
+  if (pathname.startsWith("/tenant") && roles.is_tenant) return "/tenant/browse";
   if (roles.is_landlord) return "/dashboard";
   if (roles.is_connector) return "/connector/tasks";
   if (roles.is_tenant) return "/tenant/browse";
@@ -194,6 +199,26 @@ const MORE_HREFS = new Set([
   ...MORE_ACCOUNT.map((l) => l.href),
 ]);
 
+// ─── Surface switcher ───────────────────────────────────────────────────────
+// Role flags (is_landlord, is_tenant, is_connector) determine which surfaces
+// a user may access. The active surface is derived from the current pathname
+// and controls which pill is highlighted. Clicking a pill navigates to that
+// surface's home route.
+
+type Surface = "landlord" | "tenant" | "connector";
+
+const SURFACE_LINKS: { surface: Surface; label: string; href: string; roleKey: keyof UserRoles }[] = [
+  { surface: "landlord",  label: "My Properties", href: "/dashboard",       roleKey: "is_landlord"  },
+  { surface: "tenant",    label: "My Rentals",    href: "/tenant/browse",   roleKey: "is_tenant"    },
+  { surface: "connector", label: "My Connector",  href: "/connector/tasks", roleKey: "is_connector" },
+];
+
+function getActiveSurface(pathname: string): Surface {
+  if (pathname.startsWith("/connector")) return "connector";
+  if (pathname.startsWith("/tenant")) return "tenant";
+  return "landlord";
+}
+
 // ─── NavBar ──────────────────────────────────────────────────────────────────
 
 export function NavBar() {
@@ -203,7 +228,11 @@ export function NavBar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [roles, setRoles] = useState<UserRoles>({ is_landlord: true, is_tenant: false, is_connector: false });
+  const [roles, setRoles] = useState<UserRoles>({
+    is_landlord: !pathname.startsWith("/connector") && !pathname.startsWith("/tenant"),
+    is_tenant: pathname.startsWith("/tenant"),
+    is_connector: pathname.startsWith("/connector"),
+  });
 
   const navRef         = useRef<HTMLElement>(null);
   const moreRef        = useRef<HTMLDivElement>(null);
@@ -300,9 +329,14 @@ export function NavBar() {
   // Highlight "More" button if any sub-link is active
   const moreIsActive = Array.from(MORE_HREFS).some((href) => isActive(href));
 
-  // Primary links depending on role
-  const primaryLinks = getPrimaryLinks(roles);
-  const homeHref = getHomeHref(roles);
+  // Primary links depending on role + current page context
+  const primaryLinks = getPrimaryLinks(roles, pathname);
+  const homeHref = getHomeHref(roles, pathname);
+
+  // Surface switcher — only shown when user has 2+ roles
+  const activeSurface = getActiveSurface(pathname);
+  const availableSurfaces = SURFACE_LINKS.filter((s) => roles[s.roleKey]);
+  const showSwitcher = availableSurfaces.length >= 2;
 
   return (
     <nav ref={navRef} className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -463,6 +497,27 @@ export function NavBar() {
         </div>
       </div>
 
+      {/* ── Surface switcher (desktop) — multi-role users only ────────── */}
+      {showSwitcher && (
+        <div className="hidden border-t border-slate-100 sm:block">
+          <div className="mx-auto flex max-w-6xl gap-1 px-4 py-1.5 sm:px-6">
+            {availableSurfaces.map(({ surface, label, href }) => (
+              <Link
+                key={surface}
+                href={href}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  activeSurface === surface
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Mobile overlay — fixed so it never pushes page content ─────── */}
       {menuOpen && (
         <div
@@ -470,6 +525,26 @@ export function NavBar() {
           className="fixed bottom-0 left-0 right-0 top-[61px] z-40 overflow-y-auto overscroll-contain border-t border-slate-100 bg-white pb-24 sm:hidden"
         >
           <ul className="divide-y divide-slate-100">
+            {/* Surface switcher (mobile) */}
+            {showSwitcher && (
+              <li className="flex gap-1.5 px-6 py-3">
+                {availableSurfaces.map(({ surface, label, href }) => (
+                  <Link
+                    key={surface}
+                    href={href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      activeSurface === surface
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </li>
+            )}
+
             {/* Primary links */}
             {primaryLinks.map(({ href, label }) => {
               const active = isActive(href);

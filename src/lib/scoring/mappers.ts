@@ -82,7 +82,9 @@ export function mapProperty(property: Record<string, unknown>): PropertyData {
     pets_allowed: petsAllowed,
     parking_available: parkingAvail,
     fibre_available: fibreAvail,
-    suburb_avg_rent: rent,
+    // deal_quality suppressed pending real suburb-average data; suburb_avg_rent is
+    // currently self-referential and must not be surfaced.
+    suburb_avg_rent: undefined,
     estimated_electricity: 1200,
     estimated_water: 300,
     estimated_internet: 700,
