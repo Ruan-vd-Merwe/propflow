@@ -21,11 +21,7 @@ export default async function AffordabilityPage() {
   if (!tp?.preferences_complete) {
     redirect("/onboarding/preferences");
   }
-
-  // Already done → advance
-  if (tp?.affordability_complete) {
-    redirect("/onboarding/verification");
-  }
+  // Note: no forward-redirect when affordability_complete — allows re-editing from profile
 
   return (
     <AffordabilityForm

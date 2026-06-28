@@ -375,10 +375,18 @@ export default async function TenantProfilePage({
               />
             )}
             {tenantProfile.affordability_max_cents && (
-              <Stat
-                label="Affordability"
-                value={`${tenantProfile.affordability_min_cents ? fmt(tenantProfile.affordability_min_cents) : "–"} – ${fmt(tenantProfile.affordability_max_cents)}/mo`}
-              />
+              <Link
+                href="/onboarding/affordability"
+                className="group rounded-lg bg-slate-50 px-3 py-2.5 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <p className="text-xs font-medium text-slate-400">Affordability</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900 group-hover:text-blue-700">
+                  {tenantProfile.affordability_min_cents
+                    ? fmt(tenantProfile.affordability_min_cents)
+                    : "–"}{" "}
+                  – {fmt(tenantProfile.affordability_max_cents)}/mo
+                </p>
+              </Link>
             )}
           </div>
 
