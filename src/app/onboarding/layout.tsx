@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +102,7 @@ export default async function OnboardingLayout({
     <div className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 py-5">
-          <div className="flex items-center gap-2">
+          <Link href="/tenant/profile" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-700">
               <svg
                 className="h-4 w-4 text-white"
@@ -118,7 +119,7 @@ export default async function OnboardingLayout({
               </svg>
             </div>
             <span className="text-lg font-bold text-slate-900">PropTrust</span>
-          </div>
+          </Link>
           <StepIndicator current={currentStep} />
         </div>
       </div>

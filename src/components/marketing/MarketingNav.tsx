@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type NavLink = { label: string; href: string; desc?: string };
 type NavSection =
@@ -108,9 +109,9 @@ function IconClose() {
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 
-export function NavLogo({ white = false }: { white?: boolean }) {
+export function NavLogo({ white = false, href = "/" }: { white?: boolean; href?: string }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5">
+    <Link href={href} className="flex items-center gap-2.5">
       <div
         className={`flex h-8 w-8 items-center justify-center rounded-lg ${white ? "bg-blue-500" : "bg-[#0f172a]"}`}
       >
@@ -208,11 +209,20 @@ function DesktopDropdown({
 export default function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoHref, setLogoHref] = useState("/");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (user) setLogoHref("/dashboard");
+      });
   }, []);
 
   useEffect(() => {
@@ -235,7 +245,7 @@ export default function MarketingNav() {
       >
         {/* Top bar */}
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-6 lg:py-3.5">
-          <NavLogo />
+          <NavLogo href={logoHref} />
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-0.5 lg:flex">
