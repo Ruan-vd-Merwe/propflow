@@ -3,14 +3,17 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
   :root {
-    --pt-blue:    #1e40af;
+    --pt-blue: #1e40af;
     --pt-blue-lt: #3b82f6;
-    --pt-navy:    #0f172a;
-    --pt-green:   #16a34a;
-    --pt-amber:   #d97706;
-    --pt-red:     #dc2626;
-    --pt-bg:      #f8fafc;
+    --pt-navy: #0f172a;
+    --pt-green: #16a34a;
+    --pt-amber: #d97706;
+    --pt-red: #dc2626;
+    --pt-bg: #f8fafc;
   }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
@@ -40,41 +43,99 @@
 /* ── Marketing page animations ─────────────────────────────────────────────── */
 
 @keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes fadeSlideIn {
-  0%   { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scoreBar {
-  0%   { width: 0%; }
-  60%  { width: 87%; }
-  100% { width: 87%; }
+  0% {
+    width: 0%;
+  }
+  60% {
+    width: 87%;
+  }
+  100% {
+    width: 87%;
+  }
 }
 
 @keyframes paidFade {
-  0%, 30% { opacity: 0; transform: translateY(6px) scale(0.95); }
-  50%, 85% { opacity: 1; transform: translateY(0) scale(1); }
-  100%     { opacity: 0; }
+  0%,
+  30% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.95);
+  }
+  50%,
+  85% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes matchFade {
-  0%, 50%  { opacity: 0; transform: translateX(-8px); }
-  70%, 85% { opacity: 1; transform: translateX(0); }
-  100%     { opacity: 0; }
+  0%,
+  50% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  70%,
+  85% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
-  50%      { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+  }
 }
 
-.animate-marquee   { animation: marquee 24s linear infinite; }
-.animate-fade-in   { animation: fadeSlideIn 0.6s ease both; }
-.animate-score-bar { animation: scoreBar 5s ease-out infinite; }
-.animate-paid      { animation: paidFade 5s ease-in-out infinite; }
-.animate-match     { animation: matchFade 5s ease-in-out infinite; }
-.animate-pulse-green { animation: pulseGreen 2s ease-in-out infinite; }
+.animate-marquee {
+  animation: marquee 24s linear infinite;
+}
+.animate-fade-in {
+  animation: fadeSlideIn 0.6s ease both;
+}
+.animate-score-bar {
+  animation: scoreBar 5s ease-out infinite;
+}
+.animate-paid {
+  animation: paidFade 5s ease-in-out infinite;
+}
+.animate-match {
+  animation: matchFade 5s ease-in-out infinite;
+}
+.animate-pulse-green {
+  animation: pulseGreen 2s ease-in-out infinite;
+}
+
+/* Anchor scroll offset for sticky navbar */
+[id] {
+  scroll-margin-top: 80px;
+}

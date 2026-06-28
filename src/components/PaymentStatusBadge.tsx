@@ -1,22 +1,22 @@
-type Status = 'paid' | 'late' | 'missed'
+type Status = "paid" | "late" | "missed";
 
 export function PaymentStatusBadge({ status }: { status: Status }) {
   const map: Record<Status, { label: string; className: string }> = {
     paid: {
-      label: 'Paid',
-      className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      label: "Paid",
+      className: "bg-emerald-50 text-emerald-700 border-emerald-200",
     },
     late: {
-      label: 'Late',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      label: "Late",
+      className: "bg-amber-50 text-amber-700 border-amber-200",
     },
     missed: {
-      label: 'Missed',
-      className: 'bg-red-50 text-red-700 border-red-200',
+      label: "Missed",
+      className: "bg-red-50 text-red-700 border-red-200",
     },
-  }
+  };
 
-  const { label, className } = map[status]
+  const { label, className } = map[status];
 
   return (
     <span
@@ -24,5 +24,5 @@ export function PaymentStatusBadge({ status }: { status: Status }) {
     >
       {label}
     </span>
-  )
+  );
 }

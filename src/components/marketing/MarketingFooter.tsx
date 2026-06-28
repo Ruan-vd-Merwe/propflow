@@ -1,87 +1,89 @@
-import Link from 'next/link'
-import { NavLogo } from './MarketingNav'
+import Link from "next/link";
+import { NavLogo } from "./MarketingNav";
 
 const COLS = [
   {
-    title: 'Product',
+    title: "For Tenants",
     links: [
-      { label: 'Features',       href: '/features'           },
-      { label: 'Pricing',        href: '/pricing'            },
-      { label: 'For Landlords',  href: '/solutions/landlords'},
-      { label: 'For Tenants',    href: '/solutions/tenants'  },
-      { label: 'Mobile App',     href: '#'                   },
-      { label: 'API',            href: '#'                   },
+      { label: "Area Match", href: "/area-match" },
+      { label: "Browse properties", href: "/browse" },
+      { label: "Create rental profile", href: "/register" },
+      { label: "How it works", href: "/for-tenants" },
     ],
   },
   {
-    title: 'Company',
+    title: "For Landlords",
     links: [
-      { label: 'About us',        href: '/about'   },
-      { label: 'Blog',            href: '/resources/blog' },
-      { label: 'Careers',         href: '#'        },
-      { label: 'Press',           href: '#'        },
-      { label: 'Contact',         href: '/contact' },
-      { label: 'Privacy Policy',  href: '#'        },
-      { label: 'Terms of Service',href: '#'        },
+      { label: "Manage properties", href: "/for-landlords" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "List a property", href: "/register?type=landlord" },
+      { label: "Portfolio", href: "/portfolio" },
+      { label: "Seller Assistant", href: "/sell/listing-assistant" },
+      { label: "Savings Calculator", href: "/sell/savings-calculator" },
     ],
   },
   {
-    title: 'Resources',
+    title: "For Connectors",
     links: [
-      { label: 'SA Rental Law Guide',    href: '/resources/rental-law' },
-      { label: 'FAQ',                    href: '/resources/faq'        },
-      { label: 'Tenant Screening Guide', href: '/resources/screening'  },
-      { label: 'Body Corporate Guide',   href: '#'                     },
-      { label: 'Maintenance Checklist',  href: '#'                     },
+      { label: "Become a Connector", href: "/become-a-connector" },
+      { label: "How it works", href: "/#connectors" },
     ],
   },
-]
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
+      { label: "Blog", href: "/resources/blog" },
+      { label: "Features", href: "/features" },
+      { label: "Professionals", href: "/professionals" },
+      { label: "Buyer Due Diligence", href: "/buy/due-diligence" },
+      { label: "Careers", href: "#" },
+    ],
+  },
+  {
+    title: "Legal and Trust",
+    links: [
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Trust and Security", href: "/trust" },
+      { label: "POPIA approach", href: "/trust#popia" },
+      { label: "FAQ", href: "/resources/faq" },
+      { label: "How scoring works", href: "/how-scoring-works" },
+    ],
+  },
+];
 
 export default function MarketingFooter() {
   return (
     <footer id="contact" className="bg-[#0f172a] px-6 pb-10 pt-16">
       <div className="mx-auto max-w-7xl">
-
-        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-4">
-
+        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           {/* Brand col */}
           <div>
             <NavLogo white />
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              South Africa&apos;s property management platform for landlords, tenants and property teams.
+              Connect tenants and landlords directly. No agent required. Built for South Africa.
             </p>
-            <div className="mt-4 space-y-1">
+            <div className="mt-5 space-y-1">
               <p className="text-sm text-slate-500">hello@proptrust.co.za</p>
               <p className="text-sm text-slate-500">Cape Town, South Africa</p>
-            </div>
-            <div className="mt-5 flex gap-2.5">
-              {[
-                { label: 'LinkedIn',  abbr: 'in' },
-                { label: 'Instagram', abbr: 'Ig' },
-                { label: 'X',         abbr: 'X'  },
-              ].map(s => (
-                <a
-                  key={s.label}
-                  href="#"
-                  aria-label={s.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-xs font-bold text-slate-500 transition hover:border-white/25 hover:text-slate-300"
-                >
-                  {s.abbr}
-                </a>
-              ))}
             </div>
           </div>
 
           {/* Link cols */}
-          {COLS.map(col => (
+          {COLS.map((col) => (
             <div key={col.title}>
               <p className="mb-5 text-xs font-bold uppercase tracking-wider text-slate-500">
                 {col.title}
               </p>
               <ul className="space-y-3">
-                {col.links.map(link => (
+                {col.links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="text-sm text-slate-400 transition hover:text-white">
+                    <Link
+                      href={link.href}
+                      className="text-sm text-slate-400 transition hover:text-white"
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -96,10 +98,10 @@ export default function MarketingFooter() {
             &copy; 2026 PropTrust (Pty) Ltd &middot; proptrust.co.za
           </p>
           <p className="text-xs text-slate-600">
-            POPIA Compliant &middot; Made in South Africa
+            POPIA-aligned &middot; Made in South Africa
           </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

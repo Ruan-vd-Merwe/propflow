@@ -1,81 +1,112 @@
-import { notFound } from 'next/navigation'
-import { createServiceClient } from '@/lib/supabase/service'
-import { TenantPortal } from './TenantPortal'
-import type { TenantQuery, Payment } from '@/lib/types'
+import { notFound } from "next/navigation";
+import { createServiceClient } from "@/lib/supabase/service";
+import { TenantPortal } from "./TenantPortal";
+import type { TenantQuery, Payment } from "@/lib/types";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 type ServiceCategory = {
-  id: string; name: string; icon: string | null; description: string | null
-}
+  id: string;
+  name: string;
+  icon: string | null;
+  description: string | null;
+};
 type ServiceProvider = {
-  id: string; category_id: string; name: string; phone: string | null
-  whatsapp: string | null; area: string | null; province: string | null
-  rate_description: string | null
-}
+  id: string;
+  category_id: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  area: string | null;
+  province: string | null;
+  rate_description: string | null;
+};
 
 export default async function TenantPortalPage({
   params,
 }: {
-  params: { token: string }
+  params: { token: string };
 }) {
-  const supabase = createServiceClient()
+  const supabase = createServiceClient();
 
   // Look up tenant by portal_token (UUID) — fall back to legacy access_token
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.token)
-  const column = isUuid ? 'portal_token' : 'access_token'
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      params.token,
+    );
+  const column = isUuid ? "portal_token" : "access_token";
 
   const { data: tenant } = await supabase
-    .from('tenants')
-    .select(`
+    .from("tenants")
+    .select(
+      `
       id, full_name, email, phone, monthly_rent, lease_start, lease_end, portal_token,
       properties!inner ( id, name, address, province,
         profiles!inner ( full_name, email, phone )
       )
-    `)
+    `,
+    )
     .eq(column, params.token)
-    .single()
+    .single();
 
-  if (!tenant) notFound()
+  if (!tenant) notFound();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const property = (tenant as any).properties
+  const property = (tenant as any).properties;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const landlord = property.profiles as any
+  const landlord = property.profiles as any;
 
   // Fetch payments
   const { data: paymentsRaw } = await supabase
-    .from('payments')
-    .select('*')
-    .eq('tenant_id', tenant.id)
-    .order('due_date', { ascending: false })
+    .from("payments")
+    .select("*")
+    .eq("tenant_id", tenant.id)
+    .order("due_date", { ascending: false });
 
-  const payments: Payment[] = (paymentsRaw ?? []) as Payment[]
+  const payments: Payment[] = (paymentsRaw ?? []) as Payment[];
 
   // Fetch queries
   const { data: queriesRaw } = await supabase
-    .from('tenant_queries')
-    .select('*')
-    .eq('tenant_id', tenant.id)
-    .order('created_at', { ascending: false })
+    .from("tenant_queries")
+    .select("*")
+    .eq("tenant_id", tenant.id)
+    .order("created_at", { ascending: false });
 
-  const queries: TenantQuery[] = (queriesRaw ?? []) as TenantQuery[]
+  const queries: TenantQuery[] = (queriesRaw ?? []) as TenantQuery[];
+
+  // Fetch latest active lease for this tenant
+  const { data: leaseRaw } = await supabase
+    .from("lease_agreements")
+    .select(
+      "id, lease_start, lease_end, monthly_rent, deposit_amount, payment_due_day, notice_period_days, pet_allowed, subletting_allowed, special_conditions, status, landlord_signed_at, tenant_signed_at",
+    )
+    .eq("tenant_id", tenant.id)
+    .in("status", ["sent", "signed"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   // Fetch service categories + providers for tenant's province
-  const { data: cats }  = await supabase.from('service_categories').select('*').order('sort_order')
+  const { data: cats } = await supabase
+    .from("service_categories")
+    .select("*")
+    .order("sort_order");
   const { data: provs } = await supabase
-    .from('service_providers')
-    .select('*')
-    .eq('is_active', true)
-    .order('name')
+    .from("service_providers")
+    .select("*")
+    .eq("is_active", true)
+    .order("name");
 
-  const serviceCategories: ServiceCategory[]  = (cats  ?? []) as ServiceCategory[]
-  const serviceProviders:  ServiceProvider[]  = (provs ?? []) as ServiceProvider[]
+  const serviceCategories: ServiceCategory[] = (cats ??
+    []) as ServiceCategory[];
+  const serviceProviders: ServiceProvider[] = (provs ??
+    []) as ServiceProvider[];
 
   // Next unpaid payment
-  const today = new Date().toISOString().split('T')[0]
-  const nextPayment = payments.find((p) => p.status !== 'paid' && p.due_date >= today)
-    ?? payments.find((p) => p.status !== 'paid')
+  const today = new Date().toISOString().split("T")[0];
+  const nextPayment =
+    payments.find((p) => p.status !== "paid" && p.due_date >= today) ??
+    payments.find((p) => p.status !== "paid");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
@@ -84,9 +115,18 @@ export default async function TenantPortalPage({
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10">
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <svg
+                className="h-4 w-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
               </svg>
             </div>
             <span className="text-base font-bold text-white">PropTrust</span>
@@ -100,7 +140,7 @@ export default async function TenantPortalPage({
       {/* Hero strip */}
       <div className="mx-auto max-w-2xl px-5 py-8">
         <div className="mb-1 text-2xl font-bold text-white">
-          Hi, {tenant.full_name.split(' ')[0]} 👋
+          Hi, {tenant.full_name.split(" ")[0]} 👋
         </div>
         <p className="text-slate-400 text-sm">
           {property.name} · {property.address}
@@ -112,33 +152,34 @@ export default async function TenantPortalPage({
         <TenantPortal
           token={params.token}
           tenant={{
-            id:           tenant.id,
-            full_name:    tenant.full_name,
-            email:        tenant.email,
-            phone:        tenant.phone,
+            id: tenant.id,
+            full_name: tenant.full_name,
+            email: tenant.email,
+            phone: tenant.phone,
             monthly_rent: tenant.monthly_rent,
-            lease_start:  tenant.lease_start,
-            lease_end:    tenant.lease_end,
+            lease_start: tenant.lease_start,
+            lease_end: tenant.lease_end,
             portal_token: tenant.portal_token,
           }}
           property={{
-            id:       property.id,
-            name:     property.name,
-            address:  property.address,
+            id: property.id,
+            name: property.name,
+            address: property.address,
             province: property.province,
           }}
           landlord={{
             full_name: landlord.full_name,
-            email:     landlord.email,
-            phone:     landlord.phone,
+            email: landlord.email,
+            phone: landlord.phone,
           }}
           initialPayments={payments}
           initialQueries={queries}
           serviceCategories={serviceCategories}
           serviceProviders={serviceProviders}
           nextPayment={nextPayment ?? null}
+          initialLease={leaseRaw ?? null}
         />
       </div>
     </div>
-  )
+  );
 }

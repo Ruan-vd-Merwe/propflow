@@ -1,50 +1,72 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import type { QueryStatus } from '@/lib/types'
+import { useState } from "react";
+import type { QueryStatus } from "@/lib/types";
 
-const STATUS_OPTS: { value: QueryStatus; label: string; icon: string; colour: string }[] = [
-  { value: 'open',        label: 'Open',        icon: '⏳', colour: 'border-amber-400 bg-amber-50 text-amber-800' },
-  { value: 'in_progress', label: 'In Progress',  icon: '🔄', colour: 'border-blue-400 bg-blue-50 text-blue-800' },
-  { value: 'resolved',    label: 'Resolved',     icon: '✅', colour: 'border-emerald-400 bg-emerald-50 text-emerald-800' },
-]
+const STATUS_OPTS: {
+  value: QueryStatus;
+  label: string;
+  icon: string;
+  colour: string;
+}[] = [
+  {
+    value: "open",
+    label: "Open",
+    icon: "–",
+    colour: "border-amber-400 bg-amber-50 text-amber-800",
+  },
+  {
+    value: "in_progress",
+    label: "In Progress",
+    icon: "›",
+    colour: "border-blue-400 bg-blue-50 text-blue-800",
+  },
+  {
+    value: "resolved",
+    label: "Resolved",
+    icon: "v",
+    colour: "border-emerald-400 bg-emerald-50 text-emerald-800",
+  },
+];
 
 export function QueryDetail({
   queryId,
   currentStatus,
   currentNotes,
 }: {
-  queryId: string
-  currentStatus: string
-  currentNotes: string
+  queryId: string;
+  currentStatus: string;
+  currentNotes: string;
 }) {
-  const [status, setStatus] = useState<QueryStatus>(currentStatus as QueryStatus)
-  const [notes,  setNotes]  = useState(currentNotes)
-  const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
-  const [error,  setError]  = useState<string | null>(null)
+  const [status, setStatus] = useState<QueryStatus>(
+    currentStatus as QueryStatus,
+  );
+  const [notes, setNotes] = useState(currentNotes);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    setSaving(true)
-    setSaved(false)
-    setError(null)
+    setSaving(true);
+    setSaved(false);
+    setError(null);
 
     const res = await fetch(`/api/queries/${queryId}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ status, landlord_notes: notes }),
-    })
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, landlord_notes: notes }),
+    });
 
-    setSaving(false)
+    setSaving(false);
 
     if (!res.ok) {
-      const json = await res.json()
-      setError(json.error ?? 'Failed to save')
-      return
+      const json = await res.json();
+      setError(json.error ?? "Failed to save");
+      return;
     }
 
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   }
 
   return (
@@ -60,7 +82,7 @@ export function QueryDetail({
             className={`rounded-lg border px-4 py-3 text-sm font-medium transition ${
               status === opt.value
                 ? opt.colour
-                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                : "border-slate-200 text-slate-500 hover:border-slate-300"
             }`}
           >
             <span className="block text-xl">{opt.icon}</span>
@@ -73,7 +95,9 @@ export function QueryDetail({
       <div className="mb-4">
         <label className="mb-1 block text-sm font-medium text-slate-700">
           Notes for tenant
-          <span className="ml-1 text-xs font-normal text-slate-400">(shown in tenant portal)</span>
+          <span className="ml-1 text-xs font-normal text-slate-400">
+            (shown in tenant portal)
+          </span>
         </label>
         <textarea
           className="input-field resize-none"
@@ -85,11 +109,15 @@ export function QueryDetail({
       </div>
 
       {error && (
-        <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>
+        <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-700">
+          {error}
+        </p>
       )}
 
       <div className="flex items-center justify-between">
-        <span className={`text-sm text-emerald-600 transition-opacity ${saved ? 'opacity-100' : 'opacity-0'}`}>
+        <span
+          className={`text-sm text-emerald-600 transition-opacity ${saved ? "opacity-100" : "opacity-0"}`}
+        >
           Saved ✓
         </span>
         <button
@@ -97,9 +125,9 @@ export function QueryDetail({
           disabled={saving}
           className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
         >
-          {saving ? 'Saving…' : 'Save changes'}
+          {saving ? "Saving…" : "Save changes"}
         </button>
       </div>
     </div>
-  )
+  );
 }

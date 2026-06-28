@@ -1,27 +1,31 @@
 /** Shared data for all payment notification emails */
 export interface PaymentEmailData {
-  tenantName: string
-  propertyName: string
-  propertyAddress: string
-  dueDate: string         // human-readable e.g. "1 June 2025"
-  amountRand: string      // formatted e.g. "R 15 000"
-  daysLate?: number
-  landlordName: string
-  landlordEmail: string
-  landlordPhone?: string | null
+  tenantName: string;
+  propertyName: string;
+  propertyAddress: string;
+  dueDate: string; // human-readable e.g. "1 June 2025"
+  amountRand: string; // formatted e.g. "R 15 000"
+  daysLate?: number;
+  landlordName: string;
+  landlordEmail: string;
+  landlordPhone?: string | null;
 }
 
 export interface CheckinEmailData {
-  tenantName: string
-  propertyName: string
-  checkinUrl: string      // full URL to /checkin/[token]
-  month: string           // e.g. "June 2025"
-  landlordName: string
+  tenantName: string;
+  propertyName: string;
+  checkinUrl: string; // full URL to /checkin/[token]
+  month: string; // e.g. "June 2025"
+  landlordName: string;
 }
 
 // ─── Shared HTML primitives ───────────────────────────────────────────────────
 
-function baseLayout(accentColor: string, content: string, footerNote = ''): string {
+function baseLayout(
+  accentColor: string,
+  content: string,
+  footerNote = "",
+): string {
   return /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +44,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
             <table role="presentation" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="width:28px;height:28px;background:${accentColor};border-radius:6px;text-align:center;vertical-align:middle;">
-                  <span style="color:#ffffff;font-size:15px;line-height:28px;display:block;">🏠</span>
+                  <span style="color:#ffffff;font-size:15px;line-height:28px;display:block;">P</span>
                 </td>
                 <td style="padding-left:10px;vertical-align:middle;">
                   <span style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.3px;">PropTrust</span>
@@ -65,7 +69,7 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
           <td style="border-top:1px solid #e2e8f0;background:#f8fafc;padding:16px 28px;">
             <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;">
               PropTrust Property Management · Automated notification<br />
-              ${footerNote ? footerNote + '<br />' : ''}
+              ${footerNote ? footerNote + "<br />" : ""}
               Please do not reply to this email. Contact your landlord directly.
             </p>
           </td>
@@ -75,14 +79,19 @@ function baseLayout(accentColor: string, content: string, footerNote = ''): stri
     </td></tr>
   </table>
 </body>
-</html>`
+</html>`;
 }
 
 function pill(text: string, bg: string, color: string): string {
-  return `<span style="display:inline-block;padding:4px 12px;border-radius:20px;background:${bg};color:${color};font-size:12px;font-weight:600;letter-spacing:0.3px;">${text}</span>`
+  return `<span style="display:inline-block;padding:4px 12px;border-radius:20px;background:${bg};color:${color};font-size:12px;font-weight:600;letter-spacing:0.3px;">${text}</span>`;
 }
 
-function amountBox(label: string, amount: string, bg: string, color: string): string {
+function amountBox(
+  label: string,
+  amount: string,
+  bg: string,
+  color: string,
+): string {
   return `
   <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0;border-radius:8px;background:${bg};border:1px solid ${color}30;overflow:hidden;">
     <tr>
@@ -91,7 +100,7 @@ function amountBox(label: string, amount: string, bg: string, color: string): st
         <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#0f172a;">${amount}</p>
       </td>
     </tr>
-  </table>`
+  </table>`;
 }
 
 function detailRow(label: string, value: string): string {
@@ -99,13 +108,16 @@ function detailRow(label: string, value: string): string {
   <tr>
     <td style="padding:6px 0;font-size:13px;color:#64748b;width:40%;">${label}</td>
     <td style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:500;">${value}</td>
-  </tr>`
+  </tr>`;
 }
 
 // ─── 1. Friendly Reminder (3 days before due) ─────────────────────────────────
 
-export function paymentReminderEmail(d: PaymentEmailData): { subject: string; html: string } {
-  const subject = `Rent reminder: ${d.amountRand} due on ${d.dueDate}`
+export function paymentReminderEmail(d: PaymentEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `Rent reminder: ${d.amountRand} due on ${d.dueDate}`;
 
   const content = /* html */ `
     <p style="margin:0 0 4px;font-size:13px;color:#64748b;">Hi ${d.tenantName},</p>
@@ -116,14 +128,14 @@ export function paymentReminderEmail(d: PaymentEmailData): { subject: string; ht
       Just a friendly reminder that your monthly rent payment is coming up shortly.
     </p>
 
-    ${amountBox('Amount due', d.amountRand, '#f0fdf4', '#16a34a')}
+    ${amountBox("Amount due", d.amountRand, "#f0fdf4", "#16a34a")}
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
-          ${detailRow('Due date', d.dueDate)}
-          ${detailRow('Property', d.propertyName)}
-          ${detailRow('Address', d.propertyAddress)}
+          ${detailRow("Due date", d.dueDate)}
+          ${detailRow("Property", d.propertyName)}
+          ${detailRow("Address", d.propertyAddress)}
         </table>
       </td></tr>
     </table>
@@ -135,17 +147,20 @@ export function paymentReminderEmail(d: PaymentEmailData): { subject: string; ht
 
     <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
       Landlord contact: <a href="mailto:${d.landlordEmail}" style="color:#3b82f6;">${d.landlordEmail}</a>
-      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ''}
+      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ""}
     </p>
-  `
+  `;
 
-  return { subject, html: baseLayout('#16a34a', content) }
+  return { subject, html: baseLayout("#16a34a", content) };
 }
 
 // ─── 2. Payment Due Today ─────────────────────────────────────────────────────
 
-export function paymentDueTodayEmail(d: PaymentEmailData): { subject: string; html: string } {
-  const subject = `Your rent is due today — ${d.amountRand}`
+export function paymentDueTodayEmail(d: PaymentEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `Your rent is due today — ${d.amountRand}`;
 
   const content = /* html */ `
     <p style="margin:0 0 4px;font-size:13px;color:#64748b;">Hi ${d.tenantName},</p>
@@ -156,13 +171,13 @@ export function paymentDueTodayEmail(d: PaymentEmailData): { subject: string; ht
       This is a reminder that your rent payment is due today. Please arrange payment as soon as possible.
     </p>
 
-    ${amountBox('Due today', d.amountRand, '#fffbeb', '#d97706')}
+    ${amountBox("Due today", d.amountRand, "#fffbeb", "#d97706")}
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
-          ${detailRow('Due date', d.dueDate)}
-          ${detailRow('Property', d.propertyName)}
+          ${detailRow("Due date", d.dueDate)}
+          ${detailRow("Property", d.propertyName)}
         </table>
       </td></tr>
     </table>
@@ -174,20 +189,23 @@ export function paymentDueTodayEmail(d: PaymentEmailData): { subject: string; ht
 
     <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
       Contact: <a href="mailto:${d.landlordEmail}" style="color:#3b82f6;">${d.landlordEmail}</a>
-      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ''}
+      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ""}
     </p>
-  `
+  `;
 
-  return { subject, html: baseLayout('#d97706', content) }
+  return { subject, html: baseLayout("#d97706", content) };
 }
 
 // ─── 3. First Warning — 3 days overdue ────────────────────────────────────────
 
-export function paymentLate3dEmail(d: PaymentEmailData): { subject: string; html: string } {
-  const subject = `⚠ Overdue rent: ${d.amountRand} — 3 days late`
+export function paymentLate3dEmail(d: PaymentEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `⚠ Overdue rent: ${d.amountRand} — 3 days late`;
 
   const content = /* html */ `
-    ${pill('OVERDUE — 3 DAYS', '#fef3c7', '#92400e')}
+    ${pill("OVERDUE — 3 DAYS", "#fef3c7", "#92400e")}
     <p style="margin:4px 0 4px;font-size:13px;color:#64748b;">Hi ${d.tenantName},</p>
     <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#0f172a;line-height:1.3;">
       Your rent payment is 3 days overdue
@@ -196,14 +214,14 @@ export function paymentLate3dEmail(d: PaymentEmailData): { subject: string; html
       We have not yet received your rent payment for ${d.propertyName}. Your account is now 3 days overdue.
     </p>
 
-    ${amountBox('Outstanding amount', d.amountRand, '#fff7ed', '#c2410c')}
+    ${amountBox("Outstanding amount", d.amountRand, "#fff7ed", "#c2410c")}
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
-          ${detailRow('Was due', d.dueDate)}
-          ${detailRow('Days overdue', '3 days')}
-          ${detailRow('Property', d.propertyName)}
+          ${detailRow("Was due", d.dueDate)}
+          ${detailRow("Days overdue", "3 days")}
+          ${detailRow("Property", d.propertyName)}
         </table>
       </td></tr>
     </table>
@@ -219,20 +237,23 @@ export function paymentLate3dEmail(d: PaymentEmailData): { subject: string; html
 
     <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
       Contact: <a href="mailto:${d.landlordEmail}" style="color:#3b82f6;">${d.landlordEmail}</a>
-      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ''}
+      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ""}
     </p>
-  `
+  `;
 
-  return { subject, html: baseLayout('#f59e0b', content) }
+  return { subject, html: baseLayout("#f59e0b", content) };
 }
 
 // ─── 4. Formal Warning — 7 days overdue ──────────────────────────────────────
 
-export function paymentLate7dEmail(d: PaymentEmailData): { subject: string; html: string } {
-  const subject = `FORMAL WARNING — Rent overdue 7 days: ${d.amountRand}`
+export function paymentLate7dEmail(d: PaymentEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `FORMAL WARNING — Rent overdue 7 days: ${d.amountRand}`;
 
   const content = /* html */ `
-    ${pill('FORMAL WARNING — 7 DAYS', '#fee2e2', '#991b1b')}
+    ${pill("FORMAL WARNING — 7 DAYS", "#fee2e2", "#991b1b")}
     <p style="margin:4px 0 4px;font-size:13px;color:#64748b;">Dear ${d.tenantName},</p>
     <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#0f172a;line-height:1.3;">
       Formal Warning: Rent 7 Days Overdue
@@ -242,15 +263,15 @@ export function paymentLate7dEmail(d: PaymentEmailData): { subject: string; html
       for the above property remains outstanding.
     </p>
 
-    ${amountBox('Amount overdue', d.amountRand, '#fef2f2', '#dc2626')}
+    ${amountBox("Amount overdue", d.amountRand, "#fef2f2", "#dc2626")}
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
-          ${detailRow('Original due date', d.dueDate)}
-          ${detailRow('Days overdue', '7 days')}
-          ${detailRow('Property', d.propertyName)}
-          ${detailRow('Address', d.propertyAddress)}
+          ${detailRow("Original due date", d.dueDate)}
+          ${detailRow("Days overdue", "7 days")}
+          ${detailRow("Property", d.propertyName)}
+          ${detailRow("Address", d.propertyAddress)}
         </table>
       </td></tr>
     </table>
@@ -271,20 +292,23 @@ export function paymentLate7dEmail(d: PaymentEmailData): { subject: string; html
 
     <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
       Contact: <a href="mailto:${d.landlordEmail}" style="color:#3b82f6;">${d.landlordEmail}</a>
-      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ''}
+      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ""}
     </p>
-  `
+  `;
 
-  return { subject, html: baseLayout('#dc2626', content) }
+  return { subject, html: baseLayout("#dc2626", content) };
 }
 
 // ─── 5. Final Notice — 14 days overdue ───────────────────────────────────────
 
-export function paymentLate14dEmail(d: PaymentEmailData): { subject: string; html: string } {
-  const subject = `FINAL NOTICE — Eviction process may commence — ${d.amountRand} overdue`
+export function paymentLate14dEmail(d: PaymentEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `FINAL NOTICE — Eviction process may commence — ${d.amountRand} overdue`;
 
   const content = /* html */ `
-    ${pill('FINAL NOTICE — 14 DAYS', '#450a0a', '#fca5a5')}
+    ${pill("FINAL NOTICE — 14 DAYS", "#450a0a", "#fca5a5")}
     <p style="margin:4px 0 4px;font-size:13px;color:#64748b;">Dear ${d.tenantName},</p>
     <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#0f172a;line-height:1.3;">
       FINAL NOTICE: Rent 14 Days Overdue
@@ -294,15 +318,15 @@ export function paymentLate14dEmail(d: PaymentEmailData): { subject: string; htm
       unpaid. This is your final notice before formal legal proceedings are initiated.
     </p>
 
-    ${amountBox('Total amount overdue', d.amountRand, '#fef2f2', '#991b1b')}
+    ${amountBox("Total amount overdue", d.amountRand, "#fef2f2", "#991b1b")}
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
-          ${detailRow('Original due date', d.dueDate)}
-          ${detailRow('Days overdue', '14 days')}
-          ${detailRow('Property', d.propertyName)}
-          ${detailRow('Address', d.propertyAddress)}
+          ${detailRow("Original due date", d.dueDate)}
+          ${detailRow("Days overdue", "14 days")}
+          ${detailRow("Property", d.propertyName)}
+          ${detailRow("Address", d.propertyAddress)}
         </table>
       </td></tr>
     </table>
@@ -332,20 +356,27 @@ export function paymentLate14dEmail(d: PaymentEmailData): { subject: string; htm
 
     <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">
       Urgent contact: <a href="mailto:${d.landlordEmail}" style="color:#3b82f6;">${d.landlordEmail}</a>
-      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ''}
+      ${d.landlordPhone ? ` · ${d.landlordPhone}` : ""}
     </p>
-  `
+  `;
 
   return {
     subject,
-    html: baseLayout('#991b1b', content, 'This is a legal notice. Please retain for your records.'),
-  }
+    html: baseLayout(
+      "#991b1b",
+      content,
+      "This is a legal notice. Please retain for your records.",
+    ),
+  };
 }
 
 // ─── 6. Monthly Check-in ─────────────────────────────────────────────────────
 
-export function monthlyCheckinEmail(d: CheckinEmailData): { subject: string; html: string } {
-  const subject = `Quick check-in from ${d.landlordName} — ${d.month}`
+export function monthlyCheckinEmail(d: CheckinEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `Quick check-in from ${d.landlordName} — ${d.month}`;
 
   const content = /* html */ `
     <p style="margin:0 0 4px;font-size:13px;color:#64748b;">Hi ${d.tenantName},</p>
@@ -374,28 +405,31 @@ export function monthlyCheckinEmail(d: CheckinEmailData): { subject: string; htm
       This link is unique to you and expires at month end.
       If you have an urgent issue, please contact your landlord directly.
     </p>
-  `
+  `;
 
-  return { subject, html: baseLayout('#3b82f6', content) }
+  return { subject, html: baseLayout("#3b82f6", content) };
 }
 
 // ─── Introduction emails ──────────────────────────────────────────────────────
 
 export interface IntroductionEmailData {
-  tenantDisplayName: string   // "Sarah D." (privacy)
-  tenantFullName:    string   // only revealed to tenant themselves
-  landlordName:      string
-  propertyName:      string
-  propertySuburb:    string
-  propertyProvince:  string
-  appUrl:            string
+  tenantDisplayName: string; // "Sarah D." (privacy)
+  tenantFullName: string; // only revealed to tenant themselves
+  landlordName: string;
+  propertyName: string;
+  propertySuburb: string;
+  propertyProvince: string;
+  appUrl: string;
 }
 
-export function introductionToTenantEmail(d: IntroductionEmailData): { subject: string; html: string } {
-  const subject = `A landlord is interested in your profile on PropTrust`
+export function introductionToTenantEmail(d: IntroductionEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `A landlord is interested in your profile on PropTrust`;
   const content = `
     <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
-      You have a new introduction request 🎉
+      You have a new introduction request
     </h2>
     <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
       Hi ${d.tenantDisplayName},
@@ -428,12 +462,15 @@ export function introductionToTenantEmail(d: IntroductionEmailData): { subject: 
       If you are not looking for a property right now, you can hide your profile by toggling
       "Actively looking" off in your PropTrust profile.
     </p>
-  `
-  return { subject, html: baseLayout('#10b981', content) }
+  `;
+  return { subject, html: baseLayout("#10b981", content) };
 }
 
-export function introductionToLandlordEmail(d: IntroductionEmailData): { subject: string; html: string } {
-  const subject = `Introduction request sent — ${d.propertyName}`
+export function introductionToLandlordEmail(d: IntroductionEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `Introduction request sent — ${d.propertyName}`;
   const content = `
     <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
       Introduction request sent ✓
@@ -465,18 +502,47 @@ export function introductionToLandlordEmail(d: IntroductionEmailData): { subject
         </a>
       </td></tr>
     </table>
-  `
-  return { subject, html: baseLayout('#3b82f6', content) }
+  `;
+  return { subject, html: baseLayout("#3b82f6", content) };
+}
+
+// ─── Email confirmation code ─────────────────────────────────────────────────
+
+export function confirmationCodeEmail(code: string): {
+  subject: string;
+  html: string;
+} {
+  const subject = `${code} is your PropTrust confirmation code`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
+      Confirm your email address
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      Enter this code on the confirmation page to activate your PropTrust account:
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0"
+      style="width:100%;background:#f0f9ff;border:2px solid #bfdbfe;border-radius:12px;margin:0 0 24px;">
+      <tr><td style="padding:24px;text-align:center;">
+        <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#1e40af;font-family:'Courier New',monospace;">${code}</span>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 8px;font-size:14px;color:#64748b;line-height:1.5;">
+      This code expires in 1 hour. If you didn't create a PropTrust account, you can safely ignore this email.
+    </p>
+  `;
+  return { subject, html: baseLayout("#2563eb", content) };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function formatAmountRand(cents: number): string {
-  return `R ${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 0 })}`
+  return `R ${(cents / 100).toLocaleString("en-ZA", { minimumFractionDigits: 0 })}`;
 }
 
 export function formatDateLong(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('en-ZA', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
+  return new Date(isoDate).toLocaleDateString("en-ZA", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
