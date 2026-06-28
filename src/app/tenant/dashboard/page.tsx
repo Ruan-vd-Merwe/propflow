@@ -198,7 +198,7 @@ export default async function TenantDashboardPage() {
                       Complete your affordability profile
                     </p>
                     <p className="mt-1 text-xs text-blue-700">
-                      Add your income range to see which properties you'll
+                      Add your income range to see which properties you&apos;ll
                       qualify for.
                     </p>
                   </div>
