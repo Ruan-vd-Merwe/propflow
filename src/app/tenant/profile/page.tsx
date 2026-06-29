@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { NavBar } from "@/components/NavBar";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { EditPreferencesPanel } from "./EditPreferencesPanel";
@@ -75,7 +76,7 @@ export default async function TenantProfilePage({
       .single(),
     supabase
       .from("profiles")
-      .select("full_name, email, phone, is_landlord")
+      .select("full_name, email, phone")
       .eq("id", user.id)
       .single(),
   ]);
@@ -141,9 +142,6 @@ export default async function TenantProfilePage({
     .order("created_at", { ascending: false });
 
   const introductions = (introRaw ?? []) as IntroductionRequest[];
-  const pendingCount = introductions.filter(
-    (i) => i.status === "pending",
-  ).length;
 
   // ── Onboarding state ────────────────────────────────────────────────────────
   const prefsDone = tenantProfile.preferences_complete;
@@ -152,51 +150,7 @@ export default async function TenantProfilePage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Minimal tenant nav */}
-      <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-700">
-              <svg
-                className="h-4 w-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-slate-900">PropTrust</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {profile?.is_landlord && (
-              <a
-                href="/dashboard"
-                className="text-sm font-medium text-slate-500 hover:text-slate-900"
-              >
-                Landlord dashboard →
-              </a>
-            )}
-            {pendingCount > 0 && (
-              <a
-                href="#introductions"
-                className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
-              >
-                {pendingCount} introduction{pendingCount > 1 ? "s" : ""} pending
-              </a>
-            )}
-            <VisibilityToggle
-              userId={user.id}
-              currentValue={tenantProfile.is_visible}
-            />
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       {isWelcome && (
         <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
@@ -605,37 +559,5 @@ function IntroductionRow({ intro }: { intro: IntroductionRequest }) {
   );
 }
 
-function VisibilityToggle({
-  userId,
-  currentValue,
-}: {
-  userId: string;
-  currentValue: boolean;
-}) {
-  void userId;
-  return (
-    <form
-      action="/api/tenant-profile/visibility"
-      method="POST"
-      className="inline"
-    >
-      <input type="hidden" name="is_visible" value={String(!currentValue)} />
-      <button
-        type="submit"
-        title={
-          currentValue
-            ? "Your profile is visible to landlords and appears in their searches and matches."
-            : "Browse freely — landlords can't see or contact you. Switch this on when you're ready to be discovered."
-        }
-        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-          currentValue
-            ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-        }`}
-      >
-        {currentValue ? "● Actively looking" : "○ Hidden — turn on"}
-      </button>
-    </form>
-  );
-}
+
 
