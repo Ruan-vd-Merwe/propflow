@@ -126,6 +126,7 @@ const PRIMARY_TENANT: NavLink[] = [
   { href: "/tenant/browse",       label: "Find Properties" },
   { href: "/tenant/applications", label: "Applications"    },
   { href: "/tenant/profile",      label: "My Profile"      },
+  { href: "/contact",             label: "Contact"         },
 ];
 
 const PRIMARY_CONNECTOR: NavLink[] = [
