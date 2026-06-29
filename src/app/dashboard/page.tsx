@@ -186,6 +186,25 @@ export default async function DashboardPage({
     | "resolved"
   >[];
 
+  // ── Ways to get involved data ──────────────────────────────────────────────
+  const [{ count: activeSvcCount }, { data: landlordNeighbourRaw }] =
+    await Promise.all([
+      supabase
+        .from("service_providers")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_user_id", user.id)
+        .eq("is_active", true),
+      supabase
+        .from("neighbour_profiles")
+        .select("id, is_active")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+  const landlordHasListing = (activeSvcCount ?? 0) > 0;
+  const landlordNeighbour = landlordNeighbourRaw as { id: string; is_active: boolean } | null;
+  const landlordIsGoodNeighbour = landlordNeighbour?.is_active === true;
+
   // ── Lease / Xpello stats ─────────────────────────────────────────────────────
   const { data: leasesRaw } = await supabase
     .from("lease_agreements")
@@ -927,6 +946,62 @@ export default async function DashboardPage({
                   </Link>
                 </div>
               )}
+
+            {/* ── Ways to get involved ─────────────────────────────────────────── */}
+            <div className="mb-8">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Ways to get involved
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Link
+                  href="/services/list"
+                  className="card flex items-start gap-4 p-5 transition hover:border-violet-300 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100">
+                    <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {landlordHasListing ? "Manage your listing" : "List your service"}
+                    </p>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {landlordHasListing
+                        ? "You have an active listing in the services directory."
+                        : "Offer your skills to residents in the PropTrust community."}
+                    </p>
+                    <span className="mt-2 inline-block text-xs font-semibold text-violet-600">
+                      {landlordHasListing ? "Manage →" : "Get started →"}
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/neighbour"
+                  className="card flex items-start gap-4 p-5 transition hover:border-emerald-300 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+                    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {landlordIsGoodNeighbour ? "You're a Good Neighbour" : "Be a Good Neighbour"}
+                    </p>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {landlordIsGoodNeighbour
+                        ? "Your profile is active. Keep helping your community."
+                        : "Small acts of goodwill build your reputation — no money involved."}
+                    </p>
+                    <span className="mt-2 inline-block text-xs font-semibold text-emerald-600">
+                      {landlordIsGoodNeighbour ? "View profile →" : "Opt in →"}
+                    </span>
+                  </div>
+                </Link>
+              </div>
+            </div>
 
             {/* ── Properties ────────────────────────────────────────────────────── */}
             <div>
