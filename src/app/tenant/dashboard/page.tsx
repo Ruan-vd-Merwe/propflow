@@ -246,7 +246,7 @@ export default async function TenantDashboardPage() {
                   </svg>
                 </div>
                 <p className="flex-1 text-sm font-medium text-slate-700">
-                  Get verified to rank higher in landlord searches
+                  Upload documents for hassel free future use
                 </p>
                 <Link
                   href="/onboarding/verification"
