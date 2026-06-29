@@ -210,6 +210,7 @@ export default function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoHref, setLogoHref] = useState("/");
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -218,11 +219,23 @@ export default function MarketingNav() {
   }, []);
 
   useEffect(() => {
-    createClient()
-      .auth.getUser()
-      .then(({ data: { user } }) => {
-        if (user) setLogoHref("/dashboard");
-      });
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      setAuthed(true);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_tenant, is_connector")
+        .eq("id", user.id)
+        .single();
+      if (profile?.is_tenant) {
+        setLogoHref("/tenant/dashboard");
+      } else if (profile?.is_connector) {
+        setLogoHref("/connector/tasks");
+      } else {
+        setLogoHref("/dashboard");
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -270,18 +283,29 @@ export default function MarketingNav() {
 
           {/* Right buttons */}
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <Link
-              href="/register"
-              className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
-            >
-              Register
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-md border-[1.5px] border-[#0f172a] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
-            >
-              Login
-            </Link>
+            {authed ? (
+              <Link
+                href={logoHref}
+                className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+              >
+                Open app
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+                >
+                  Register
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-md border-[1.5px] border-[#0f172a] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+                >
+                  Login
+                </Link>
+              </>
+            )}
             {/* Hamburger — mobile only */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
@@ -345,27 +369,40 @@ export default function MarketingNav() {
 
             {/* CTA buttons */}
             <div className="px-4 pb-8 pt-5" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Link
-                href="/register"
-                onClick={closeMobile}
-                className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
-                style={{ height: 48, background: "#1e40af", fontSize: 15 }}
-              >
-                Get started
-              </Link>
-              <Link
-                href="/login"
-                onClick={closeMobile}
-                className="flex items-center justify-center rounded-xl font-bold transition hover:bg-slate-50"
-                style={{
-                  height: 48,
-                  border: "2px solid #0f172a",
-                  color: "#0f172a",
-                  fontSize: 15,
-                }}
-              >
-                Login
-              </Link>
+              {authed ? (
+                <Link
+                  href={logoHref}
+                  onClick={closeMobile}
+                  className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
+                  style={{ height: 48, background: "#1e40af", fontSize: 15 }}
+                >
+                  Open app
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    onClick={closeMobile}
+                    className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
+                    style={{ height: 48, background: "#1e40af", fontSize: 15 }}
+                  >
+                    Get started
+                  </Link>
+                  <Link
+                    href="/login"
+                    onClick={closeMobile}
+                    className="flex items-center justify-center rounded-xl font-bold transition hover:bg-slate-50"
+                    style={{
+                      height: 48,
+                      border: "2px solid #0f172a",
+                      color: "#0f172a",
+                      fontSize: 15,
+                    }}
+                  >
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
