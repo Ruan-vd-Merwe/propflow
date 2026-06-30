@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { NavBar } from "@/components/NavBar";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import type { TenantProfile, PropertyListing } from "@/lib/types";
@@ -148,7 +147,6 @@ export default async function TenantDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <NavBar />
 
       <main className="mx-auto max-w-6xl px-6 py-8">
 

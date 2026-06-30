@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { NavBar } from "@/components/NavBar";
 import { TenantBrowseContent } from "./TenantBrowseContent";
 import type { PropertyListing } from "@/lib/types";
 
@@ -24,7 +23,6 @@ export default async function TenantBrowsePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <NavBar />
       <TenantBrowseContent properties={properties} />
     </div>
   );

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { NavBar } from "@/components/NavBar";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +43,6 @@ export default async function TenantApplicationsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <NavBar />
 
       <main className="mx-auto max-w-4xl px-6 py-8">
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">

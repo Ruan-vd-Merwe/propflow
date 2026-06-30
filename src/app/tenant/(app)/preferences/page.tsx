@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { NavBar } from "@/components/NavBar";
 
 // ─── Tag definitions ──────────────────────────────────────────────────────────
 
@@ -314,7 +313,6 @@ export default function TenantPreferencesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <NavBar />
         <div className="flex items-center justify-center py-32">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
         </div>
@@ -324,7 +322,6 @@ export default function TenantPreferencesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <NavBar />
 
       {/* Toast */}
       {toast && (
