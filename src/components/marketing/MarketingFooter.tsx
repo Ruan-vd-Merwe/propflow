@@ -23,13 +23,6 @@ const COLS = [
     ],
   },
   {
-    title: "For Connectors",
-    links: [
-      { label: "Become a Connector", href: "/become-a-connector" },
-      { label: "How it works", href: "/#connectors" },
-    ],
-  },
-  {
     title: "Company",
     links: [
       { label: "About", href: "/about" },
@@ -58,7 +51,7 @@ export default function MarketingFooter() {
   return (
     <footer id="contact" className="bg-[#0f172a] px-6 pb-10 pt-16">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {/* Brand col */}
           <div>
             <NavLogo white />
