@@ -3,49 +3,10 @@
 import { useState } from "react";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
-
-type FormState = {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-};
-
-const SUBJECTS = [
-  "I am a tenant with a question",
-  "I am a landlord with a question",
-  "I would like a product demo",
-  "I have a privacy or security question",
-  "I have a technical issue",
-  "Other",
-];
+import ContactForm from "@/components/ContactForm";
 
 export default function ContactPage() {
-  const [form, setForm] = useState<FormState>({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  function handleChange(
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 800);
-  }
+  const [subject, setSubject] = useState("");
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 antialiased">
@@ -155,6 +116,27 @@ export default function ContactPage() {
                     <p className="text-sm text-slate-500">8am – 5pm SAST</p>
                   </div>
                 </div>
+
+                {/* WhatsApp */}
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.523 5.847L.057 23.882a.5.5 0 00.611.611l6.109-1.48A11.938 11.938 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 01-5.002-1.369l-.357-.213-3.705.897.913-3.618-.233-.372A9.775 9.775 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#0f172a]">WhatsApp</p>
+                    <a
+                      href="https://wa.me/27746020084?text=Hi%20PropTrust%2C%20I%20have%20a%20question"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-0.5 inline-block text-sm font-semibold text-green-600 underline-offset-2 hover:underline"
+                    >
+                      Chat on WhatsApp
+                    </a>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-10 rounded-2xl border border-[#e2e8f0] bg-white p-6">
@@ -193,130 +175,14 @@ export default function ContactPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      subject: "I would like a product demo",
-                    }))
-                  }
+                  onClick={() => setSubject("I would like a product demo")}
                   className="rounded-xl bg-[#1e40af] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800"
                 >
                   Request a demo
                 </button>
               </div>
 
-              {submitted ? (
-                <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl border border-green-200 bg-green-50 p-10 text-center">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-green-500">
-                    <svg
-                      className="h-7 w-7 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="mb-3 text-xl font-extrabold text-[#0f172a]">
-                    Message sent
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-600">
-                    Thank you for reaching out. We&apos;ll get back to you
-                    within one business day.
-                  </p>
-                </div>
-              ) : (
-                <form
-                  onSubmit={handleSubmit}
-                  className="rounded-2xl border border-[#e2e8f0] bg-white p-8"
-                >
-                  <h2 className="mb-8 text-xl font-extrabold text-[#0f172a]">
-                    Send a message
-                  </h2>
-
-                  <div className="space-y-5">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        value={form.name}
-                        onChange={handleChange}
-                        placeholder="Your full name"
-                        className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-[#1e40af] focus:outline-none focus:ring-1 focus:ring-[#1e40af]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder="you@example.com"
-                        className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-[#1e40af] focus:outline-none focus:ring-1 focus:ring-[#1e40af]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Subject
-                      </label>
-                      <select
-                        name="subject"
-                        required
-                        value={form.subject}
-                        onChange={handleChange}
-                        className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 transition focus:border-[#1e40af] focus:outline-none focus:ring-1 focus:ring-[#1e40af]"
-                      >
-                        <option value="" disabled>
-                          Select a subject
-                        </option>
-                        {SUBJECTS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Message
-                      </label>
-                      <textarea
-                        name="message"
-                        required
-                        rows={5}
-                        value={form.message}
-                        onChange={handleChange}
-                        placeholder="How can we help?"
-                        className="w-full resize-none rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-[#1e40af] focus:outline-none focus:ring-1 focus:ring-[#1e40af]"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full rounded-xl bg-[#1e40af] py-3.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-60"
-                    >
-                      {loading ? "Sending…" : "Send message"}
-                    </button>
-                  </div>
-                </form>
-              )}
+              <ContactForm source="contact_page" initialSubject={subject} />
 
               <p className="mt-5 text-xs text-slate-400">
                 We are based in Cape Town, South Africa. We aim to respond
