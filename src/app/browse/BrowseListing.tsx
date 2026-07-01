@@ -239,22 +239,22 @@ function PropertyCard({
       </div>
 
       {/* Body */}
-      <div className="flex-1 p-4">
-        <p className="font-semibold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
+      <div className="flex-1 p-5">
+        <p className="truncate text-base font-semibold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
           {p.name}
         </p>
 
         {(p.suburb || p.province) && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+          <div className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
             <IconMapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>
+            <span className="truncate">
               {p.suburb}
               {p.province ? `, ${p.province}` : ""}
             </span>
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
           {p.bedrooms != null && (
             <span className="flex items-center gap-1">
               <IconBed className="h-3.5 w-3.5" />
@@ -262,13 +262,13 @@ function PropertyCard({
             </span>
           )}
           {p.property_type && (
-            <span className="capitalize text-slate-400">{p.property_type}</span>
+            <span className="capitalize">{p.property_type}</span>
           )}
         </div>
 
         <div className="mt-3">
           {p.asking_rent ? (
-            <span className="text-xl font-bold text-[#0f172a]">
+            <span className="text-2xl font-bold text-[#0f172a]">
               {fmtRand(p.asking_rent)}
               <span className="text-sm font-normal text-slate-400">/mo</span>
             </span>
@@ -284,20 +284,20 @@ function PropertyCard({
         )}
 
         {isPersonalised && result?.match_reasons && result.match_reasons.length > 0 && (
-          <ul className="mt-3 space-y-1">
+          <ul className="mt-4 space-y-1.5">
             {result.match_reasons.slice(0, 3).map((r) => (
-              <li key={r} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-green-700">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+              <li key={r} className="flex items-start gap-2 text-xs leading-relaxed text-green-700">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
                 {r}
               </li>
             ))}
           </ul>
         )}
         {isPersonalised && result?.warnings && result.warnings.length > 0 && (
-          <ul className="mt-2 space-y-1">
+          <ul className="mt-2 space-y-1.5">
             {result.warnings.slice(0, 2).map((w) => (
-              <li key={w} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-700">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <li key={w} className="flex items-start gap-2 text-xs leading-relaxed text-amber-700">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                 {w}
               </li>
             ))}
@@ -309,14 +309,14 @@ function PropertyCard({
       <div className="flex gap-2 border-t border-slate-100 p-4">
         <Link
           href={`/browse/${p.id}`}
-          className={`rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? "flex-1" : "w-full"}`}
+          className={`rounded-lg border border-slate-200 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? "flex-1" : "w-full"}`}
         >
           View property
         </Link>
         {showApply && (
           <Link
             href={`/apply/${p.id}`}
-            className="flex-1 rounded-lg bg-blue-700 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
+            className="flex-1 rounded-lg bg-blue-700 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
           >
             Apply with profile
           </Link>

@@ -595,10 +595,10 @@ export default async function TenantDashboardPage() {
                             key={i}
                             className="flex items-start justify-end gap-1.5"
                           >
-                            <span className="text-[11px] leading-snug text-green-700">
+                            <span className="text-xs leading-snug text-green-700">
                               {r}
                             </span>
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
                           </li>
                         ))}
                       </ul>

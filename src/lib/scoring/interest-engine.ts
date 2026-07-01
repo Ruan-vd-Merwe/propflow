@@ -325,19 +325,19 @@ export function tenant_affordability_insight(
 
   if (income_ratio <= 0.25 && budget_ratio <= 0.9) {
     score = 0.95;
-    message = `Excellent fit — rent is ${Math.round(income_ratio * 100)}% of income and well within budget.`;
+    message = `Excellent fit. Rent is ${Math.round(income_ratio * 100)}% of income, well within budget.`;
   } else if (income_ratio <= 0.3 && budget_ratio <= 1.0) {
     score = 0.8;
-    message = `Good fit — rent is ${Math.round(income_ratio * 100)}% of income and within budget.`;
+    message = `Good fit. Rent is ${Math.round(income_ratio * 100)}% of income, within budget.`;
   } else if (income_ratio <= 0.35) {
     score = 0.6;
-    message = `Manageable — rent is ${Math.round(income_ratio * 100)}% of income. Slightly stretched.`;
+    message = `Manageable. Rent is ${Math.round(income_ratio * 100)}% of income. Slightly stretched.`;
   } else if (income_ratio <= 0.45) {
     score = 0.35;
-    message = `Stretched — rent takes ${Math.round(income_ratio * 100)}% of your income.`;
+    message = `Stretched. Rent takes ${Math.round(income_ratio * 100)}% of your income.`;
   } else {
     score = 0.1;
-    message = `High financial strain — rent is ${Math.round(income_ratio * 100)}% of income.`;
+    message = `High financial strain. Rent is ${Math.round(income_ratio * 100)}% of income.`;
   }
 
   if (living_ratio > 1.0 && total_extras > 0) {
@@ -367,7 +367,7 @@ export function property_fit_insight(
       notes.push(`${property.bedrooms}-bed matches your preference.`);
     else if (diff === 1)
       notes.push(
-        `${property.bedrooms}-bed — one off your preferred ${profile.desired_bedrooms}.`,
+        `${property.bedrooms} beds, one off your preferred ${profile.desired_bedrooms}.`,
       );
   } else {
     scores.push([0.6, 0.35]);
@@ -391,7 +391,7 @@ export function property_fit_insight(
   if (profile.has_car) {
     scores.push([property.parking_available ? 1.0 : 0.3, 0.15]);
     if (!property.parking_available)
-      notes.push("No parking listed — may need street parking.");
+      notes.push("No parking listed. May need street parking.");
   } else {
     scores.push([0.7, 0.15]);
   }
@@ -457,7 +457,7 @@ export function area_fit_insight(
     preferred.some((s) => s.toLowerCase() === property.suburb!.toLowerCase());
 
   const message = inArea
-    ? `Located in ${property.suburb} — one of your preferred areas.`
+    ? `Located in ${property.suburb}, one of your preferred areas.`
     : score >= 0.75
       ? `${property.suburb ?? "This area"} has strong amenity access and matches your area preferences.`
       : score >= 0.5
@@ -596,14 +596,14 @@ export function commute_fit_insight(
 
   const message =
     avg <= 15
-      ? `Excellent commute — ${Math.round(avg)} min average to work.`
+      ? `Excellent commute. ${Math.round(avg)} min average to work.`
       : avg <= 30
-        ? `Good commute — ${Math.round(avg)} min to work.`
+        ? `Good commute. ${Math.round(avg)} min to work.`
         : avg <= 45
-          ? `Moderate commute — ${Math.round(avg)} min to work.`
+          ? `Moderate commute. ${Math.round(avg)} min to work.`
           : avg <= 60
-            ? `Long commute — ${Math.round(avg)} min. Consider transport costs.`
-            : `Very long commute — ${Math.round(avg)} min. This may impact your daily life.`;
+            ? `Long commute. ${Math.round(avg)} min. Consider transport costs.`
+            : `Very long commute. ${Math.round(avg)} min. This may impact your daily life.`;
 
   return { score, message, avg_commute_minutes: Math.round(avg) };
 }
@@ -620,7 +620,7 @@ export function tenant_deal_quality_insight(property: PropertyData): {
   if (avg === 0) {
     return {
       score: 0.55,
-      message: "No suburb average data — deal quality cannot be assessed.",
+      message: "No suburb average data. Deal quality cannot be assessed.",
     };
   }
 
@@ -631,10 +631,10 @@ export function tenant_deal_quality_insight(property: PropertyData): {
 
   if (diff <= -0.12) {
     base_score = 0.95;
-    message = `${Math.round(Math.abs(diff) * 100)}% below suburb average — excellent value.`;
+    message = `${Math.round(Math.abs(diff) * 100)}% below suburb average. Excellent value.`;
   } else if (diff <= -0.04) {
     base_score = 0.8;
-    message = `Slightly below suburb average — good deal.`;
+    message = `Slightly below suburb average. Good deal.`;
   } else if (diff <= 0.05) {
     base_score = 0.65;
     message = `Priced in line with the suburb average.`;
@@ -643,7 +643,7 @@ export function tenant_deal_quality_insight(property: PropertyData): {
     message = `${Math.round(diff * 100)}% above suburb average.`;
   } else {
     base_score = 0.15;
-    message = `${Math.round(diff * 100)}% above suburb average — significantly overpriced.`;
+    message = `${Math.round(diff * 100)}% above suburb average. Significantly overpriced.`;
   }
 
   // Days on market adjustment — longer = may have room to negotiate
@@ -651,10 +651,10 @@ export function tenant_deal_quality_insight(property: PropertyData): {
   if (dom !== undefined) {
     if (dom > 45) {
       score = Math.min(base_score + 0.08, 1.0);
-      message += ` Listed ${dom} days — potential to negotiate.`;
+      message += ` Listed ${dom} days. Good negotiating position.`;
     } else if (dom < 7) {
       score = Math.max(base_score - 0.05, 0);
-      message += ` New listing — high demand likely.`;
+      message += ` New listing. Expect high demand.`;
     }
   }
 
@@ -688,8 +688,8 @@ export function tenant_safety_insight(property: PropertyData): {
       : score >= 0.6
         ? "Reasonably safe area with average security."
         : score >= 0.4
-          ? "Moderate safety concerns — check local security."
-          : "Higher-risk area — research local safety before committing.";
+          ? "Moderate safety concerns. Check local security."
+          : "Higher-risk area. Research local safety before committing.";
 
   return { score, message };
 }
@@ -723,12 +723,12 @@ export function tenant_approval_insight(
 
   const message =
     score >= 0.75
-      ? `Strong approval profile — ${probability_pct}% estimated likelihood.`
+      ? `Strong approval profile. ${probability_pct}% estimated likelihood.`
       : score >= 0.55
-        ? `Good approval chances — ${probability_pct}%. ${apps} competing applications.`
+        ? `Good approval chances. ${probability_pct}% likelihood, ${apps} competing applications.`
         : score >= 0.4
-          ? `Moderate chances — ${probability_pct}%. ${apps} other applications.`
-          : `Lower approval likelihood — ${probability_pct}%. Consider strengthening your profile.`;
+          ? `Moderate chances. ${probability_pct}% likelihood, ${apps} other applications.`
+          : `Lower approval likelihood. ${probability_pct}%. Consider strengthening your profile.`;
 
   return { score, message, probability_pct };
 }
