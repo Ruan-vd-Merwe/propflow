@@ -40,6 +40,48 @@
   }
 }
 
+/* ── Progressive-enhancement scroll reveal ─────────────────────────────────── */
+/* Default (no JS): every .reveal element is fully visible and in its final
+   position — this IS the base HTML/CSS state. JS opts elements INTO the
+   animated treatment by adding .js-animate to an ancestor; only then do the
+   pre-animation offsets below apply, and IntersectionObserver adds .in-view
+   to settle each element. If JS never runs, nothing here ever applies. */
+
+.js-animate .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 250ms ease-out,
+    transform 250ms ease-out;
+}
+.js-animate .reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pain-story "mess" cards use a per-card scatter offset (set inline via the
+   --scatter custom property) instead of a uniform slide-up. */
+.js-animate .reveal-mess {
+  opacity: 0.85;
+  transform: var(--scatter, none);
+  transition:
+    opacity 280ms ease-out,
+    transform 280ms ease-out;
+}
+.js-animate .reveal-mess.in-view {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-animate .reveal,
+  .js-animate .reveal-mess {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ── Marketing page animations ─────────────────────────────────────────────── */
 
 @keyframes marquee {
