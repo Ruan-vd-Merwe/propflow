@@ -5,6 +5,11 @@ import Link from "next/link";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import ContactForm from "@/components/ContactForm";
+import { PainStory } from "@/components/marketing/home/PainStory";
+import { TenantJourney } from "@/components/marketing/home/TenantJourney";
+import { ArtefactCards } from "@/components/marketing/home/ArtefactCards";
+import { LandlordJourney } from "@/components/marketing/home/LandlordJourney";
+import { PricingStory } from "@/components/marketing/home/PricingStory";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -30,55 +35,6 @@ const STRIP_ITEMS = [
   { label: "Pay only when it helps", desc: "Once-off fees or monthly, your choice" },
   { label: "No agent commission", desc: "Direct connection only" },
   { label: "South Africa", desc: "Built for the local market" },
-];
-
-const TENANT_POINTS = [
-  {
-    n: "01",
-    title: "Choose your area",
-    desc: "Match suburbs by budget, commute, safety, and lifestyle before browsing listings.",
-  },
-  {
-    n: "02",
-    title: "Build your profile",
-    desc: "Upload your documents once and reuse your rental profile for every application.",
-  },
-  {
-    n: "03",
-    title: "Apply directly",
-    desc: "Contact landlords without going through an agent.",
-  },
-  {
-    n: "04",
-    title: "Track your deal",
-    desc: "Track applications and keep documents in one place.",
-  },
-];
-
-const SUBURB_SCORES = [
-  { name: "Sea Point", score: 84, tag: "Coastal · Walkable" },
-  { name: "Rondebosch", score: 76, tag: "Quiet · Good schools" },
-  { name: "Gardens", score: 71, tag: "Central · Social" },
-  { name: "Woodstock", score: 62, tag: "Creative · Affordable" },
-];
-
-const LANDLORD_POINTS = [
-  {
-    title: "Screen tenants properly",
-    desc: "Review verified rental profiles including income summary, documents, and references before signing.",
-  },
-  {
-    title: "Manage leases and documents",
-    desc: "Store signed leases, inspection reports, and tenant documents organised by property.",
-  },
-  {
-    title: "Track rent and finances",
-    desc: "Log rent payments, track bond payments, levies, rates, and see monthly cash flow per property.",
-  },
-  {
-    title: "Reduce agent dependency",
-    desc: "Handle applications, leases, rent tracking, and maintenance without 8 to 10 percent monthly commission.",
-  },
 ];
 
 const TRUST_POINTS = [
@@ -197,254 +153,17 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── ROLE CARDS ────────────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-14 md:py-20">
-        <div className="mx-auto max-w-4xl">
-          <div className="grid gap-5 sm:grid-cols-2">
-            {/* Tenant */}
-            <div className="flex flex-col rounded-2xl bg-[#f8fafc] p-7 ring-1 ring-slate-100">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                For Tenants
-              </p>
-              <h3 className="mb-3 text-xl font-extrabold text-[#0f172a]">
-                Find a place to live
-              </h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-                Find a place to live. Apply with one trusted profile.
-                Track your deal from first application to signed lease.
-              </p>
-              <Link
-                href="/browse"
-                className="inline-block rounded-full bg-[#0f172a] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                Browse properties
-              </Link>
-            </div>
-            {/* Landlord */}
-            <div className="flex flex-col rounded-2xl bg-[#f8fafc] p-7 ring-1 ring-slate-100">
-              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                For Landlords
-              </p>
-              <h3 className="mb-3 text-xl font-extrabold text-[#0f172a]">
-                List and manage your property
-              </h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-                List, screen, lease, and manage — without paying
-                agent commission.
-              </p>
-              <Link
-                href="/register?role=owner"
-                className="inline-block rounded-full bg-[#0f172a] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                List my property
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── PAIN STORY ────────────────────────────────────────────────────────── */}
+      <PainStory />
 
-      {/* ── 3. FOR TENANTS ────────────────────────────────────────────────────── */}
-      <section className="bg-[#f8fafc] px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-14 text-center">
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-              For Tenants
-            </p>
-            <h2 className="text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-              Find the right place,
-              <br className="hidden sm:block" />
-              not just the first available listing.
-            </h2>
-          </div>
+      {/* ── TENANT JOURNEY ────────────────────────────────────────────────────── */}
+      <TenantJourney />
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {TENANT_POINTS.map((step) => (
-              <div
-                key={step.n}
-                className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-100"
-              >
-                <p className="mb-4 text-3xl font-extrabold text-slate-100">
-                  {step.n}
-                </p>
-                <h3 className="mb-2 text-base font-bold text-[#0f172a]">
-                  {step.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-slate-500">
-                  {step.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+      {/* ── ARTEFACT CARDS ────────────────────────────────────────────────────── */}
+      <ArtefactCards />
 
-          <div className="mt-10 text-center">
-            <Link
-              href="/area-match"
-              className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
-            >
-              Find my area
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. AREA MATCH ─────────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            {/* Copy */}
-            <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                Area Match
-              </p>
-              <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-                Find the right area first.
-              </h2>
-              <p className="mb-8 text-base leading-relaxed text-slate-500">
-                Most people start by searching for a property. PropTrust
-                suggests starting with the suburb. Area Match helps you
-                understand which areas fit your budget, commute, lifestyle, and
-                priorities before you start applying.
-              </p>
-              <ul className="mb-8 space-y-3">
-                {[
-                  "Budget and rent ranges",
-                  "Commute estimates",
-                  "Safety signals",
-                  "Amenities, transport, and green space",
-                  "Lifestyle fit",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-3 text-sm text-slate-700"
-                  >
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1e40af]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/area-match"
-                className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                Try Area Match
-              </Link>
-              <p className="mt-5 text-xs leading-relaxed text-slate-400">
-                Area Match is a guide, not a guarantee. Scores are based on
-                available data and your preferences. Always visit an area before
-                committing.
-              </p>
-            </div>
-
-            {/* Visual: suburb comparison */}
-            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-6 lg:p-8">
-              <p className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">
-                Suburb comparison
-              </p>
-              <div className="space-y-5">
-                {SUBURB_SCORES.map((suburb) => (
-                  <div key={suburb.name}>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-bold text-[#0f172a]">
-                          {suburb.name}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {suburb.tag}
-                        </span>
-                      </div>
-                      <span className="text-sm font-bold text-[#1e40af]">
-                        {suburb.score}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-[#1e40af]"
-                        style={{ width: `${suburb.score}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-6 text-xs text-slate-400">
-                Scores are calculated from your budget, commute and lifestyle
-                preferences.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. FOR LANDLORDS ──────────────────────────────────────────────────── */}
-      <section className="bg-[#f8fafc] px-6 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            {/* Visual: landlord summary */}
-            <div className="order-2 lg:order-1">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">
-                  Portfolio overview
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { label: "Tenant screening", status: "3 applications" },
-                    { label: "Rent received this month", status: "2 of 3" },
-                    { label: "Open maintenance requests", status: "1 open" },
-                    { label: "Documents stored", status: "12 files" },
-                  ].map((row) => (
-                    <div
-                      key={row.label}
-                      className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"
-                    >
-                      <p className="text-sm text-slate-600">{row.label}</p>
-                      <span className="text-xs font-semibold text-slate-700">
-                        {row.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 rounded-xl bg-[#0f172a] px-4 py-3 text-center">
-                  <p className="text-xs font-bold text-white">
-                    Free to list · Pay per tool · No agent commission
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Copy */}
-            <div className="order-1 lg:order-2">
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
-                For Landlords
-              </p>
-              <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-                Manage rentals without paying
-                <br className="hidden sm:block" />
-                away your margin.
-              </h2>
-              <div className="mb-8 space-y-5">
-                {LANDLORD_POINTS.map((point) => (
-                  <div key={point.title} className="flex items-start gap-4">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1e40af]" />
-                    <div>
-                      <p className="text-sm font-bold text-[#0f172a]">
-                        {point.title}
-                      </p>
-                      <p className="mt-0.5 text-sm leading-relaxed text-slate-500">
-                        {point.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href="/register?role=owner"
-                className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                List my property
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── LANDLORD JOURNEY ──────────────────────────────────────────────────── */}
+      <LandlordJourney />
 
       {/* ── 6. TRUST ──────────────────────────────────────────────────────────── */}
       <section className="bg-white px-6 py-20 md:py-28">
@@ -532,9 +251,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 14. HOW PAYMENT WORKS ────────────────────────────────────────────── */}
-      <PricingSection />
-
       {/* ── SOCIAL PROOF ──────────────────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
@@ -568,6 +284,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── PRICING STORY ─────────────────────────────────────────────────────── */}
+      <PricingStory />
 
       {/* ── CONTACT ───────────────────────────────────────────────────────────── */}
       <section className="bg-white px-6 py-20 md:py-28">
@@ -684,175 +403,6 @@ export default function HomePage() {
 
       <MarketingFooter />
     </div>
-  );
-}
-
-// ── How payment works ────────────────────────────────────────────────────────
-
-function PricingSection() {
-  const [costOpen, setCostOpen] = React.useState(false);
-
-  return (
-    <section className="bg-white px-6 py-20 md:py-28">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-14 text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0f172a] md:text-4xl">
-            How payment works
-          </h2>
-          <p className="mt-4 text-base text-slate-500">
-            Free to start. Pay when real work gets done.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Tenant */}
-          <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#1e40af]">
-              Tenant
-            </p>
-            <div className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-700">
-              <span>Find Place</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span>Apply Once</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span>Move In</span>
-            </div>
-            <p className="mb-2 text-2xl font-extrabold text-[#0f172a]">Free</p>
-            <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-              Create one rental profile and use it when you apply. No monthly
-              fee.
-            </p>
-            <Link
-              href="/register?role=tenant"
-              className="block rounded-xl border-2 border-[#0f172a] py-3 text-center text-sm font-bold text-[#0f172a] transition hover:bg-slate-50"
-            >
-              Create profile
-            </Link>
-          </div>
-
-          {/* Property Owner */}
-          <div className="flex flex-col rounded-2xl border border-[#1e40af]/30 bg-[#f8fafc] p-7 shadow-sm">
-            <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#1e40af]">
-              Property Owner
-            </p>
-            <div className="mb-5 flex items-center gap-2 text-sm font-medium text-slate-700">
-              <span>List Property</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span>Choose Tenant</span>
-              <span className="text-slate-300">&rarr;</span>
-              <span>Manage Rental</span>
-            </div>
-            <div className="mb-4 space-y-1.5">
-              <p className="text-sm text-slate-700">
-                <span className="font-bold">Free</span> to list
-              </p>
-              <p className="text-sm text-slate-700">
-                <span className="font-bold">Once-off fees</span> for specific
-                tools
-              </p>
-              <p className="text-sm text-slate-700">
-                <span className="font-bold">Monthly fee</span> only for ongoing
-                management
-              </p>
-            </div>
-            <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-              Pay for the parts you use. If PropTrust helps manage the rental
-              every month, that becomes a subscription.
-            </p>
-            <Link
-              href="/register?role=owner"
-              className="block rounded-xl bg-[#1e40af] py-3 text-center text-sm font-bold text-white transition hover:bg-blue-700"
-            >
-              List property
-            </Link>
-          </div>
-
-        </div>
-
-        {/* Expandable: What might cost money? */}
-        <div className="mt-12 text-center">
-          <button
-            onClick={() => setCostOpen(!costOpen)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-[#0f172a] shadow-sm transition hover:bg-slate-50"
-          >
-            What might cost money?
-            <svg
-              className={`h-4 w-4 text-slate-400 transition-transform ${costOpen ? "rotate-180" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-
-          {costOpen && (
-            <div className="mt-8 grid gap-6 text-left md:grid-cols-2">
-              {/* Tenant breakdown */}
-              <div className="rounded-xl bg-[#f8fafc] p-6">
-                <p className="mb-4 text-sm font-bold text-[#0f172a]">Tenant</p>
-                <ul className="space-y-2.5 text-sm text-slate-600">
-                  {[
-                    "Free profile",
-                    "Free applications",
-                    "Free property matching",
-                    "No monthly tenant fee",
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2.5">
-                      <span className="text-green-600">&#10003;</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Property Owner breakdown */}
-              <div className="rounded-xl bg-[#f8fafc] p-6">
-                <p className="mb-4 text-sm font-bold text-[#0f172a]">
-                  Property Owner
-                </p>
-                <ul className="space-y-2.5 text-sm text-slate-600">
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-green-600">&#10003;</span>
-                    Free property listing
-                  </li>
-                  {[
-                    ["Tenant screening", "once-off fee"],
-                    ["Digital lease", "once-off fee"],
-                    ["Inspection or viewing help", "once-off fee"],
-                    ["Deposit support", "once-off/admin fee"],
-                    ["Rent collection", "small monthly or transaction fee"],
-                  ].map(([label, cost]) => (
-                    <li key={label} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 text-slate-300">&middot;</span>
-                      <span>
-                        {label}{" "}
-                        <span className="text-slate-400">&mdash; {cost}</span>
-                      </span>
-                    </li>
-                  ))}
-                  <li className="flex items-start gap-2.5">
-                    <span className="mt-0.5 text-[#1e40af]">&bull;</span>
-                    <span>
-                      Full property management{" "}
-                      <span className="text-slate-400">
-                        &mdash; monthly subscription
-                      </span>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
   );
 }
 
