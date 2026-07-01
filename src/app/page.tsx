@@ -142,14 +142,14 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
-            PropTrust is where the deal happens — from first application to
-            signed lease. Tenants apply with one trusted profile. Landlords
-            screen, lease, and manage without agent commission.
+            Property24 finds them the listing. PropTrust is where the deal
+            happens — applications, screening, lease, and everything after.
+            No agents. No WhatsApp threads. No lost paperwork.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3">
             <Link
-              href="/area-match"
+              href="/browse"
               className="w-full max-w-sm rounded-full bg-[#3b82f6] px-8 py-4 text-center text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-95 sm:w-auto sm:min-w-[280px]"
             >
               Find a place to live
@@ -210,7 +210,8 @@ export default function HomePage() {
                 Find a place to live
               </h3>
               <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-                Build one rental profile and apply to properties directly. No agent, no repeating yourself.
+                Find a place to live. Apply with one trusted profile.
+                Track your deal from first application to signed lease.
               </p>
               <Link
                 href="/browse"
@@ -228,7 +229,8 @@ export default function HomePage() {
                 List and manage your property
               </h3>
               <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
-                Screen tenants with verified profiles, sign leases, and manage the rental — without paying commission.
+                List, screen, lease, and manage — without paying
+                agent commission.
               </p>
               <Link
                 href="/register?role=owner"
@@ -656,7 +658,7 @@ export default function HomePage() {
           </h2>
           <div className="mt-10 flex flex-col items-center gap-3">
             <Link
-              href="/area-match"
+              href="/browse"
               className="w-full max-w-sm rounded-full bg-white px-8 py-4 text-center text-base font-extrabold text-[#1e40af] shadow-lg transition hover:bg-blue-50 active:scale-95 sm:w-auto sm:min-w-[280px]"
             >
               Find a place to live
