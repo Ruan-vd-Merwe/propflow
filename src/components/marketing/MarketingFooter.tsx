@@ -8,15 +8,14 @@ const COLS = [
       { label: "Area Match", href: "/area-match" },
       { label: "Browse properties", href: "/browse" },
       { label: "Create rental profile", href: "/register" },
-      { label: "How it works", href: "/for-tenants" },
+      { label: "Tenant FAQ", href: "/resources/faq" },
     ],
   },
   {
     title: "For Landlords",
     links: [
-      { label: "Manage properties", href: "/for-landlords" },
+      { label: "List my property", href: "/register?role=owner" },
       { label: "Pricing", href: "/pricing" },
-      { label: "List a property", href: "/register?type=landlord" },
       { label: "Portfolio", href: "/portfolio" },
       { label: "Seller Assistant", href: "/sell/listing-assistant" },
       { label: "Savings Calculator", href: "/sell/savings-calculator" },
