@@ -497,7 +497,7 @@ export default function HomePage() {
                   },
                   {
                     label: "Storage",
-                    value: "Secure and encrypted",
+                    value: "Encrypted at rest",
                     color: "text-green-700",
                   },
                   {
