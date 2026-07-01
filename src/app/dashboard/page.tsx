@@ -390,12 +390,12 @@ export default async function DashboardPage({
                     <div className="flex flex-col items-end gap-2">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          myTenantProfile.is_visible
+                          myTenantProfile.discoverable
                             ? "bg-green-100 text-green-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
                       >
-                        {myTenantProfile.is_visible
+                        {myTenantProfile.discoverable
                           ? "Actively looking"
                           : "Hidden"}
                       </span>

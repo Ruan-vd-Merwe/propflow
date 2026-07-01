@@ -273,7 +273,7 @@ export default async function BrowsePage({
   let tpQuery = service
     .from("tenant_profiles")
     .select("*")
-    .eq("is_visible", true);
+    .eq("discoverable", true);
 
   if (province) tpQuery = tpQuery.eq("looking_in_province", province);
   if (budgetMin > BUDGET_MIN)
