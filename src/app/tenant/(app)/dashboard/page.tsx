@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import type { TenantProfile, PropertyListing } from "@/lib/types";
+import { DiscoverableToggle } from "./DiscoverableToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,7 @@ export default async function TenantDashboardPage() {
   const prefsDone   = tenantProfile.preferences_complete;
   const affordDone  = tenantProfile.affordability_complete;
   const verStatus   = tenantProfile.verification_status ?? "unverified";
-  const isLooking   = tenantProfile.is_visible ?? false;
+  const isLooking   = tenantProfile.discoverable ?? false;
   const firstName   = profile?.full_name?.split(" ")[0] ?? "there";
   const hasAnyIncomplete = !prefsDone || !affordDone || verStatus === "unverified";
 
@@ -156,13 +157,7 @@ export default async function TenantDashboardPage() {
             <h1 className="text-2xl font-bold text-slate-900">Hi {firstName}</h1>
             <p className="mt-1 text-sm text-slate-500">Your rental dashboard</p>
           </div>
-          <span
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              isLooking ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
-            }`}
-          >
-            {isLooking ? "Actively looking" : "Search hidden"}
-          </span>
+          <DiscoverableToggle initial={isLooking} />
         </div>
 
         {/* ── Stats row ───────────────────────────────────────────────────── */}
@@ -244,7 +239,7 @@ export default async function TenantDashboardPage() {
                   </svg>
                 </div>
                 <p className="flex-1 text-sm font-medium text-slate-700">
-                  Upload documents for hassel free future use
+                  Upload documents for hassle free future use
                 </p>
                 <Link
                   href="/onboarding/verification"
