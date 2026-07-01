@@ -124,7 +124,7 @@ export default async function TenantDashboardPage() {
   const verStatus   = tenantProfile.verification_status ?? "unverified";
   const isLooking   = tenantProfile.discoverable ?? false;
   const firstName   = profile?.full_name?.split(" ")[0] ?? "there";
-  const hasAnyIncomplete = !prefsDone || !affordDone || verStatus === "unverified";
+  const hasAnyIncomplete = !prefsDone || !affordDone;
 
   // ── Matched properties ──────────────────────────────────────────────────────
   const scoredProperties = (() => {
@@ -152,26 +152,49 @@ export default async function TenantDashboardPage() {
       <main className="mx-auto max-w-6xl px-6 py-8">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Hi {firstName}</h1>
             <p className="mt-1 text-sm text-slate-500">Your rental dashboard</p>
           </div>
-          <DiscoverableToggle initial={isLooking} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/tenant/browse"
+              className="rounded-full bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Find properties
+            </Link>
+            <DiscoverableToggle initial={isLooking} />
+          </div>
         </div>
 
-        {/* ── Stats row ───────────────────────────────────────────────────── */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <StatCard label="Applications sent" value={String(applications.length)} />
-          <StatCard label="Introductions"     value={String(introductions.length)} />
-          <div className="card p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              TrustScore
-            </p>
-            <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${verBadge.cls}`}>
+        {/* ── TrustScore + verify ──────────────────────────────────────────── */}
+        <div className="card mb-6 flex items-center gap-4 p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+            <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">TrustScore</p>
+            <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${verBadge.cls}`}>
               {verBadge.label}
             </span>
           </div>
+          {verStatus === "unverified" && (
+            <Link href="/onboarding/verification" className="shrink-0 text-sm font-semibold text-blue-700 hover:underline">
+              Verify now →
+            </Link>
+          )}
+          {verStatus === "pending" && (
+            <p className="shrink-0 text-xs text-slate-400">Review in progress</p>
+          )}
+        </div>
+
+        {/* ── Stats row ───────────────────────────────────────────────────── */}
+        <div className="mb-8 grid grid-cols-2 gap-4">
+          <StatCard label="Applications sent" value={String(applications.length)} />
+          <StatCard label="Introductions"     value={String(introductions.length)} />
         </div>
 
         {/* ── Onboarding prompts — self-hides when all complete ───────────── */}
@@ -221,34 +244,6 @@ export default async function TenantDashboardPage() {
               </div>
             )}
 
-            {prefsDone && affordDone && verStatus === "unverified" && (
-              <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                  <svg
-                    className="h-5 w-5 text-blue-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
-                    />
-                  </svg>
-                </div>
-                <p className="flex-1 text-sm font-medium text-slate-700">
-                  Upload documents for hassle free future use
-                </p>
-                <Link
-                  href="/onboarding/verification"
-                  className="shrink-0 text-sm font-semibold text-blue-700 hover:underline"
-                >
-                  Verify now
-                </Link>
-              </div>
-            )}
           </div>
         )}
 
