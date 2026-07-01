@@ -119,7 +119,6 @@ export async function POST(request: Request) {
             lease_length_months: m.lease_length_months ?? null,
             employment_status: m.employment_status ?? null,
             monthly_income: m.monthly_income ?? null,
-            is_visible: true,
             whatsapp_opted_in: m.whatsapp_opted_in ?? true,
           });
 

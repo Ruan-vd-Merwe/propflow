@@ -103,7 +103,6 @@ export default function SettingsPage() {
     if (!existing) {
       await supabase.from("tenant_profiles").insert({
         user_id: profile.id,
-        is_visible: true,
         budget_min: 300000, // R3 000 in cents
         budget_max: 1500000,
       });

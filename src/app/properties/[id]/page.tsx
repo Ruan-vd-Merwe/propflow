@@ -262,7 +262,7 @@ export default async function PropertyPage({
       service
         .from("tenant_profiles")
         .select("*")
-        .eq("is_visible", true)
+        .eq("discoverable", true)
         .limit(200)
         .order("created_at", { ascending: false }),
       supabase
