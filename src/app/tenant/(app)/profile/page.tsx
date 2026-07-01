@@ -238,12 +238,12 @@ export default async function TenantProfilePage({
                 </h1>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    tenantProfile.is_visible
+                    tenantProfile.discoverable
                       ? "bg-green-100 text-green-700"
                       : "bg-slate-100 text-slate-500"
                   }`}
                 >
-                  {tenantProfile.is_visible
+                  {tenantProfile.discoverable
                     ? "● Actively looking"
                     : "○ Not looking"}
                 </span>
