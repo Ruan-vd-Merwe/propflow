@@ -66,7 +66,7 @@ export function EditPreferencesPanel({
       ? String(Math.round(tenantProfile.monthly_income / 100))
       : "",
   );
-  const [visible, setVisible] = useState(tenantProfile.is_visible);
+  const [visible, setVisible] = useState(tenantProfile.discoverable ?? false);
 
   function openPanel() {
     // Re-sync form with latest saved values each time we open
@@ -82,7 +82,7 @@ export function EditPreferencesPanel({
         ? String(Math.round(tenantProfile.monthly_income / 100))
         : "",
     );
-    setVisible(tenantProfile.is_visible);
+    setVisible(tenantProfile.discoverable ?? false);
     setOpen(true);
   }
 
@@ -101,7 +101,7 @@ export function EditPreferencesPanel({
         lease_length_months: lease,
         employment_status: empStatus || null,
         monthly_income: income ? parseInt(income) * 100 : null,
-        is_visible: visible,
+        discoverable: visible,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },

@@ -35,12 +35,12 @@ const STRIP_ITEMS = [
 const TENANT_POINTS = [
   {
     n: "01",
-    title: "Start with area fit",
+    title: "Choose your area",
     desc: "Match suburbs by budget, commute, safety, and lifestyle before browsing listings.",
   },
   {
     n: "02",
-    title: "One verified profile",
+    title: "Build your profile",
     desc: "Upload your documents once and reuse your rental profile for every application.",
   },
   {
@@ -50,7 +50,7 @@ const TENANT_POINTS = [
   },
   {
     n: "04",
-    title: "Stay organised",
+    title: "Track your deal",
     desc: "Track applications and keep documents in one place.",
   },
 ];
@@ -142,9 +142,9 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
-            PropTrust helps tenants find homes, landlords manage rentals,
-            investors compare suburbs, and trusted locals help people rent
-            safely.
+            PropTrust is where the deal happens — from first application to
+            signed lease. Tenants apply with one trusted profile. Landlords
+            screen, lease, and manage without agent commission.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3">
@@ -155,16 +155,10 @@ export default function HomePage() {
               Find a place to live
             </Link>
             <Link
-              href="/for-landlords"
+              href="/register?role=owner"
               className="rounded-full border-2 border-white/25 px-7 py-3.5 text-center text-sm font-bold text-white transition hover:border-white/50 hover:bg-white/5 active:scale-95"
             >
               List my property
-            </Link>
-            <Link
-              href="/investment-scores"
-              className="mt-1 text-sm text-blue-300/80 underline-offset-2 hover:text-blue-300 hover:underline"
-            >
-              Investing in property? Explore investor tools →
             </Link>
           </div>
         </div>
@@ -202,6 +196,50 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* ── ROLE CARDS ────────────────────────────────────────────────────────── */}
+      <section className="bg-white px-6 py-14 md:py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Tenant */}
+            <div className="flex flex-col rounded-2xl bg-[#f8fafc] p-7 ring-1 ring-slate-100">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
+                For Tenants
+              </p>
+              <h3 className="mb-3 text-xl font-extrabold text-[#0f172a]">
+                Find a place to live
+              </h3>
+              <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
+                Build one rental profile and apply to properties directly. No agent, no repeating yourself.
+              </p>
+              <Link
+                href="/browse"
+                className="inline-block rounded-full bg-[#0f172a] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
+              >
+                Browse properties
+              </Link>
+            </div>
+            {/* Landlord */}
+            <div className="flex flex-col rounded-2xl bg-[#f8fafc] p-7 ring-1 ring-slate-100">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#1e40af]">
+                For Landlords
+              </p>
+              <h3 className="mb-3 text-xl font-extrabold text-[#0f172a]">
+                List and manage your property
+              </h3>
+              <p className="mb-6 flex-1 text-sm leading-relaxed text-slate-500">
+                Screen tenants with verified profiles, sign leases, and manage the rental — without paying commission.
+              </p>
+              <Link
+                href="/register?role=owner"
+                className="inline-block rounded-full bg-[#0f172a] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-slate-800"
+              >
+                List my property
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── 3. FOR TENANTS ────────────────────────────────────────────────────── */}
       <section className="bg-[#f8fafc] px-6 py-20 md:py-28">
@@ -396,10 +434,10 @@ export default function HomePage() {
                 ))}
               </div>
               <Link
-                href="/for-landlords"
+                href="/register?role=owner"
                 className="inline-block rounded-full bg-[#0f172a] px-7 py-3.5 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                Set up my portfolio
+                List my property
               </Link>
             </div>
           </div>
@@ -624,7 +662,7 @@ export default function HomePage() {
               Find a place to live
             </Link>
             <Link
-              href="/for-landlords"
+              href="/register?role=owner"
               className="rounded-full border-2 border-white/40 px-7 py-3.5 text-center text-sm font-bold text-white transition hover:border-white hover:bg-white/10 active:scale-95"
             >
               List my property

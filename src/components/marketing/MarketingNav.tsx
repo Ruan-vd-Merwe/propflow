@@ -14,20 +14,18 @@ const NAV: NavSection[] = [
     type: "dropdown",
     label: "For Tenants",
     items: [
+      { label: "Find a place to live", href: "/browse", desc: "Browse verified rental properties" },
       { label: "Find my area", href: "/area-match", desc: "Match suburbs by budget, commute, and lifestyle" },
-      { label: "Browse properties", href: "/browse", desc: "View available rental listings" },
-      { label: "Rental profiles", href: "/for-tenants", desc: "Create and manage your rental profile" },
-      { label: "How it works", href: "/for-tenants#how-it-works", desc: "How PropTrust works for tenants" },
+      { label: "Tenant profile", href: "/solutions/tenants", desc: "Create and manage your rental profile" },
     ],
   },
   {
     type: "dropdown",
     label: "For Landlords",
     items: [
-      { label: "Manage properties", href: "/for-landlords", desc: "Property management tools" },
+      { label: "List my property", href: "/register?role=owner", desc: "Add your property to PropTrust" },
       { label: "Tenant screening", href: "/features#screening", desc: "Review verified tenant applications" },
       { label: "Portfolio finance", href: "/portfolio", desc: "Track yield, cash flow, and bond payments" },
-      { label: "List a property", href: "/register?type=landlord", desc: "Add your property to PropTrust" },
     ],
   },
   { type: "link", label: "Area Match", href: "/area-match" },

@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
       if (!existing) {
         const { error: tenantErr } = await service
           .from("tenant_profiles")
-          .insert({ user_id: user.id, is_visible: true });
+          .insert({ user_id: user.id });
 
         if (tenantErr) {
           console.error(
