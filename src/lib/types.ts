@@ -53,6 +53,16 @@ export type PropertyListing = Property & {
   lifestyle_tags: string[];
 };
 
+// Column list matching PropertyListing, safe to select as the anon role.
+// The financial columns added in migration_finance.sql / migration_portfolio_finance.sql
+// (bond_*, purchase_price_cents, current_value_cents, levy/rates/insurance, notes)
+// are revoked from anon — do not add them here or add "*" back to a public query.
+export const PUBLIC_PROPERTY_COLUMNS =
+  "id, owner_id, name, address, created_at, property_type, bedrooms, " +
+  "asking_rent, available_from, suburb, province, description, is_listed, " +
+  "status, photos, floor_size_m2, pets_allowed, parking_available, " +
+  "fibre_available, property_tags, area_tags, lifestyle_tags";
+
 // ─── Marketplace ──────────────────────────────────────────────────────────────
 
 export type IncomeBand = "under_10k" | "10k_20k" | "20k_35k" | "35k_50k" | "50k_plus";

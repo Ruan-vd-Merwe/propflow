@@ -5,7 +5,7 @@ import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import { tenant_interest_match_model } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
-import type { PropertyListing } from "@/lib/types";
+import { PUBLIC_PROPERTY_COLUMNS, type PropertyListing } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -117,13 +117,13 @@ export default async function BrowsePropertyPage({
   // Load property
   const { data: raw } = await supabase
     .from("properties")
-    .select("*")
+    .select(PUBLIC_PROPERTY_COLUMNS)
     .eq("id", params.id)
     .in("status", ["available", "available_from"])
     .single();
 
   if (!raw) notFound();
-  const property = raw as PropertyListing;
+  const property = raw as unknown as PropertyListing;
 
   // User roles
   let isLandlord = false;
@@ -151,7 +151,7 @@ export default async function BrowsePropertyPage({
       if (tp) {
         hasTenantProfile = true;
         const profile = mapTenantProfile(tp as Record<string, unknown>);
-        const propData = mapProperty(raw as Record<string, unknown>);
+        const propData = mapProperty(raw as unknown as Record<string, unknown>);
         scoreResult = tenant_interest_match_model(profile, propData);
       }
     }
@@ -179,7 +179,7 @@ export default async function BrowsePropertyPage({
   if (property.suburb || property.province) {
     const { data: simRaw } = await supabase
       .from("properties")
-      .select("*")
+      .select(PUBLIC_PROPERTY_COLUMNS)
       .in("status", ["available", "available_from"])
       .neq("id", property.id)
       .eq(
@@ -187,7 +187,7 @@ export default async function BrowsePropertyPage({
         (property.suburb ?? property.province) as string,
       )
       .limit(3);
-    similar = (simRaw ?? []) as PropertyListing[];
+    similar = (simRaw ?? []) as unknown as PropertyListing[];
   }
 
   const deposit = property.asking_rent ? property.asking_rent * 2 : null;
