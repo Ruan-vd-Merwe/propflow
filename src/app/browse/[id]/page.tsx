@@ -633,13 +633,13 @@ export default async function BrowsePropertyPage({
                       </svg>
                     </div>
                   )}
-                  <div className="p-3">
-                    <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-700">
+                  <div className="p-4">
+                    <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-700">
                       {p.name}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">{p.suburb}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-400">{p.suburb}</p>
                     {p.asking_rent && (
-                      <p className="mt-1.5 text-sm font-bold text-slate-900">
+                      <p className="mt-2 text-base font-bold text-slate-900">
                         {fmtRand(p.asking_rent)}
                         <span className="text-xs font-normal text-slate-400">
                           /mo

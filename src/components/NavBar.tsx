@@ -160,8 +160,9 @@ const MORE_CONNECTOR_TASKS: MoreLink[] = [
 
 // "More" dropdown — Account (shared)
 const MORE_ACCOUNT: MoreLink[] = [
-  { href: "/services",    label: "Services",   Icon: IconShoppingBag },
-  { href: "/settings",    label: "Settings",   Icon: IconCog         },
+  { href: "/services",   label: "Services",   Icon: IconShoppingBag },
+  { href: "/neighbour",  label: "Neighbour",  Icon: IconPeople      },
+  { href: "/settings",   label: "Settings",   Icon: IconCog         },
 ];
 
 // Pick primary links based on the page the user is currently on.

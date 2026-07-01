@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { NavBar } from "@/components/NavBar";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { EditPreferencesPanel } from "./EditPreferencesPanel";
@@ -150,7 +149,6 @@ export default async function TenantProfilePage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <NavBar />
 
       {isWelcome && (
         <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
