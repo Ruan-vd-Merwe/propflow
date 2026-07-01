@@ -390,12 +390,12 @@ export function landlord_insight(property: PropertyData): InsightResult {
   } else if (overall >= 0.4) {
     return {
       score: overall,
-      message: "Average landlord rating — some mixed feedback.",
+      message: "Average landlord rating. Some mixed feedback.",
     };
   } else {
     return {
       score: overall,
-      message: "Low landlord score — review dispute history before committing.",
+      message: "Low landlord score. Review dispute history before committing.",
     };
   }
 }
@@ -418,17 +418,17 @@ export function market_pressure_insight(property: PropertyData): InsightResult {
   if (pressure >= 0.7) {
     return {
       score: 1 - pressure,
-      message: `High demand — ${views} views, ${apps} applications. Act quickly.`,
+      message: `High demand. ${views} views, ${apps} applications. Act quickly.`,
     };
   } else if (pressure >= 0.4) {
     return {
       score: 0.7,
-      message: `Moderate interest — ${apps} applications received.`,
+      message: `Moderate interest. ${apps} applications received.`,
     };
   } else {
     return {
       score: 0.9,
-      message: `Low competition — ${dom} days on market with ${apps} applications.`,
+      message: `Low competition. ${dom} days on market with ${apps} applications.`,
     };
   }
 }
@@ -502,17 +502,17 @@ export function hidden_cost_insight(
   if (cost_ratio <= 0.85) {
     return {
       score: 0.9,
-      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} incl. utilities — comfortable within your budget.`,
+      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} incl. utilities. Comfortable within your budget.`,
     };
   } else if (cost_ratio <= 1.0) {
     return {
       score: 0.65,
-      message: `Total R${Math.round(total_cost).toLocaleString("en-ZA")} incl. extras — just within total budget.`,
+      message: `Total R${Math.round(total_cost).toLocaleString("en-ZA")} incl. extras. Just within total budget.`,
     };
   } else {
     return {
       score: 0.25,
-      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} — exceeds your total living budget by ${Math.round((cost_ratio - 1) * 100)}%.`,
+      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")}. Exceeds your total living budget by ${Math.round((cost_ratio - 1) * 100)}%.`,
     };
   }
 }
