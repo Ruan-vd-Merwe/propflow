@@ -352,14 +352,9 @@ export function NavBar() {
         {/* Logo */}
         <Link
           href={homeHref}
-          className="flex shrink-0 items-center gap-2"
+          className="flex shrink-0 items-center"
           onClick={() => { setMenuOpen(false); setMoreOpen(false); }}
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900">
-            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </div>
           <span className="text-lg font-bold tracking-tight text-slate-900">PropTrust</span>
         </Link>
 

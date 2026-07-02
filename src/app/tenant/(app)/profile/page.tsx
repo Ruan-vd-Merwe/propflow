@@ -160,7 +160,7 @@ export default async function TenantProfilePage({
         </div>
       )}
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:py-8">
         {/* ── Onboarding prompts based on step completion ─────────────── */}
         {!prefsDone && (
           <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a] p-6">
@@ -208,7 +208,7 @@ export default async function TenantProfilePage({
 
         {/* Verification nudge — non-pushy, never a blocker */}
         {prefsDone && affordDone && verStatus === "unverified" && (
-          <div className="mb-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="mb-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
               <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -221,16 +221,33 @@ export default async function TenantProfilePage({
             </div>
             <Link
               href="/onboarding/verification"
-              className="shrink-0 text-sm font-semibold text-blue-700 hover:underline"
+              className="min-h-[44px] shrink-0 rounded-lg border border-slate-200 px-4 py-2.5 text-center text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
             >
               Verify now
             </Link>
           </div>
         )}
 
+        {verStatus === "pending" && (
+          <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
+            <p className="text-sm font-semibold text-blue-950">
+              Verification pending
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-blue-900">
+              Your documents are being checked for affordability and profile verification. Reviews usually finish within 24-48 hours.
+            </p>
+            <Link
+              href="/onboarding/verification"
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+            >
+              View verification status
+            </Link>
+          </div>
+        )}
+
         {/* ── Profile card ─────────────────────────────────────────────── */}
         <div className="card mb-6 p-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-slate-900">
@@ -556,6 +573,5 @@ function IntroductionRow({ intro }: { intro: IntroductionRequest }) {
     </div>
   );
 }
-
 
 

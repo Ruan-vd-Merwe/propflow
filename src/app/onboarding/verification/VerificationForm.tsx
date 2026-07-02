@@ -22,6 +22,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
   const supabase = createClient();
 
   const [showForm, setShowForm] = useState(false);
+  const [submittedForReview, setSubmittedForReview] = useState(false);
   const [saIdNumber, setSaIdNumber] = useState("");
   const [files, setFiles] = useState<Record<VerificationDocType, File | null>>({
     payslip: null,
@@ -119,32 +120,75 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
         .eq("user_id", userId);
     }
 
-    router.push("/tenant/profile");
+    setSubmittedForReview(uploadedDocs.length > 0);
+    if (uploadedDocs.length === 0) {
+      router.push("/tenant/profile");
+    }
   }
 
-  // Already verified or pending — show status and proceed
-  if (currentStatus === "pending" || currentStatus === "verified") {
+  if ((submittedForReview || currentStatus === "pending") && !showForm) {
     return (
       <div className="card p-6 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
-          <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+          <svg className="h-7 w-7 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Verification pending</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Your documents are being checked for affordability and profile verification. Reviews usually finish within 24-48 hours.
+        </p>
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
+          <p className="text-sm font-semibold text-slate-900">What happens next</p>
+          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600">
+            <li>Your profile stays active while the review is in progress.</li>
+            <li>PropTrust checks the uploaded files against your affordability and profile details.</li>
+            <li>Your TrustScore status updates on your dashboard when the review is complete.</li>
+          </ul>
+        </div>
+        <div
+          className="mt-6 flex flex-col gap-3 sm:flex-row"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <button
+            type="button"
+            onClick={() => router.push("/tenant/dashboard")}
+            className="btn-primary min-h-[44px] flex-1"
+          >
+            Return to dashboard
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="min-h-[44px] flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            Upload another document
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStatus === "verified") {
+    return (
+      <div className="card p-6 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+          <svg className="h-7 w-7 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
           </svg>
         </div>
         <h2 className="text-xl font-bold text-slate-900">
-          {currentStatus === "verified" ? "Your TrustScore is verified!" : "Verification in progress"}
+          Your TrustScore is verified
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          {currentStatus === "verified"
-            ? "Your profile is verified. Landlords can see your trusted status."
-            : "We're reviewing your documents. This usually takes 1–2 business days."}
+          Your profile is verified. Landlords can see your trusted status.
         </p>
         <button
           type="button"
-          onClick={() => router.push("/tenant/profile")}
-          className="btn-primary mt-6"
+          onClick={() => router.push("/tenant/dashboard")}
+          className="btn-primary mt-6 min-h-[44px]"
         >
-          Go to dashboard
+          Return to dashboard
         </button>
       </div>
     );
@@ -191,7 +235,10 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           profile.
         </p>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <div
+          className="mt-6 flex flex-col gap-3 sm:flex-row"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <button
             type="button"
             onClick={() => setShowForm(true)}
@@ -319,11 +366,14 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           </div>
         )}
 
-        <div className="mt-6 flex gap-3">
+        <div
+          className="mt-6 flex flex-col-reverse gap-3 sm:flex-row"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <button
             type="button"
             onClick={() => setShowForm(false)}
-            className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="min-h-[44px] flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             Back
           </button>
@@ -331,7 +381,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
             type="button"
             disabled={loading}
             onClick={handleSubmit}
-            className="btn-primary flex-[2]"
+            className="btn-primary min-h-[44px] flex-[2]"
           >
             {loading ? "Uploading..." : "Submit verification"}
           </button>

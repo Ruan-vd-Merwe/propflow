@@ -100,26 +100,9 @@ function IconClose() {
 
 export function NavLogo({ white = false, href = "/" }: { white?: boolean; href?: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2.5">
-      <div
-        className={`flex h-8 w-8 items-center justify-center rounded-lg ${white ? "bg-blue-500" : "bg-[#0f172a]"}`}
-      >
-        <svg
-          className="h-4 w-4 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      </div>
+    <Link href={href} className="flex items-center">
       <span
-        className={`text-[17px] font-bold tracking-tight ${white ? "text-white" : "text-[#0f172a]"}`}
+        className={`text-[18px] font-bold tracking-tight ${white ? "text-white" : "text-[#0f172a]"}`}
       >
         PropTrust
       </span>
@@ -357,7 +340,15 @@ export default function MarketingNav() {
             })}
 
             {/* CTA buttons */}
-            <div className="px-4 pb-8 pt-5" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div
+              className="px-4 pb-8 pt-5"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+              }}
+            >
               {authed ? (
                 <Link
                   href={logoHref}

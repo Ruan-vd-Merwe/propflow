@@ -188,7 +188,7 @@ export default async function TenantDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-6 sm:py-8">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
