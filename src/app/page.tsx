@@ -5,9 +5,8 @@ import Link from "next/link";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import ContactForm from "@/components/ContactForm";
-import { PainStory } from "@/components/marketing/home/PainStory";
-import { TenantJourney } from "@/components/marketing/home/TenantJourney";
-import { ArtefactCards } from "@/components/marketing/home/ArtefactCards";
+import { HomeReveal } from "@/components/marketing/home/HomeReveal";
+import { TheScene } from "@/components/marketing/home/TheScene";
 import { LandlordJourney } from "@/components/marketing/home/LandlordJourney";
 import { PricingStory } from "@/components/marketing/home/PricingStory";
 
@@ -43,7 +42,7 @@ const TRUST_POINTS = [
     desc: "Tenants control what they share. Landlords only see documents submitted as part of an application.",
   },
   {
-    title: "POPIA-aligned approach",
+    title: "POPIA aligned approach",
     desc: "PropTrust is designed to handle personal and financial information responsibly, in line with South African privacy expectations.",
   },
   {
@@ -83,36 +82,39 @@ const QUOTES = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 antialiased">
+    <div className="min-h-screen bg-[#F7F7F5] font-sans text-slate-900 antialiased">
+      <HomeReveal />
       <MarketingNav />
 
       {/* ── 1. HERO ───────────────────────────────────────────────────────────── */}
-      <section className="bg-[#0f172a] px-6 pb-24 pt-20 md:pb-32 md:pt-28">
+      <section className="bg-[#F7F7F5] px-6 pb-20 pt-20 md:pb-28 md:pt-28">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="mb-6 text-xs font-bold uppercase tracking-widest text-blue-400">
+          <p className="mb-6 text-xs font-bold uppercase tracking-widest text-[#2563EB]">
             South Africa
           </p>
 
-          <h1 className="text-5xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl md:text-7xl">
+          <h1 className="text-5xl font-extrabold leading-[1.08] tracking-tight text-[#111B29] sm:text-6xl md:text-7xl">
             Rent privately, safely.
           </h1>
 
-          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
+          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
             Property24 finds them the listing. PropTrust is where the deal
-            happens — applications, screening, lease, and everything after.
+            happens: applications, screening, lease, and everything after.
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-slate-500">
             No agents. No WhatsApp threads. No lost paperwork.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3">
             <Link
               href="/browse"
-              className="w-full max-w-sm rounded-full bg-[#3b82f6] px-8 py-4 text-center text-base font-bold text-white shadow-lg transition hover:bg-blue-500 active:scale-95 sm:w-auto sm:min-w-[280px]"
+              className="w-full max-w-sm rounded-full bg-[#2563EB] px-8 py-4 text-center text-base font-bold text-white shadow-lg transition hover:bg-blue-600 active:scale-95 sm:w-auto sm:min-w-[280px]"
             >
               Find a place to live
             </Link>
             <Link
               href="/register?role=owner"
-              className="rounded-full border-2 border-white/25 px-7 py-3.5 text-center text-sm font-bold text-white transition hover:border-white/50 hover:bg-white/5 active:scale-95"
+              className="rounded-full border-2 border-[#111B29]/20 px-7 py-3.5 text-center text-sm font-bold text-[#111B29] transition hover:border-[#111B29]/40 hover:bg-black/5 active:scale-95"
             >
               List my property
             </Link>
@@ -153,14 +155,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── PAIN STORY ────────────────────────────────────────────────────────── */}
-      <PainStory />
-
-      {/* ── TENANT JOURNEY ────────────────────────────────────────────────────── */}
-      <TenantJourney />
-
-      {/* ── ARTEFACT CARDS ────────────────────────────────────────────────────── */}
-      <ArtefactCards />
+      {/* ── THE SCENE ─────────────────────────────────────────────────────────── */}
+      <TheScene />
 
       {/* ── LANDLORD JOURNEY ──────────────────────────────────────────────────── */}
       <LandlordJourney />
@@ -211,7 +207,7 @@ export default function HomePage() {
                 {[
                   {
                     label: "Document sharing",
-                    value: "Tenant-controlled",
+                    value: "Tenant controlled",
                     color: "text-green-700",
                   },
                   {
@@ -325,7 +321,7 @@ export default function HomePage() {
                       Office hours
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      Mon–Fri · 8am – 5pm SAST
+                      Mon to Fri, 8am to 5pm SAST
                     </p>
                   </div>
                   <div>
@@ -392,7 +388,7 @@ export default function HomePage() {
               href="/investment-scores"
               className="mt-1 text-sm text-blue-200/80 underline-offset-2 hover:text-blue-100 hover:underline"
             >
-              Investing in property? Explore investor tools →
+              Investing in property? Explore investor tools
             </Link>
           </div>
         </div>
