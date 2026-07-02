@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import type { TenantProfile, PropertyListing } from "@/lib/types";
 import { DiscoverableToggle } from "./DiscoverableToggle";
+import { LogMaintenanceButton } from "./LogMaintenanceButton";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +114,22 @@ export default async function TenantDashboardPage() {
   const neighbourProfile = neighbourProfileRaw as { id: string; is_active: boolean } | null;
   const isGoodNeighbour = neighbourProfile?.is_active === true;
 
+  // The authenticated dashboard has no direct link to public.tenants (the
+  // lease record). Match by email, the same bridge used by
+  // /api/tenant/maintenance, to see if this account has an active lease.
+  let hasActiveLease = false;
+  if (profile?.email) {
+    const today = new Date().toISOString().split("T")[0];
+    const { data: activeTenant } = await createServiceClient()
+      .from("tenants")
+      .select("id")
+      .eq("email", profile.email)
+      .or(`lease_end.is.null,lease_end.gte.${today}`)
+      .limit(1)
+      .maybeSingle();
+    hasActiveLease = !!activeTenant;
+  }
+
   const tenantProfile = tp as TenantProfile | null;
   if (!tenantProfile) redirect("/onboarding/preferences");
 
@@ -165,6 +183,7 @@ export default async function TenantDashboardPage() {
               Find properties
             </Link>
             <DiscoverableToggle initial={isLooking} />
+            <LogMaintenanceButton hasActiveLease={hasActiveLease} />
           </div>
         </div>
 
