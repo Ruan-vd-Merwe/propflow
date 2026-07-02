@@ -41,6 +41,11 @@ export function DiscoverableToggle({ initial }: { initial: boolean }) {
       >
         {discoverable ? "Actively looking" : "Paused"}
       </button>
+      {!discoverable && (
+        <span className="max-w-[180px] text-right text-xs leading-snug text-slate-400">
+          Turn on your rental search to receive matching properties.
+        </span>
+      )}
       {error && (
         <span className="text-xs text-red-500">Update failed — try again</span>
       )}

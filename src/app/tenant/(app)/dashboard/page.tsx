@@ -143,6 +143,27 @@ export default async function TenantDashboardPage() {
   const isLooking   = tenantProfile.discoverable ?? false;
   const firstName   = profile?.full_name?.split(" ")[0] ?? "there";
   const hasAnyIncomplete = !prefsDone || !affordDone;
+  const hasApplications = applications.length > 0;
+  const isVerified = verStatus === "verified";
+  const nextStep = hasApplications
+    ? null
+    : isVerified
+      ? {
+          body: "Your next step: Set your rental search and apply for your first property.",
+          cta: "Find properties",
+          href: "/browse",
+        }
+      : {
+          body: "Your next step: Verify your profile to increase your chances of getting approved.",
+          cta: "Verify now",
+          href: "/onboarding/verification",
+        };
+  const readinessItems = [
+    { label: "Complete profile", done: Boolean(profile?.full_name) && prefsDone && affordDone },
+    { label: "Verify identity", done: isVerified },
+    { label: "Set rental preferences", done: prefsDone },
+    { label: "Apply for first property", done: hasApplications },
+  ];
 
   // ── Matched properties ──────────────────────────────────────────────────────
   const scoredProperties = (() => {
@@ -187,6 +208,20 @@ export default async function TenantDashboardPage() {
           </div>
         </div>
 
+        {nextStep && (
+          <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium leading-relaxed text-slate-700">
+              {nextStep.body}
+            </p>
+            <Link
+              href={nextStep.href}
+              className="shrink-0 rounded-lg bg-[#1e40af] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              {nextStep.cta}
+            </Link>
+          </div>
+        )}
+
         {/* ── TrustScore + verify ──────────────────────────────────────────── */}
         <div className="card mb-6 flex items-center gap-4 p-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
@@ -210,10 +245,45 @@ export default async function TenantDashboardPage() {
           )}
         </div>
 
-        {/* ── Stats row ───────────────────────────────────────────────────── */}
-        <div className="mb-8 grid grid-cols-2 gap-4">
-          <StatCard label="Applications sent" value={String(applications.length)} />
-          <StatCard label="Introductions"     value={String(introductions.length)} />
+        <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
+          <div className="card p-5">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              Rental readiness
+            </p>
+            <ul className="mt-4 space-y-3">
+              {readinessItems.map((item) => (
+                <li key={item.label} className="flex items-center gap-3 text-sm text-slate-600">
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                      item.done
+                        ? "border-blue-200 bg-blue-50 text-blue-700"
+                        : "border-slate-200 text-slate-300"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {item.done ? (
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : null}
+                  </span>
+                  <span className={item.done ? "text-slate-700" : "text-slate-500"}>
+                    {item.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {(applications.length > 0 || introductions.length > 0) && (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
+              {applications.length > 0 && (
+                <StatCard label="Applications sent" value={String(applications.length)} />
+              )}
+              {introductions.length > 0 && (
+                <StatCard label="Introductions" value={String(introductions.length)} />
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Onboarding prompts — self-hides when all complete ───────────── */}
