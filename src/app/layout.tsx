@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Sora } from "next/font/google";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -13,8 +14,14 @@ const geistSans = localFont({
   weight: "100 900",
 });
 
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-sora",
+});
+
 export const metadata: Metadata = {
-  title: "PropTrust — Find a home that fits your life",
+  title: "PropTrust: Find a home that fits your life",
   description:
     "PropTrust helps South African tenants choose the right area, discover properties that match their lifestyle, and apply with one trusted rental profile.",
 };
@@ -26,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans`}>{children}</body>
+      <body className={`${geistSans.variable} ${sora.variable} font-sans`}>
+        {children}
+      </body>
     </html>
   );
 }

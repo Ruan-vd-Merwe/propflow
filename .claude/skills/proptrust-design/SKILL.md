@@ -59,6 +59,23 @@ Match what's actually there, not the unused config.
   - **CTA button**: primary = `rounded-full` (marketing) or `rounded-lg`/`rounded-xl` (app), filled with `bg-[#0f172a]`, `bg-[#1e40af]`, or `bg-blue-700`, `font-bold`/`font-semibold text-white`. Secondary/outline = `border-2 border-white/25` on dark backgrounds, `border border-slate-200` on light.
   - **Toggle**: `DiscoverableToggle` in `src/app/tenant/(app)/dashboard/DiscoverableToggle.tsx` — not a switch input; a pill button that swaps color/label between two states (`bg-green-100 text-green-700` active vs `bg-slate-100 text-slate-500` paused), with optimistic update + rollback on failure.
 
+## Palette rules
+
+Theme: "trust plus evolution". Neutral and trustworthy, not
+loud or trendy.
+
+- Warm off-white surfaces, deep navy for headings/dark
+  sections, blue as the only accent color.
+- No gradients anywhere in PropTrust UI.
+- No green in PropTrust UI. Green is reserved exclusively
+  for use inside the chat prop (the scene narrative artifact);
+  it must never appear in real product surfaces, badges, or
+  marketing sections.
+- This supersedes the `green-*` status-badge/toggle usage
+  documented above as current-state fact; new work must not
+  extend it, and existing green UI is a known deviation to be
+  cleaned up, not a pattern to copy.
+
 ## Hierarchy rules
 
 - Property cards: price > title > location > recommendation.
@@ -68,7 +85,8 @@ Match what's actually there, not the unused config.
 ## Copy rules
 
 - Public brand is PropTrust, never propflow.
-- No em dashes as sentence separators in generated copy.
+- No em dashes or en dashes anywhere in copy or UI text.
+  Rewrite as separate sentences or use a colon instead.
 - Banned words: seamless, unlock, empower, leverage, simply,
   revolutionise, game-changer.
 - Trust claims: only "POPIA aligned approach", "private
