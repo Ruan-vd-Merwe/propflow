@@ -56,7 +56,7 @@ export function Gate() {
 
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Tenant side */}
-        <div className="flex flex-1 flex-col justify-center bg-[#F7F7F5] px-6 py-16 md:px-12 lg:px-16">
+        <div className="relative flex flex-1 flex-col justify-center bg-[#F7F7F5] px-6 py-16 md:px-12 lg:px-16">
           <div className="mx-auto w-full max-w-md">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#2563EB]">
               I am looking for a place
@@ -78,6 +78,38 @@ export function Gate() {
             >
               This is me
             </button>
+          </div>
+
+          {/* Hinge emblem: straddles the seam between the two halves.
+              Anchored to this panel's own edge (its right edge on desktop,
+              its bottom edge on mobile) rather than the row's midpoint, so
+              it lands exactly on the seam regardless of each side's actual
+              content height. Decorative only: pointer-events-none keeps it
+              out of the way of both "This is me" buttons. */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-full z-20 flex -translate-x-1/2 -translate-y-[26px] flex-col items-center gap-2 md:left-full md:top-1/2 md:-translate-y-[32px]"
+          >
+            <div
+              aria-hidden="true"
+              className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#E7E6E2] bg-white shadow-[0_8px_24px_rgba(17,27,41,0.12)] md:h-16 md:w-16"
+            >
+              <svg
+                className="h-6 w-6 text-[#111B29]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+            </div>
+            <span className="whitespace-nowrap rounded-full bg-white px-3 py-1 text-[13px] font-semibold uppercase tracking-[.06em] text-[#111B29] shadow-sm">
+              Two sides. One deal.
+            </span>
           </div>
         </div>
 
