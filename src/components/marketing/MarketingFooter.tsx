@@ -41,7 +41,7 @@ const COLS = [
       { label: "Trust and Security", href: "/trust" },
       { label: "POPIA approach", href: "/trust#popia" },
       { label: "FAQ", href: "/resources/faq" },
-      { label: "How scoring works", href: "/how-scoring-works" },
+      { label: "How verification works", href: "/how-scoring-works" },
     ],
   },
 ];
