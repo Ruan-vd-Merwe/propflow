@@ -7,7 +7,8 @@ import MarketingFooter from "@/components/marketing/MarketingFooter";
 import ContactForm from "@/components/ContactForm";
 import { HomeReveal } from "@/components/marketing/home/HomeReveal";
 import { TheScene } from "@/components/marketing/home/TheScene";
-import { LandlordJourney } from "@/components/marketing/home/LandlordJourney";
+import { ThreeDoors } from "@/components/marketing/home/ThreeDoors";
+import { LandlordStrip } from "@/components/marketing/home/LandlordStrip";
 import { PricingStory } from "@/components/marketing/home/PricingStory";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -50,6 +51,27 @@ const TRUST_POINTS = [
     desc: "Landlords and tenants connect directly. No agent handling your documents or data.",
   },
 ];
+
+const TRUST_CHIPS = [
+  "POPIA aligned approach",
+  "Encrypted at rest",
+  "Tenant controlled sharing",
+  "Free for tenants",
+];
+
+function CheckIcon() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-[#2563EB]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
 
 const QUOTES = [
   {
@@ -158,10 +180,27 @@ export default function HomePage() {
       {/* ── THE SCENE ─────────────────────────────────────────────────────────── */}
       <TheScene />
 
-      {/* ── LANDLORD JOURNEY ──────────────────────────────────────────────────── */}
-      <LandlordJourney />
+      {/* ── THE TURN: THREE DOORS ─────────────────────────────────────────────── */}
+      <ThreeDoors />
 
-      {/* ── 6. TRUST ──────────────────────────────────────────────────────────── */}
+      {/* ── LANDLORD STRIP ────────────────────────────────────────────────────── */}
+      <LandlordStrip />
+
+      {/* ── TRUST STRIP ───────────────────────────────────────────────────────── */}
+      <section className="bg-[#F7F7F5] px-6 py-14">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
+          {TRUST_CHIPS.map((chip) => (
+            <div key={chip} className="flex items-center gap-2">
+              <CheckIcon />
+              <span className="text-sm font-semibold text-[#111B29]">
+                {chip}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 6. TRUST (legacy, superseded above; removed next commit) ─────────── */}
       <section className="bg-white px-6 py-20 md:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -366,15 +405,18 @@ export default function HomePage() {
       </section>
 
       {/* ── 8. FINAL CTA ──────────────────────────────────────────────────────── */}
-      <section className="bg-[#1e40af] px-6 py-24 text-center">
+      <section className="bg-[#2563EB] px-6 py-24 text-center">
         <div className="mx-auto max-w-xl">
           <h2 className="text-4xl font-extrabold text-white md:text-5xl">
-            Ready to get started?
+            The listing is out there. The deal starts here.
           </h2>
+          <p className="mt-4 text-base text-blue-100">
+            Free for tenants. Free to list. No commission.
+          </p>
           <div className="mt-10 flex flex-col items-center gap-3">
             <Link
               href="/browse"
-              className="w-full max-w-sm rounded-full bg-white px-8 py-4 text-center text-base font-extrabold text-[#1e40af] shadow-lg transition hover:bg-blue-50 active:scale-95 sm:w-auto sm:min-w-[280px]"
+              className="w-full max-w-sm rounded-full bg-white px-8 py-4 text-center text-base font-extrabold text-[#2563EB] shadow-lg transition hover:bg-blue-50 active:scale-95 sm:w-auto sm:min-w-[280px]"
             >
               Find a place to live
             </Link>
