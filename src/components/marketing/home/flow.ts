@@ -1,6 +1,6 @@
 // ── Split gate flow control ────────────────────────────────────────────────
 // Plain DOM helpers (no React state, no context) so any client component
-// anywhere in the tree — the gate buttons, the switch links — can choose a
+// anywhere in the tree, the gate buttons, the switch links, can choose a
 // side the same way HomeReveal.tsx drives its own [data-reveal] system.
 // Browser-only: only ever called from an event handler, never during render.
 
