@@ -223,7 +223,7 @@ export default async function TenantDashboardPage() {
         )}
 
         {/* ── TrustScore + verify ──────────────────────────────────────────── */}
-        <div className="card mb-6 flex items-center gap-4 p-5">
+        <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
             <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -231,13 +231,19 @@ export default async function TenantDashboardPage() {
           </div>
           <div className="flex-1">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">TrustScore</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">
+              Increase your approval chances
+            </p>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+              Verify your identity and rental profile so landlords can trust your application from the start.
+            </p>
             <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${verBadge.cls}`}>
               {verBadge.label}
             </span>
           </div>
           {verStatus === "unverified" && (
-            <Link href="/onboarding/verification" className="shrink-0 text-sm font-semibold text-blue-700 hover:underline">
-              Verify now →
+            <Link href="/onboarding/verification" className="shrink-0 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50">
+              Verify now
             </Link>
           )}
           {verStatus === "pending" && (
@@ -354,15 +360,21 @@ export default async function TenantDashboardPage() {
 
           {applications.length === 0 ? (
             <div className="card p-10 text-center">
-              <p className="text-slate-500">
-                You haven&apos;t applied to any properties yet.
+              <p className="text-base font-semibold text-slate-900">
+                No applications yet.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                Once your profile is ready, you can apply faster and stand out to landlords.
               </p>
               <Link
-                href="/tenant/browse"
-                className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
+                href="/browse"
+                className="mt-4 inline-block rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
-                Find Properties →
+                Find properties
               </Link>
+              <p className="mt-3 text-xs text-slate-400">
+                Verified profiles are more trusted by landlords.
+              </p>
             </div>
           ) : (
             <div className="card overflow-hidden">
@@ -478,6 +490,43 @@ export default async function TenantDashboardPage() {
               Lease tracking will appear here once your landlord adds you to a
               lease.
             </p>
+          </div>
+        </section>
+
+        {/* Helpful extras */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Helpful extras
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="card p-5">
+              <p className="font-semibold text-slate-900">
+                Helpful services for move in.
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                Cleaning, garden help, laundry, and other local services when you need them.
+              </p>
+              <Link
+                href="/services"
+                className="mt-4 inline-block rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+              >
+                Browse services
+              </Link>
+            </div>
+            <div className="card p-5">
+              <p className="font-semibold text-slate-900">
+                Get to know your community.
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                Connect with neighbours and explore local area tips after you move in.
+              </p>
+              <Link
+                href="/neighbour"
+                className="mt-4 inline-block rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+              >
+                Explore community
+              </Link>
+            </div>
           </div>
         </section>
 
