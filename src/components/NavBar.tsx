@@ -327,6 +327,17 @@ export function NavBar() {
   // Primary links depending on role + current page context
   const primaryLinks = getPrimaryLinks(roles, pathname);
   const homeHref = getHomeHref(roles, pathname);
+  const isTenantNav = primaryLinks.some((link) => link.href === "/tenant/dashboard");
+  const tenantMainLinks = isTenantNav
+    ? primaryLinks.filter((link) => link.href !== "/contact")
+    : primaryLinks;
+  const tenantLivingLinks = MORE_ACCOUNT.filter((link) =>
+    link.href === "/services" || link.href === "/neighbour",
+  );
+  const tenantAccountLinks: MoreLink[] = [
+    ...MORE_ACCOUNT.filter((link) => link.href === "/settings"),
+    { href: "/contact", label: "Contact", Icon: IconChat },
+  ];
 
   // Surface switcher — only shown when user has 2+ roles
   const activeSurface = getActiveSurface(pathname);
@@ -390,7 +401,7 @@ export function NavBar() {
             {/* Dropdown panel */}
             {moreOpen && (
               <div className="absolute right-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                {/* Property Management — landlord only */}
+                {/* Property Management */}
                 {roles.is_landlord && (
                   <DropdownSection label="Property Management">
                     {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => (
@@ -540,34 +551,29 @@ export function NavBar() {
               </li>
             )}
 
-            {/* Primary links */}
-            {primaryLinks.map(({ href, label }) => {
-              const active = isActive(href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex min-h-[48px] items-center px-6 py-3 text-sm font-medium transition ${
-                      active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {label}
-                    {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
-                  </Link>
-                </li>
-              );
-            })}
-
-            {/* Property Management — landlord only */}
-            {roles.is_landlord && (
+            {isTenantNav ? (
               <>
-                <li className="bg-slate-50 px-6 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Property Management
-                  </p>
-                </li>
-                {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => {
+                <MobileSectionLabel label="Main" />
+                {tenantMainLinks.map(({ href, label }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {label}
+                        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
+                      </Link>
+                    </li>
+                  );
+                })}
+
+                <MobileSectionLabel label="Rental Search" />
+                {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => {
                   const active = isActive(href);
                   return (
                     <li key={href}>
@@ -585,18 +591,9 @@ export function NavBar() {
                     </li>
                   );
                 })}
-              </>
-            )}
 
-            {/* Rental Search — tenant only */}
-            {roles.is_tenant && (
-              <>
-                <li className="bg-blue-50 px-6 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-                    Rental Search
-                  </p>
-                </li>
-                {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => {
+                <MobileSectionLabel label="Living" />
+                {tenantLivingLinks.map(({ href, label, Icon }) => {
                   const active = isActive(href);
                   return (
                     <li key={href}>
@@ -604,27 +601,19 @@ export function NavBar() {
                         href={href}
                         onClick={() => setMenuOpen(false)}
                         className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                          active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
                         }`}
                       >
-                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
                         <span>{label}</span>
+                        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
                       </Link>
                     </li>
                   );
                 })}
-              </>
-            )}
 
-            {/* Connector tasks — connector only */}
-            {roles.is_connector && (
-              <>
-                <li className="bg-amber-50 px-6 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">
-                    Connector
-                  </p>
-                </li>
-                {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => {
+                <MobileSectionLabel label="Account" />
+                {tenantAccountLinks.map(({ href, label, Icon }) => {
                   const active = isActive(href);
                   return (
                     <li key={href}>
@@ -632,50 +621,167 @@ export function NavBar() {
                         href={href}
                         onClick={() => setMenuOpen(false)}
                         className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                          active ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-amber-50 hover:text-amber-700"
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
                         }`}
                       >
-                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-amber-600" : "text-slate-400"}`} />
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
                         <span>{label}</span>
+                        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
                       </Link>
                     </li>
                   );
                 })}
-              </>
-            )}
 
-            {/* Account section */}
-            <li className="bg-slate-50 px-6 py-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
-            </li>
-            {MORE_ACCOUNT.map(({ href, label, Icon }) => {
-              const active = isActive(href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                      active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
-                    }`}
+                <li>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex min-h-[48px] w-full items-center gap-4 px-6 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
                   >
-                    <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
-                    <span>{label}</span>
-                  </Link>
+                    <IconSignOut className="h-5 w-5 shrink-0 text-red-500" />
+                    <span>Sign out</span>
+                  </button>
                 </li>
-              );
-            })}
+              </>
+            ) : (
+              <>
+                {/* Primary links */}
+                {primaryLinks.map(({ href, label }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {label}
+                        {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
+                      </Link>
+                    </li>
+                  );
+                })}
 
-            {/* Sign out */}
-            <li>
-              <button
-                onClick={handleSignOut}
-                className="flex min-h-[48px] w-full items-center gap-4 px-6 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
-              >
-                <IconSignOut className="h-5 w-5 shrink-0 text-red-500" />
-                <span>Sign out</span>
-              </button>
-            </li>
+                {/* Property Management */}
+                {roles.is_landlord && (
+                  <>
+                    <li className="bg-slate-50 px-6 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Property Management
+                      </p>
+                    </li>
+                    {MORE_PROPERTY_MGMT.map(({ href, label, Icon }) => {
+                      const active = isActive(href);
+                      return (
+                        <li key={href}>
+                          <Link
+                            href={href}
+                            onClick={() => setMenuOpen(false)}
+                            className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                              active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
+                            <span>{label}</span>
+                            {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Rental Search */}
+                {roles.is_tenant && (
+                  <>
+                    <li className="bg-blue-50 px-6 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+                        Rental Search
+                      </p>
+                    </li>
+                    {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => {
+                      const active = isActive(href);
+                      return (
+                        <li key={href}>
+                          <Link
+                            href={href}
+                            onClick={() => setMenuOpen(false)}
+                            className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                              active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                            }`}
+                          >
+                            <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
+                            <span>{label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Connector tasks */}
+                {roles.is_connector && (
+                  <>
+                    <li className="bg-amber-50 px-6 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">
+                        Connector
+                      </p>
+                    </li>
+                    {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => {
+                      const active = isActive(href);
+                      return (
+                        <li key={href}>
+                          <Link
+                            href={href}
+                            onClick={() => setMenuOpen(false)}
+                            className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                              active ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-amber-50 hover:text-amber-700"
+                            }`}
+                          >
+                            <Icon className={`h-5 w-5 shrink-0 ${active ? "text-amber-600" : "text-slate-400"}`} />
+                            <span>{label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Account section */}
+                <li className="bg-slate-50 px-6 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
+                </li>
+                {MORE_ACCOUNT.map(({ href, label, Icon }) => {
+                  const active = isActive(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
+                          active ? "bg-slate-50 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 shrink-0 ${active ? "text-slate-900" : "text-slate-400"}`} />
+                        <span>{label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+
+                {/* Sign out */}
+                <li>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex min-h-[48px] w-full items-center gap-4 px-6 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  >
+                    <IconSignOut className="h-5 w-5 shrink-0 text-red-500" />
+                    <span>Sign out</span>
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
@@ -684,6 +790,16 @@ export function NavBar() {
 }
 
 // ─── Dropdown helpers ─────────────────────────────────────────────────────────
+
+function MobileSectionLabel({ label }: { label: string }) {
+  return (
+    <li className="px-6 pb-2 pt-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+    </li>
+  );
+}
 
 function DropdownSection({
   label,
