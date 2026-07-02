@@ -96,12 +96,12 @@
 }
 
 /* ── Split gate flow reveal ─────────────────────────────────────────────── */
-/* Default (no JS): every [data-flow-section] is visible — this is the base
+/* Default (no JS): every [data-flow-section] is visible. This is the base
    fallback state. Gate.tsx adds .gate-js to <html> on mount, which is what
    hides the two flows until a side is chosen; a click sets data-flow on
    <html> to reveal that side's sections. This is a plain instant show/hide
    (no transition on display), independent of HomeReveal's .js class, so it
-   is unaffected by prefers-reduced-motion — only the scroll behaviour
+   is unaffected by prefers-reduced-motion. Only the scroll behaviour
    (handled in flow.ts) responds to that. */
 
 .gate-js [data-flow-section] {

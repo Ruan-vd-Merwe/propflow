@@ -20,7 +20,7 @@ const LANDLORD_PAINS = [
 export function Gate() {
   // JS present: opt the page into the click-to-reveal split. This is a
   // separate switch from HomeReveal's `.js` class (which HomeReveal skips
-  // under prefers-reduced-motion for its fade-in animations) — hiding the
+  // under prefers-reduced-motion for its fade-in animations). Hiding the
   // unchosen flow is a state change, not motion, so it applies regardless
   // of the user's motion preference.
   useEffect(() => {
