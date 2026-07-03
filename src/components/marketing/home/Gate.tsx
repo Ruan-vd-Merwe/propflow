@@ -115,7 +115,7 @@ export function Gate() {
             {copy.eyebrow}
           </p>
           <h2
-            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-7xl ${
+            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-9xl ${
               isLandlord ? "text-white" : "text-[#111B29]"
             }`}
           >
