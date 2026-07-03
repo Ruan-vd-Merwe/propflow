@@ -131,7 +131,7 @@ export function Gate() {
 
       {/* Hero content */}
       <div className="flex min-h-[60vh] flex-col justify-center px-6 py-16 md:min-h-0 md:px-12 md:py-12 lg:px-16">
-        <div className="mx-auto w-full max-w-md md:mx-0 md:max-w-3xl">
+        <div className="mx-auto w-full max-w-md md:max-w-3xl">
           <p
             className={`mb-4 text-xs font-bold uppercase tracking-widest ${
               isLandlord ? "text-[#3b82f6]" : "text-[#2563EB]"
@@ -150,7 +150,7 @@ export function Gate() {
             {copy.lines.map((line) => (
               <p
                 key={line}
-                className={`text-base leading-snug md:leading-relaxed ${
+                className={`text-base leading-snug md:text-lg md:leading-relaxed ${
                   isLandlord ? "text-slate-400" : "text-slate-500"
                 }`}
               >
@@ -161,7 +161,7 @@ export function Gate() {
           <button
             type="button"
             onClick={() => chooseFlow(mode)}
-            className={`mt-9 min-h-[44px] w-full rounded-full px-8 py-3.5 text-center text-base font-bold shadow-lg transition active:scale-95 sm:w-auto ${
+            className={`mt-9 min-h-[44px] w-full rounded-full px-8 py-3.5 text-center text-base font-bold shadow-lg transition active:scale-95 sm:w-auto md:mx-auto md:block md:w-fit ${
               isLandlord
                 ? "bg-white text-[#111B29] hover:bg-slate-100"
                 : "bg-[#2563EB] text-white hover:bg-blue-600"
