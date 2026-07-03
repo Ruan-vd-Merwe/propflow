@@ -130,7 +130,7 @@ export function Gate() {
       </div>
 
       {/* Hero content */}
-      <div className="flex min-h-[60vh] flex-col justify-center px-6 py-16 md:px-12 lg:px-16">
+      <div className="flex min-h-[60vh] flex-col justify-center px-6 py-16 md:min-h-0 md:px-12 md:py-12 lg:px-16">
         <div className="mx-auto w-full max-w-md md:mx-0 md:max-w-3xl">
           <p
             className={`mb-4 text-xs font-bold uppercase tracking-widest ${
