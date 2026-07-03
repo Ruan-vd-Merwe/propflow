@@ -129,28 +129,28 @@ export function Gate() {
                 than fixed pixel offsets, so placement holds regardless of
                 how many lines the huge lg:text-8xl headline wraps to. */}
             <p
-              className={`hidden lg:absolute lg:-top-4 lg:right-[calc(100%+1.5rem)] lg:block lg:w-44 lg:-rotate-[2deg] lg:text-right lg:text-base lg:leading-snug ${
+              className={`hidden lg:absolute lg:-top-4 lg:right-[calc(100%+1.5rem)] lg:block lg:w-44 lg:-rotate-[2deg] lg:text-right lg:text-xl lg:leading-snug ${
                 isLandlord ? "text-slate-400" : "text-slate-500"
               }`}
             >
               {copy.lines[0]}
             </p>
             <p
-              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-[42%] lg:block lg:w-48 lg:-translate-y-1/2 lg:rotate-[1.5deg] lg:text-lg lg:leading-snug ${
+              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-[42%] lg:block lg:w-48 lg:-translate-y-1/2 lg:rotate-[1.5deg] lg:text-2xl lg:leading-snug ${
                 isLandlord ? "text-slate-400" : "text-slate-500"
               }`}
             >
               {copy.lines[1]}
             </p>
             <p
-              className={`hidden lg:absolute lg:right-[calc(100%+1.5rem)] lg:top-full lg:mt-6 lg:block lg:w-44 lg:-rotate-[1deg] lg:text-right lg:text-base lg:leading-snug ${
+              className={`hidden lg:absolute lg:right-[calc(100%+1.5rem)] lg:top-full lg:mt-6 lg:block lg:w-44 lg:-rotate-[1deg] lg:text-right lg:text-xl lg:leading-snug ${
                 isLandlord ? "text-slate-400" : "text-slate-500"
               }`}
             >
               {copy.lines[2]}
             </p>
             <p
-              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-full lg:mt-10 lg:block lg:w-48 lg:rotate-[2deg] lg:text-lg lg:leading-snug ${
+              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-full lg:mt-10 lg:block lg:w-48 lg:rotate-[2deg] lg:text-2xl lg:leading-snug ${
                 isLandlord ? "text-slate-400" : "text-slate-500"
               }`}
             >
