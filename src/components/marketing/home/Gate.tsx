@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { chooseFlow } from "./flow";
+import { useEffect, useState } from "react";
+import { chooseFlow, type Flow } from "./flow";
 
-const TENANT_PAINS = [
-  "Three weeks of refreshing.",
-  "Messages that never get answered.",
-  "Your payslips in a stranger's inbox, again.",
-  "The perfect place, gone before you could view it.",
+const TENANT_LINES = [
+  "An agent between every question.",
+  "A leak that takes three phone calls to fix.",
+  "Fifty people competing for the same place.",
+  "Rent, deposit, refund, tracked by no one.",
 ];
 
 const LANDLORD_PAINS = [
@@ -17,7 +17,36 @@ const LANDLORD_PAINS = [
   "And the agent wants a month's rent.",
 ];
 
+const HERO_COPY: Record<
+  Flow,
+  { eyebrow: string; headline: string; lines: string[]; cta: string }
+> = {
+  tenant: {
+    eyebrow: "I am looking for a place",
+    headline: "Your payslip. Everyone's inbox.",
+    lines: TENANT_LINES,
+    cta: "This is me",
+  },
+  landlord: {
+    eyebrow: "I have a place to let",
+    headline: "Drowning in enquiries?",
+    lines: LANDLORD_PAINS,
+    cta: "This is me",
+  },
+};
+
+const TOGGLE_LABEL: Record<Flow, string> = {
+  tenant: "Looking",
+  landlord: "Listing",
+};
+
+function otherFlow(flow: Flow): Flow {
+  return flow === "tenant" ? "landlord" : "tenant";
+}
+
 export function Gate() {
+  const [mode, setMode] = useState<Flow>("tenant");
+
   // JS present: opt the page into the click-to-reveal split. This is a
   // separate switch from HomeReveal's `.js` class (which HomeReveal skips
   // under prefers-reduced-motion for its fade-in animations). Hiding the
@@ -27,10 +56,18 @@ export function Gate() {
     document.documentElement.classList.add("gate-js");
   }, []);
 
+  const isLandlord = mode === "landlord";
+  const copy = HERO_COPY[mode];
+  const other = otherFlow(mode);
+  const otherCopy = HERO_COPY[other];
+
   return (
-    <section id="gate" className="flex min-h-[90vh] flex-col">
-      {/* Brand mark, top left */}
-      <div className="bg-[#F7F7F5] px-6 pt-6">
+    <section
+      id="gate"
+      className={isLandlord ? "bg-[#111B29]" : "bg-[#F7F7F5]"}
+    >
+      <div className="px-6 pt-6">
+        {/* Brand mark, top left */}
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#111B29]">
             <svg
@@ -47,98 +84,112 @@ export function Gate() {
               />
             </svg>
           </div>
-          <span className="text-[17px] font-bold tracking-tight text-[#111B29]">
+          <span
+            className={`text-[17px] font-bold tracking-tight ${
+              isLandlord ? "text-white" : "text-[#111B29]"
+            }`}
+          >
             PropTrust
           </span>
         </div>
         <h1 className="sr-only">Rent privately, safely.</h1>
-      </div>
 
-      <div className="flex flex-1 flex-col md:flex-row">
-        {/* Tenant side */}
-        <div className="relative flex flex-1 flex-col justify-center bg-[#F7F7F5] px-6 py-16 md:px-12 lg:px-16">
-          <div className="mx-auto w-full max-w-md">
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#2563EB]">
-              I am looking for a place
-            </p>
-            <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[#111B29] md:text-4xl">
-              Tired of the silence?
-            </h2>
-            <div className="mt-7 space-y-2.5">
-              {TENANT_PAINS.map((line) => (
-                <p key={line} className="text-base leading-snug text-slate-500">
-                  {line}
-                </p>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => chooseFlow("tenant")}
-              className="mt-9 min-h-[44px] w-full rounded-full bg-[#2563EB] px-8 py-3.5 text-center text-base font-bold text-white shadow-lg transition hover:bg-blue-600 active:scale-95 sm:w-auto"
-            >
-              This is me
-            </button>
-          </div>
-
-          {/* Hinge emblem: straddles the seam between the two halves.
-              Anchored to this panel's own edge (its right edge on desktop,
-              its bottom edge on mobile) rather than the row's midpoint, so
-              it lands exactly on the seam regardless of each side's actual
-              content height. Decorative only: pointer-events-none keeps it
-              out of the way of both "This is me" buttons. */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-full z-20 flex -translate-x-1/2 -translate-y-[26px] flex-col items-center gap-2 md:left-full md:top-1/2 md:-translate-y-[32px]"
-          >
-            <div
-              aria-hidden="true"
-              className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#E7E6E2] bg-white shadow-[0_8px_24px_rgba(17,27,41,0.12)] md:h-16 md:w-16"
-            >
-              <svg
-                className="h-6 w-6 text-[#111B29]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+        {/* Looking / Listing segmented toggle */}
+        <div
+          role="group"
+          aria-label="Choose whether you are looking for a place or listing one"
+          className={`mt-6 inline-flex rounded-full border p-1 ${
+            isLandlord
+              ? "border-white/20 bg-white/10"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          {(["tenant", "landlord"] as Flow[]).map((flow) => {
+            const active = flow === mode;
+            return (
+              <button
+                key={flow}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setMode(flow)}
+                className={`min-h-[44px] rounded-full px-6 text-sm font-bold transition ${
+                  active
+                    ? isLandlord
+                      ? "bg-white text-[#111B29]"
+                      : "bg-[#111B29] text-white"
+                    : isLandlord
+                      ? "text-slate-300"
+                      : "text-slate-500"
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-            </div>
-            <span className="whitespace-nowrap rounded-full bg-white px-3 py-1 text-[13px] font-semibold uppercase tracking-[.06em] text-[#111B29] shadow-sm">
-              Two sides. One deal.
-            </span>
-          </div>
-        </div>
-
-        {/* Landlord side */}
-        <div className="flex flex-1 flex-col justify-center bg-[#111B29] px-6 py-16 md:px-12 lg:px-16">
-          <div className="mx-auto w-full max-w-md">
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#3b82f6]">
-              I have a place to let
-            </p>
-            <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-white md:text-4xl">
-              Drowning in enquiries?
-            </h2>
-            <div className="mt-7 space-y-2.5">
-              {LANDLORD_PAINS.map((line) => (
-                <p key={line} className="text-base leading-snug text-slate-400">
-                  {line}
-                </p>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => chooseFlow("landlord")}
-              className="mt-9 min-h-[44px] w-full rounded-full bg-white px-8 py-3.5 text-center text-base font-bold text-[#111B29] shadow-lg transition hover:bg-slate-100 active:scale-95 sm:w-auto"
-            >
-              This is me
-            </button>
-          </div>
+                {TOGGLE_LABEL[flow]}
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Hero content */}
+      <div className="flex min-h-[60vh] flex-col justify-center px-6 py-16 md:px-12 lg:px-16">
+        <div className="mx-auto w-full max-w-md">
+          <p
+            className={`mb-4 text-xs font-bold uppercase tracking-widest ${
+              isLandlord ? "text-[#3b82f6]" : "text-[#2563EB]"
+            }`}
+          >
+            {copy.eyebrow}
+          </p>
+          <h2
+            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-4xl ${
+              isLandlord ? "text-white" : "text-[#111B29]"
+            }`}
+          >
+            {copy.headline}
+          </h2>
+          <div className="mt-7 space-y-2.5">
+            {copy.lines.map((line) => (
+              <p
+                key={line}
+                className={`text-base leading-snug ${
+                  isLandlord ? "text-slate-400" : "text-slate-500"
+                }`}
+              >
+                {line}
+              </p>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => chooseFlow(mode)}
+            className={`mt-9 min-h-[44px] w-full rounded-full px-8 py-3.5 text-center text-base font-bold shadow-lg transition active:scale-95 sm:w-auto ${
+              isLandlord
+                ? "bg-white text-[#111B29] hover:bg-slate-100"
+                : "bg-[#2563EB] text-white hover:bg-blue-600"
+            }`}
+          >
+            {copy.cta}
+          </button>
+        </div>
+      </div>
+
+      {/* Peek strip: preview of the other mode, tappable to switch */}
+      <button
+        type="button"
+        onClick={() => setMode(other)}
+        className={`flex min-h-[44px] w-full items-center gap-3 bg-[#111B29] px-6 py-4 text-left transition hover:bg-[#16223a] ${
+          isLandlord ? "border-t border-white/10" : ""
+        }`}
+      >
+        <span className="shrink-0 text-xs font-bold uppercase tracking-widest text-[#3b82f6]">
+          {TOGGLE_LABEL[other]}
+        </span>
+        <span className="flex-1 truncate text-sm font-semibold text-white">
+          {otherCopy.headline}
+        </span>
+        <span aria-hidden="true" className="shrink-0 text-white">
+          &rarr;
+        </span>
+      </button>
     </section>
   );
 }
