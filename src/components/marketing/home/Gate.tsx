@@ -131,7 +131,7 @@ export function Gate() {
 
       {/* Hero content */}
       <div className="flex min-h-[60vh] flex-col justify-center px-6 py-16 md:px-12 lg:px-16">
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-md md:mx-0 md:max-w-3xl">
           <p
             className={`mb-4 text-xs font-bold uppercase tracking-widest ${
               isLandlord ? "text-[#3b82f6]" : "text-[#2563EB]"
@@ -140,7 +140,7 @@ export function Gate() {
             {copy.eyebrow}
           </p>
           <h2
-            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-4xl ${
+            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl ${
               isLandlord ? "text-white" : "text-[#111B29]"
             }`}
           >
@@ -150,7 +150,7 @@ export function Gate() {
             {copy.lines.map((line) => (
               <p
                 key={line}
-                className={`text-base leading-snug ${
+                className={`text-base leading-snug md:leading-relaxed ${
                   isLandlord ? "text-slate-400" : "text-slate-500"
                 }`}
               >
