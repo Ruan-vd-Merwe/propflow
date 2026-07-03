@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     phone,
     whatsapp,
     area,
-    province,
+    province, 
     rate_description,
     is_active: true,
     is_self_listed: true,
