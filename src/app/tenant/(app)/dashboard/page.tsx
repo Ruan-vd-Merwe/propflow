@@ -73,8 +73,8 @@ export default async function TenantDashboardPage() {
     { data: appsRaw },
     { data: introRaw },
     { data: rawProps },
-    { count: activeListingCount },
-    { data: neighbourProfileRaw },
+    ,
+    ,
   ] = await Promise.all([
     supabase.from("tenant_profiles").select("*").eq("user_id", user.id).single(),
     supabase
@@ -109,10 +109,6 @@ export default async function TenantDashboardPage() {
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
-
-  const hasServiceListing = (activeListingCount ?? 0) > 0;
-  const neighbourProfile = neighbourProfileRaw as { id: string; is_active: boolean } | null;
-  const isGoodNeighbour = neighbourProfile?.is_active === true;
 
   // The authenticated dashboard has no direct link to public.tenants (the
   // lease record). Match by email, the same bridge used by
@@ -493,98 +489,67 @@ export default async function TenantDashboardPage() {
           </div>
         </section>
 
-        {/* Helpful extras */}
+        {/* ── Get involved ──────────────────────────────────────────────────── */}
         <section className="mb-8">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Helpful extras
+            Get involved
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Services */}
             <div className="card p-5">
-              <p className="font-semibold text-slate-900">
-                Helpful services for move in.
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                Cleaning, garden help, laundry, and other local services when you need them.
-              </p>
-              <Link
-                href="/services"
-                className="mt-4 inline-block rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
-              >
-                Browse services
-              </Link>
-            </div>
-            <div className="card p-5">
-              <p className="font-semibold text-slate-900">
-                Get to know your community.
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                Connect with neighbours and explore local area tips after you move in.
-              </p>
-              <Link
-                href="/neighbour"
-                className="mt-4 inline-block rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
-              >
-                Explore community
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Ways to get involved ─────────────────────────────────────────── */}
-        <section className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Ways to get involved
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* List your service */}
-            <Link
-              href="/services/list"
-              className="card flex items-start gap-4 p-5 transition hover:border-violet-300 hover:shadow-md"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">
-                  {hasServiceListing ? "Manage your listing" : "List your service"}
-                </p>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  {hasServiceListing
-                    ? "You have an active listing in the services directory."
-                    : "Offer your skills to other residents in the community."}
-                </p>
-                <span className="mt-2 inline-block text-xs font-semibold text-violet-600">
-                  {hasServiceListing ? "Manage →" : "Get started →"}
-                </span>
+              <p className="mt-4 font-semibold text-slate-900">Services</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                Cleaning, garden help, laundry and other local help when you
+                need it. Or offer your own skills to residents nearby.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  href="/services"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+                >
+                  Browse
+                </Link>
+                <Link
+                  href="/services/list"
+                  className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                >
+                  List yours
+                </Link>
               </div>
-            </Link>
+            </div>
 
-            {/* Good neighbour */}
-            <Link
-              href="/neighbour"
-              className="card flex items-start gap-4 p-5 transition hover:border-emerald-300 hover:shadow-md"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
-                <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            {/* Good Neighbour */}
+            <div className="card p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">
-                  {isGoodNeighbour ? "You're a Good Neighbour" : "Be a Good Neighbour"}
-                </p>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  {isGoodNeighbour
-                    ? "Your profile is active. Keep helping your community."
-                    : "Small acts of goodwill build your reputation — no money involved."}
-                </p>
-                <span className="mt-2 inline-block text-xs font-semibold text-emerald-600">
-                  {isGoodNeighbour ? "View profile →" : "Opt in →"}
-                </span>
+              <p className="mt-4 font-semibold text-slate-900">Good Neighbour</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                Connect with people nearby and build your reputation through
+                small acts of goodwill. No money involved.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  href="/neighbour"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+                >
+                  Explore
+                </Link>
+                <Link
+                  href="/neighbour"
+                  className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                >
+                  Opt in
+                </Link>
               </div>
-            </Link>
+            </div>
           </div>
         </section>
 
