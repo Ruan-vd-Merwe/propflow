@@ -200,6 +200,10 @@ export default async function TenantDashboardPage() {
               Find properties
             </Link>
             <DiscoverableToggle initial={isLooking} />
+            <div
+              aria-hidden="true"
+              className="hidden h-6 w-px bg-slate-200 sm:block"
+            />
             <LogMaintenanceButton hasActiveLease={hasActiveLease} />
           </div>
         </div>
@@ -497,7 +501,7 @@ export default async function TenantDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Services */}
             <div className="card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100">
                 <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
@@ -525,7 +529,7 @@ export default async function TenantDashboardPage() {
 
             {/* Good Neighbour */}
             <div className="card p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
                 <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
