@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "PropTrust: Find a home that fits your life",
   description:
     "PropTrust helps South African tenants choose the right area, discover properties that match their lifestyle, and apply with one trusted rental profile.",
+  other: {
+    "mobile-web-app-capable": "no",
+  },
 };
 
 export default function RootLayout({

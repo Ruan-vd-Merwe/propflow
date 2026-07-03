@@ -140,7 +140,7 @@ export function Gate() {
             {copy.eyebrow}
           </p>
           <h2
-            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl ${
+            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-7xl ${
               isLandlord ? "text-white" : "text-[#111B29]"
             }`}
           >
@@ -150,7 +150,7 @@ export function Gate() {
             {copy.lines.map((line) => (
               <p
                 key={line}
-                className={`text-base leading-snug md:text-lg md:leading-relaxed ${
+                className={`text-base leading-snug md:text-lg md:leading-relaxed lg:text-xl ${
                   isLandlord ? "text-slate-400" : "text-slate-500"
                 }`}
               >
