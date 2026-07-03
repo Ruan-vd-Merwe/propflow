@@ -33,9 +33,9 @@ export function DiscoverableToggle({ initial }: { initial: boolean }) {
       <button
         onClick={toggle}
         disabled={pending}
-        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
           discoverable
-            ? "bg-green-100 text-green-700 hover:bg-green-200"
+            ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
             : "bg-slate-100 text-slate-500 hover:bg-slate-200"
         } ${pending ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
       >

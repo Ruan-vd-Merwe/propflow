@@ -75,7 +75,7 @@ export function LogMaintenanceButton({
             setOpen((o) => !o);
             setSuccess(false);
           }}
-          className="min-h-[44px] rounded-full bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+          className="min-h-[44px] rounded-full border-2 border-[#1e40af] bg-transparent px-4 py-2 text-sm font-semibold text-[#1e40af] transition hover:bg-blue-50"
         >
           Log a maintenance issue
         </button>
@@ -185,7 +185,7 @@ export function LogMaintenanceButton({
           setOpen((o) => !o);
           setSuccess(false);
         }}
-        className="min-h-[44px] rounded-full bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+        className="min-h-[44px] rounded-full border-2 border-[#1e40af] bg-transparent px-4 py-2 text-sm font-semibold text-[#1e40af] transition hover:bg-blue-50"
       >
         Log a maintenance issue
       </button>
