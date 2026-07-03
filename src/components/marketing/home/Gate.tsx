@@ -116,7 +116,7 @@ export function Gate() {
           </p>
           <div className="relative">
             <h2
-              className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-9xl ${
+              className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-8xl ${
                 isLandlord ? "text-white" : "text-[#111B29]"
               }`}
             >
@@ -127,7 +127,7 @@ export function Gate() {
                 scattered fragments instead of a stacked list. Anchored to
                 the headline's own box (top-0 / top-1/2 / top-full) rather
                 than fixed pixel offsets, so placement holds regardless of
-                how many lines the huge lg:text-9xl headline wraps to. */}
+                how many lines the huge lg:text-8xl headline wraps to. */}
             <p
               className={`hidden lg:absolute lg:-top-4 lg:right-[calc(100%+1.5rem)] lg:block lg:w-44 lg:-rotate-[2deg] lg:text-right lg:text-base lg:leading-snug ${
                 isLandlord ? "text-slate-400" : "text-slate-500"
