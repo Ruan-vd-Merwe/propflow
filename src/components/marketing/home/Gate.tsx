@@ -114,18 +114,57 @@ export function Gate() {
           >
             {copy.eyebrow}
           </p>
-          <h2
-            className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-9xl ${
-              isLandlord ? "text-white" : "text-[#111B29]"
-            }`}
-          >
-            {copy.headline}
-          </h2>
-          <div className="mt-7 space-y-2.5">
+          <div className="relative">
+            <h2
+              className={`text-3xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-9xl ${
+                isLandlord ? "text-white" : "text-[#111B29]"
+              }`}
+            >
+              {copy.headline}
+            </h2>
+
+            {/* Desktop only: pain lines float around the headline as
+                scattered fragments instead of a stacked list. Anchored to
+                the headline's own box (top-0 / top-1/2 / top-full) rather
+                than fixed pixel offsets, so placement holds regardless of
+                how many lines the huge lg:text-9xl headline wraps to. */}
+            <p
+              className={`hidden lg:absolute lg:-top-4 lg:right-[calc(100%+1.5rem)] lg:block lg:w-44 lg:-rotate-[2deg] lg:text-right lg:text-base lg:leading-snug ${
+                isLandlord ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              {copy.lines[0]}
+            </p>
+            <p
+              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-[42%] lg:block lg:w-48 lg:-translate-y-1/2 lg:rotate-[1.5deg] lg:text-lg lg:leading-snug ${
+                isLandlord ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              {copy.lines[1]}
+            </p>
+            <p
+              className={`hidden lg:absolute lg:right-[calc(100%+1.5rem)] lg:top-full lg:mt-6 lg:block lg:w-44 lg:-rotate-[1deg] lg:text-right lg:text-base lg:leading-snug ${
+                isLandlord ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              {copy.lines[2]}
+            </p>
+            <p
+              className={`hidden lg:absolute lg:left-[calc(100%+1.5rem)] lg:top-full lg:mt-10 lg:block lg:w-48 lg:rotate-[2deg] lg:text-lg lg:leading-snug ${
+                isLandlord ? "text-slate-400" : "text-slate-500"
+              }`}
+            >
+              {copy.lines[3]}
+            </p>
+          </div>
+
+          {/* Mobile/tablet: stacked list, unchanged. Hidden at lg where the
+              floating fragments above take over. */}
+          <div className="mt-7 space-y-2.5 lg:hidden">
             {copy.lines.map((line) => (
               <p
                 key={line}
-                className={`text-base leading-snug md:text-lg md:leading-relaxed lg:text-xl ${
+                className={`text-base leading-snug md:text-lg md:leading-relaxed ${
                   isLandlord ? "text-slate-400" : "text-slate-500"
                 }`}
               >
