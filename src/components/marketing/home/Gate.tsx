@@ -67,31 +67,6 @@ export function Gate() {
       className={isLandlord ? "bg-[#111B29]" : "bg-[#F7F7F5]"}
     >
       <div className="px-6 pt-6">
-        {/* Brand mark, top left */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#111B29]">
-            <svg
-              className="h-4 w-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              />
-            </svg>
-          </div>
-          <span
-            className={`text-[17px] font-bold tracking-tight ${
-              isLandlord ? "text-white" : "text-[#111B29]"
-            }`}
-          >
-            PropTrust
-          </span>
-        </div>
         <h1 className="sr-only">Rent privately, safely.</h1>
 
         {/* Looking / Listing segmented toggle */}
