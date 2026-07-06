@@ -506,6 +506,63 @@ export function introductionToLandlordEmail(d: IntroductionEmailData): {
   return { subject, html: baseLayout("#3b82f6", content) };
 }
 
+// ─── Flatmate Finder ──────────────────────────────────────────────────────────
+
+export interface FlatmateApprovalEmailData {
+  landlordName: string;
+  propertyName: string;
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone?: string | null;
+  trustStatusSnapshot: string | null;
+  appUrl: string;
+}
+
+export function flatmateApprovalToLandlordEmail(d: FlatmateApprovalEmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject = `Your tenant has approved a flatmate for ${d.propertyName}`;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">
+      A tenant has approved a flatmate candidate
+    </h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
+      Hi ${d.landlordName},
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      Your existing tenant at <strong>${d.propertyName}</strong> has approved a
+      candidate through PropTrust's Flatmate Finder. This is a notification,
+      not an automatic change to the tenancy. Nothing has been added to the
+      lease or the property record on your side.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0"
+      style="width:100%;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin:0 0 24px;">
+      <tr><td style="padding:16px 20px;">
+        <p style="margin:0;font-size:13px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;">Approved candidate</p>
+        <p style="margin:4px 0 0;font-size:15px;color:#0f172a;font-weight:600;">${d.applicantName}</p>
+        <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${d.applicantEmail}${d.applicantPhone ? ` · ${d.applicantPhone}` : ""}</p>
+        <p style="margin:8px 0 0;font-size:13px;color:#64748b;">
+          TrustScore status at time of approval: <strong>${d.trustStatusSnapshot ?? "not verified"}</strong>
+        </p>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.6;">
+      Next step: if you would like this person on the lease, contact them
+      directly using the details above to formalize the tenancy on your end.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      <tr><td style="background:#0f172a;border-radius:8px;padding:12px 28px;">
+        <a href="${d.appUrl}/properties"
+          style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          View My Properties →
+        </a>
+      </td></tr>
+    </table>
+  `;
+  return { subject, html: baseLayout("#3b82f6", content) };
+}
+
 // ─── Email confirmation code ─────────────────────────────────────────────────
 
 export function confirmationCodeEmail(code: string): {

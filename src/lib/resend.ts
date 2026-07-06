@@ -9,11 +9,13 @@ import {
   monthlyCheckinEmail,
   introductionToTenantEmail,
   introductionToLandlordEmail,
+  flatmateApprovalToLandlordEmail,
   formatAmountRand,
   formatDateLong,
   type PaymentEmailData,
   type CheckinEmailData,
   type IntroductionEmailData,
+  type FlatmateApprovalEmailData,
 } from "./email-templates";
 
 /** Lazy-init Resend client — returns null if API key is not configured */
@@ -208,6 +210,53 @@ export async function sendCheckinNotification(opts: {
   if (!resend) {
     console.log(`[resend DEV] To: ${opts.toEmail} | Subject: ${subject}`);
     console.log(`[resend DEV] Check-in URL: ${opts.checkinUrl}`);
+    return { success: true, resend_id: `dev_${Date.now()}` };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: [opts.toEmail],
+      subject,
+      html,
+    });
+
+    if (error) return { success: false, resend_id: null, error: error.message };
+    return { success: true, resend_id: data?.id ?? null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, resend_id: null, error: msg };
+  }
+}
+
+// ─── Flatmate Finder approval notification ───────────────────────────────────
+
+export async function sendFlatmateApprovalEmail(opts: {
+  toEmail: string;
+  landlordName: string;
+  propertyName: string;
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone?: string | null;
+  trustStatusSnapshot: string | null;
+  appUrl: string;
+}): Promise<SendResult> {
+  const resend = getResend();
+
+  const emailData: FlatmateApprovalEmailData = {
+    landlordName: opts.landlordName,
+    propertyName: opts.propertyName,
+    applicantName: opts.applicantName,
+    applicantEmail: opts.applicantEmail,
+    applicantPhone: opts.applicantPhone,
+    trustStatusSnapshot: opts.trustStatusSnapshot,
+    appUrl: opts.appUrl,
+  };
+
+  const { subject, html } = flatmateApprovalToLandlordEmail(emailData);
+
+  if (!resend) {
+    console.log(`[resend DEV] To: ${opts.toEmail} | Subject: ${subject}`);
     return { success: true, resend_id: `dev_${Date.now()}` };
   }
 

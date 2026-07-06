@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
+import { UploadLeaseButton } from "./UploadLeaseButton";
 import type { LeaseStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,14 @@ export default async function LeasesPage() {
 
   const rows: LeaseRow[] = (leases ?? []) as LeaseRow[];
 
+  const { data: propertiesRaw } = await supabase
+    .from("properties")
+    .select("id, name, address")
+    .eq("owner_id", user.id)
+    .order("name");
+
+  const properties = propertiesRaw ?? [];
+
   function fmtDate(d: string) {
     return new Date(d).toLocaleDateString("en-ZA", {
       day: "numeric",
@@ -98,25 +107,28 @@ export default async function LeasesPage() {
               Manage lease agreements and legal protection
             </p>
           </div>
-          <Link
-            href="/leases/new"
-            className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex flex-wrap items-center gap-3">
+            <UploadLeaseButton properties={properties} />
+            <Link
+              href="/leases/new"
+              className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Create lease
-          </Link>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Create lease
+            </Link>
+          </div>
         </div>
 
         {rows.length === 0 ? (

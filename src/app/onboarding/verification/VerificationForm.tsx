@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { consumeFlatmateReturnToken } from "@/lib/flatmate/return-continuation";
 import type { VerificationDocType } from "@/lib/types";
 
 const DOC_TYPES: { type: VerificationDocType; label: string; description: string }[] = [
@@ -35,6 +36,16 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
   const [error, setError] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  /**
+   * If the visitor arrived here from a Flatmate Finder apply page with no
+   * TrustScore on file, send them back to that listing instead of the
+   * normal dashboard/profile destination.
+   */
+  function goNext(fallback: string) {
+    const returnToken = consumeFlatmateReturnToken();
+    router.push(returnToken ? `/flatmate/${returnToken}` : fallback);
+  }
+
   function handleFileChange(docType: VerificationDocType, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setFiles((prev) => ({ ...prev, [docType]: file }));
@@ -43,7 +54,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
   async function handleSubmit() {
     const hasAnyInput = saIdNumber.trim() || Object.values(files).some(Boolean) || creditConsent;
     if (!hasAnyInput) {
-      router.push("/tenant/profile");
+      goNext("/tenant/profile");
       return;
     }
 
@@ -122,7 +133,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
 
     setSubmittedForReview(uploadedDocs.length > 0);
     if (uploadedDocs.length === 0) {
-      router.push("/tenant/profile");
+      goNext("/tenant/profile");
     }
   }
 
@@ -152,7 +163,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
         >
           <button
             type="button"
-            onClick={() => router.push("/tenant/dashboard")}
+            onClick={() => goNext("/tenant/dashboard")}
             className="btn-primary min-h-[44px] flex-1"
           >
             Return to dashboard
@@ -185,7 +196,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
         </p>
         <button
           type="button"
-          onClick={() => router.push("/tenant/dashboard")}
+          onClick={() => goNext("/tenant/dashboard")}
           className="btn-primary mt-6 min-h-[44px]"
         >
           Return to dashboard
@@ -248,7 +259,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
           </button>
           <button
             type="button"
-            onClick={() => router.push("/tenant/profile")}
+            onClick={() => goNext("/tenant/profile")}
             className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             Skip for now
@@ -390,7 +401,7 @@ export function VerificationForm({ userId, currentStatus }: VerificationFormProp
 
       <button
         type="button"
-        onClick={() => router.push("/tenant/profile")}
+        onClick={() => goNext("/tenant/profile")}
         className="w-full text-center text-sm font-medium text-slate-400 hover:text-slate-600"
       >
         Skip for now — go to dashboard

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { LeaseUploadSection } from "./LeaseUploadSection";
+import type { LeaseExtraction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,15 @@ export default async function TenantApplicationsPage() {
 
   const applications = (appsRaw ?? []) as unknown as AppRow[];
 
+  const { data: leaseExtractionsRaw } = await supabase
+    .from("lease_extractions")
+    .select("*")
+    .eq("uploaded_by_role", "tenant")
+    .eq("uploaded_by_profile_id", user.id)
+    .order("created_at", { ascending: false });
+
+  const leaseExtractions = (leaseExtractionsRaw ?? []) as LeaseExtraction[];
+
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -59,6 +70,8 @@ export default async function TenantApplicationsPage() {
             ← Dashboard
           </Link>
         </div>
+
+        <LeaseUploadSection initialExtractions={leaseExtractions} />
 
         {applications.length === 0 ? (
           <div className="card p-12 text-center">

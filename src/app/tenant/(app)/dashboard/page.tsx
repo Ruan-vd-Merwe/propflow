@@ -4,10 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
-import type { TenantProfile, PropertyListing, RentObligation, PaymentAttempt } from "@/lib/types";
+import type {
+  TenantProfile,
+  PropertyListing,
+  RentObligation,
+  PaymentAttempt,
+  FlatmateListing,
+  FlatmateApplicant,
+} from "@/lib/types";
 import { DiscoverableToggle } from "./DiscoverableToggle";
 import { LogMaintenanceButton } from "./LogMaintenanceButton";
 import { RentPaymentCard } from "./RentPaymentCard";
+import { FlatmateListingPanel } from "./FlatmateListingPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -119,13 +127,15 @@ export default async function TenantDashboardPage() {
   let nextObligationForCard:
     | (RentObligation & { latest_attempt: PaymentAttempt | null })
     | null = null;
+  let flatmateListing: FlatmateListing | null = null;
+  let flatmateApplicants: FlatmateApplicant[] = [];
 
   if (profile?.email) {
     const today = new Date().toISOString().split("T")[0];
     const service = createServiceClient();
     const { data: activeTenant } = await service
       .from("tenants")
-      .select("id, portal_token, access_token")
+      .select("id, portal_token, access_token, property_id")
       .eq("email", profile.email)
       .or(`lease_end.is.null,lease_end.gte.${today}`)
       .limit(1)
@@ -174,6 +184,33 @@ export default async function TenantDashboardPage() {
       nextObligationForCard = chosen
         ? { ...chosen, latest_attempt: latestAttemptByObligation.get(chosen.id) ?? null }
         : null;
+
+      // Session-scoped client here, not the service client: RLS on
+      // flatmate_listings already resolves ownership via the same email
+      // bridge, so this naturally scopes to this tenant's own listing.
+      const { data: listingRaw, error: listingErr } = await supabase
+        .from("flatmate_listings")
+        .select("*")
+        .eq("created_by_tenant_id", activeTenant.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (listingErr) {
+        console.error("[tenant dashboard] flatmate_listings lookup failed:", listingErr.message);
+      }
+      flatmateListing = (listingRaw as FlatmateListing | null) ?? null;
+
+      if (flatmateListing) {
+        const { data: applicantsRaw, error: applicantsErr } = await supabase
+          .from("flatmate_applicants")
+          .select("*")
+          .eq("listing_id", flatmateListing.id)
+          .order("created_at", { ascending: false });
+        if (applicantsErr) {
+          console.error("[tenant dashboard] flatmate_applicants lookup failed:", applicantsErr.message);
+        }
+        flatmateApplicants = (applicantsRaw as FlatmateApplicant[]) ?? [];
+      }
     }
   }
 
@@ -267,6 +304,16 @@ export default async function TenantDashboardPage() {
             devMode={process.env.NODE_ENV !== "production"}
           />
         </div>
+
+        {/* ── Flatmate Finder ──────────────────────────────────────────────── */}
+        {hasActiveLease && (
+          <div className="mb-6">
+            <FlatmateListingPanel
+              initialListing={flatmateListing}
+              initialApplicants={flatmateApplicants}
+            />
+          </div>
+        )}
 
         {nextStep && (
           <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">

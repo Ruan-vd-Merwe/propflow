@@ -729,3 +729,75 @@ export type OwnerNotification = {
   read: boolean;
   created_at: string;
 };
+
+// ─── Flatmate Finder ──────────────────────────────────────────────────────────
+
+export type FlatmateListingStatus = "active" | "filled" | "cancelled";
+
+export type FlatmateListing = {
+  id: string;
+  property_id: string;
+  created_by_tenant_id: string;
+  status: FlatmateListingStatus;
+  note: string | null;
+  rent_portion_cents: number;
+  move_in_date: string; // YYYY-MM-DD
+  share_token: string; // uuid
+  created_at: string;
+  filled_at: string | null;
+};
+
+export type FlatmateApplicantStatus = "pending" | "approved" | "declined";
+
+export type FlatmateApplicant = {
+  id: string;
+  listing_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  applicant_profile_id: string | null;
+  // Mirrors tenant_profiles.verification_status at apply time. Text, not a
+  // number: this codebase has no numeric TrustScore anywhere.
+  trust_status_snapshot: VerificationStatus | null;
+  status: FlatmateApplicantStatus;
+  created_at: string;
+};
+
+// ─── Lease upload and AI extraction ───────────────────────────────────────────
+
+export type LeaseUploaderRole = "landlord" | "tenant";
+export type LeaseExtractionStatus = "pending" | "extracted" | "failed";
+
+/**
+ * The fixed shape both the AI extraction and manual entry fill in. Every
+ * field is nullable: extraction may miss a field, and manual_fields only
+ * carries whatever the landlord or tenant entered for fields left null.
+ */
+export type LeaseExtractedFields = {
+  tenant_name: string | null;
+  landlord_name: string | null;
+  property_address: string | null;
+  monthly_rent_cents: number | null;
+  deposit_amount_cents: number | null;
+  lease_start: string | null; // YYYY-MM-DD
+  lease_end: string | null; // YYYY-MM-DD
+  payment_due_day: number | null;
+  escalation_pct: number | null;
+  escalation_date: string | null; // YYYY-MM-DD
+};
+
+export type LeaseExtraction = {
+  id: string;
+  uploaded_by_role: LeaseUploaderRole;
+  uploaded_by_profile_id: string;
+  property_id: string | null;
+  tenant_id: string | null;
+  storage_path: string;
+  original_filename: string;
+  status: LeaseExtractionStatus;
+  extracted_fields: LeaseExtractedFields | null;
+  manual_fields: LeaseExtractedFields | null;
+  confirmed: boolean;
+  confirmed_at: string | null;
+  created_at: string;
+};
