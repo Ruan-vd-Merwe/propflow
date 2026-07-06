@@ -629,7 +629,7 @@ export default async function DashboardPage({
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-semibold text-slate-900">
-                    💰 Rent tracking
+                    Rent tracking
                   </h2>
                   <p className="mt-0.5 text-sm text-slate-500">
                     Know who has paid without opening your bank account.
