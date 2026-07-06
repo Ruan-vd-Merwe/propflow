@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
-import type { Tenant, Payment, PropertyWithFinance } from "@/lib/types";
+import { rentLedgerTotals } from "@/lib/rent/ledger";
+import type { Tenant, PropertyWithFinance, RentObligation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -64,9 +65,7 @@ export default async function PortfolioPage() {
     Tenant,
     "id" | "property_id" | "full_name" | "monthly_rent"
   >[] = tenantsRaw ?? [];
-  const tenantIds = tenants.map((t) => t.id);
-
-  // Current month paid payments
+  // Current month rent obligations
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString()
@@ -75,22 +74,17 @@ export default async function PortfolioPage() {
     .toISOString()
     .split("T")[0];
 
-  const { data: currentPaymentsRaw } = tenantIds.length
-    ? await supabase
-        .from("payments")
-        .select("id, tenant_id, amount, status, due_date")
-        .in("tenant_id", tenantIds)
-        .gte("due_date", monthStart)
-        .lte("due_date", monthEnd)
-    : { data: [] };
+  const { data: rentObligationsRaw } = await supabase
+    .from("rent_obligations")
+    .select("*")
+    .eq("landlord_id", user.id)
+    .gte("period_start", monthStart)
+    .lte("period_start", monthEnd);
 
-  const currentPayments: Pick<Payment, "id" | "tenant_id" | "amount" | "status" | "due_date">[] =
-    currentPaymentsRaw ?? [];
+  const rentObligations: RentObligation[] = rentObligationsRaw ?? [];
 
   // ── Computed stats ────────────────────────────────────────────────────────
-  const monthlyIncomeCents = currentPayments
-    .filter((p) => p.status === "paid")
-    .reduce((s, p) => s + p.amount, 0);
+  const { collectedCents: monthlyIncomeCents } = rentLedgerTotals(rentObligations);
 
   const monthlyExpensesCents = properties.reduce((s, p) => {
     return (

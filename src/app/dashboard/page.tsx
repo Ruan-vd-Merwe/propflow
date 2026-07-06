@@ -7,6 +7,7 @@ import { calculateRiskScore } from "@/lib/risk";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { getComponentHealth } from "@/lib/maintenance";
+import { rentLedgerTotals, lateTenantIds } from "@/lib/rent/ledger";
 import { PaymentWarningsButton } from "./PaymentWarningsButton";
 import type {
   Payment,
@@ -17,6 +18,7 @@ import type {
   BodyCorpFlag,
   TenantProfile,
   PropertyListing,
+  RentObligation,
 } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -241,6 +243,26 @@ export default async function DashboardPage({
     );
   }).length;
   const totalRentCents = tenantList.reduce((s, t) => s + t.monthly_rent, 0);
+
+  // ── Rent ledger (this month) ──────────────────────────────────────────────
+  const now = new Date();
+  const rentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+  const rentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .split("T")[0];
+
+  const { data: rentObligationsRaw } = await supabase
+    .from("rent_obligations")
+    .select("*")
+    .eq("landlord_id", user.id)
+    .gte("period_start", rentMonthStart)
+    .lte("period_start", rentMonthEnd);
+
+  const rentObligations: RentObligation[] = rentObligationsRaw ?? [];
+  const rentTotals = rentLedgerTotals(rentObligations);
+  const rentLateTenantCount = lateTenantIds(rentObligations).length;
 
   // ── Payment warnings stats ─────────────────────────────────────────────────
   const todayMidnight = new Date();
@@ -589,6 +611,61 @@ export default async function DashboardPage({
                 value={formatRand(totalRentCents)}
               />
             </div>
+
+            {/* ── Rent this month ──────────────────────────────────────────────── */}
+            {tenantList.length > 0 && (
+              <div className="card mb-8 p-5">
+                <h2 className="mb-4 font-semibold text-slate-900">
+                  💰 Rent this month
+                </h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                      Expected
+                    </p>
+                    <p className="mt-1 text-xl font-bold text-slate-900">
+                      {formatRand(rentTotals.expectedCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                      Collected
+                    </p>
+                    <p className="mt-1 text-xl font-bold text-emerald-600">
+                      {formatRand(rentTotals.collectedCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                      Outstanding
+                    </p>
+                    <p
+                      className={`mt-1 text-xl font-bold ${
+                        rentTotals.outstandingCents > 0
+                          ? "text-red-600"
+                          : "text-slate-900"
+                      }`}
+                    >
+                      {formatRand(rentTotals.outstandingCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                      Late tenants
+                    </p>
+                    <p
+                      className={`mt-1 text-xl font-bold ${
+                        rentLateTenantCount > 0
+                          ? "text-red-600"
+                          : "text-emerald-600"
+                      }`}
+                    >
+                      {rentLateTenantCount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Portfolio nudge ────────────────────────────────────────────── */}
             {isLandlord &&

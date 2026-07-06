@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/weekly-digest",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/rent/generate",
+      "schedule": "0 5 * * *"
     }
   ]
 }

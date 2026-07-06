@@ -398,6 +398,77 @@ export type LeaseAgreement = {
   created_at: string;
 };
 
+// ─── Rent ledger (Phase 1: manual-only) ───────────────────────────────────────
+
+export type RentScheduleStatus = "active" | "superseded";
+
+export type RentSchedule = {
+  id: string;
+  lease_id: string;
+  amount_cents: number;
+  due_day: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string | null; // YYYY-MM-DD
+  escalation_date: string | null; // YYYY-MM-DD
+  escalation_pct: number | null;
+  status: RentScheduleStatus;
+  created_at: string;
+};
+
+export type ObligationStatus =
+  | "pending"
+  | "processing" // Phase 2: a payment attempt is in flight
+  | "paid"
+  | "partial"
+  | "late"
+  | "failed"
+  | "waived";
+
+export type RentObligation = {
+  id: string;
+  schedule_id: string;
+  tenant_id: string;
+  property_id: string;
+  landlord_id: string;
+  period_start: string; // YYYY-MM-DD
+  due_date: string; // YYYY-MM-DD
+  amount_due_cents: number;
+  amount_paid_cents: number;
+  status: ObligationStatus;
+  paid_at: string | null; // Phase 2: set when status first becomes 'paid'
+  created_at: string;
+  updated_at: string;
+};
+
+// Phase 2 adds 'processing' (provider settling) and 'cancelled' (tenant
+// abandoned checkout) — both are payment states the tenant can see directly.
+export type PaymentAttemptStatus =
+  | "pending"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "refunded";
+export type PaymentAttemptInitiator = "tenant" | "landlord" | "system";
+
+export type PaymentAttempt = {
+  id: string;
+  obligation_id: string;
+  provider: string; // 'manual' in Phase 1, 'mock' in Phase 2, a real gateway later
+  provider_ref: string | null; // doubles as the provider's payment/session id
+  provider_checkout_url: string | null; // Phase 2: checkout/dev-checkout URL
+  amount_cents: number;
+  currency: string; // Phase 2, default 'ZAR'
+  status: PaymentAttemptStatus;
+  method: string | null;
+  failure_reason: string | null; // Phase 2
+  raw_provider_event: Record<string, unknown> | null; // Phase 2: last webhook payload
+  initiated_by: PaymentAttemptInitiator;
+  created_at: string;
+  updated_at: string; // Phase 2
+  confirmed_at: string | null;
+};
+
 // ─── Intelligence features ────────────────────────────────────────────────────
 
 export type ComponentTypeKey =

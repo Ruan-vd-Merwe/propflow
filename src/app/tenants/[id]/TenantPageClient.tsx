@@ -3,9 +3,14 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RiskBadge } from "@/components/RiskBadge";
-import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
+import { ObligationStatusBadge } from "@/components/ObligationStatusBadge";
 import { DocumentUploader } from "@/components/DocumentUploader";
-import type { Payment, RiskScore } from "@/lib/types";
+import type { Payment, RentObligation, RiskScore } from "@/lib/types";
+
+// A rent obligation plus which provider (if any) collected the successful
+// payment — 'manual' means the landlord's own Mark paid, anything else
+// (e.g. 'mock', later a real gateway) came through PropTrust.
+type ObligationWithProvider = RentObligation & { paid_via_provider: string | null };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,13 +92,11 @@ function formatDateTime(iso: string) {
   });
 }
 
-function daysLate(payment: Payment): number | null {
-  if (!payment.paid_date || payment.status === "missed") return null;
-  const diff =
-    new Date(payment.paid_date).getTime() -
-    new Date(payment.due_date).getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return days > 0 ? days : null;
+function formatPeriod(periodStart: string) {
+  return new Date(periodStart).toLocaleDateString("en-ZA", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function formatSize(bytes: number | null): string {
@@ -160,6 +163,7 @@ export function TenantPageClient({
   risk,
   initialDocuments,
   initialCommsLog,
+  initialObligations,
 }: {
   tenant: TenantInfo;
   property: PropertyInfo;
@@ -167,11 +171,15 @@ export function TenantPageClient({
   risk: RiskScore;
   initialDocuments: TenantDoc[];
   initialCommsLog: CommLog[];
+  initialObligations: ObligationWithProvider[];
 }) {
   const supabase = createClient();
 
   const [activeTab, setActiveTab] = useState<"payments" | "documents" | "messages">("payments");
   const [documents, setDocuments] = useState<TenantDoc[]>(initialDocuments);
+  const [obligations, setObligations] = useState<ObligationWithProvider[]>(initialObligations);
+  const [obligationActionId, setObligationActionId] = useState<string | null>(null);
+  const [obligationError, setObligationError] = useState<string | null>(null);
 
   // WhatsApp panel
   const [waOpen, setWaOpen] = useState(false);
@@ -212,6 +220,37 @@ export function TenantPageClient({
       setWaError("Network error. Please try again.");
     } finally {
       setWaSending(false);
+    }
+  }
+
+  async function handleObligationAction(
+    obligation: ObligationWithProvider,
+    action: "mark_paid" | "waive",
+  ) {
+    setObligationActionId(obligation.id);
+    setObligationError(null);
+    try {
+      const res = await fetch(`/api/rent/obligations/${obligation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setObligationError(json.error ?? "Failed to update obligation");
+        return;
+      }
+      setObligations((prev) =>
+        prev.map((o) =>
+          o.id === obligation.id
+            ? { ...json.obligation, paid_via_provider: null } // manual action, not via a provider
+            : o,
+        ),
+      );
+    } catch {
+      setObligationError("Network error. Please try again.");
+    } finally {
+      setObligationActionId(null);
     }
   }
 
@@ -314,35 +353,76 @@ export function TenantPageClient({
             </div>
           </div>
 
-          {/* Payment history */}
+          {/* Rent obligation timeline */}
           <div className="card overflow-hidden">
             <div className="border-b border-slate-100 px-6 py-4">
               <h2 className="font-semibold text-slate-900">
-                Payment History
-                <span className="ml-2 text-sm font-normal text-slate-400">{payments.length} records</span>
+                Rent Ledger
+                <span className="ml-2 text-sm font-normal text-slate-400">{obligations.length} periods</span>
               </h2>
             </div>
-            {payments.length === 0 ? (
-              <div className="p-12 text-center text-slate-500">No payment records yet.</div>
+            {obligationError && (
+              <p className="border-b border-red-100 bg-red-50 px-6 py-2 text-sm text-red-600">
+                {obligationError}
+              </p>
+            )}
+            {obligations.length === 0 ? (
+              <div className="p-12 text-center text-slate-500">No rent obligations generated yet.</div>
             ) : (
               <div className="divide-y divide-slate-100">
-                <div className="grid grid-cols-4 px-6 py-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+                <div className="grid grid-cols-[1fr_1fr_1fr_100px_180px] px-6 py-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+                  <span>Period</span>
                   <span>Due date</span>
-                  <span>Paid date</span>
-                  <span>Amount</span>
+                  <span>Amount due / paid</span>
                   <span>Status</span>
+                  <span></span>
                 </div>
-                {payments.map((p) => {
-                  const late = daysLate(p);
+                {obligations.map((o) => {
+                  const actionable = o.status !== "paid" && o.status !== "waived";
+                  const isLoading = obligationActionId === o.id;
                   return (
-                    <div key={p.id} className="grid grid-cols-4 items-center px-6 py-3.5">
-                      <span className="text-sm text-slate-700">{formatDate(p.due_date)}</span>
-                      <span className="text-sm text-slate-700">
-                        {formatDate(p.paid_date)}
-                        {late !== null && <span className="ml-1 text-xs text-amber-500">+{late}d</span>}
+                    <div
+                      key={o.id}
+                      className="grid grid-cols-[1fr_1fr_1fr_100px_180px] items-center px-6 py-3.5"
+                    >
+                      <span className="text-sm text-slate-700">{formatPeriod(o.period_start)}</span>
+                      <span className="text-sm text-slate-700">{formatDate(o.due_date)}</span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {formatRand(o.amount_due_cents)}
+                        {o.amount_paid_cents > 0 && o.amount_paid_cents !== o.amount_due_cents && (
+                          <span className="ml-1 text-xs text-slate-400">
+                            ({formatRand(o.amount_paid_cents)} paid)
+                          </span>
+                        )}
                       </span>
-                      <span className="text-sm font-medium text-slate-900">{formatRand(p.amount)}</span>
-                      <PaymentStatusBadge status={p.status} />
+                      <div className="flex flex-col items-start gap-1">
+                        <ObligationStatusBadge status={o.status} />
+                        {o.paid_via_provider && o.paid_via_provider !== "manual" && (
+                          <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                            ⚡ Paid through PropTrust
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        {actionable && (
+                          <>
+                            <button
+                              onClick={() => handleObligationAction(o, "mark_paid")}
+                              disabled={isLoading}
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                              {isLoading ? "…" : "Mark paid"}
+                            </button>
+                            <button
+                              onClick={() => handleObligationAction(o, "waive")}
+                              disabled={isLoading}
+                              className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              Waive
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

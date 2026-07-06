@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TenantPortal } from "./TenantPortal";
-import type { TenantQuery, Payment } from "@/lib/types";
+import type { TenantQuery, RentObligation, PaymentAttempt } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -56,14 +56,36 @@ export default async function TenantPortalPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const landlord = property.profiles as any;
 
-  // Fetch payments
-  const { data: paymentsRaw } = await supabase
-    .from("payments")
+  // Fetch rent obligations + their payment attempts
+  const { data: obligationsRaw } = await supabase
+    .from("rent_obligations")
     .select("*")
     .eq("tenant_id", tenant.id)
     .order("due_date", { ascending: false });
 
-  const payments: Payment[] = (paymentsRaw ?? []) as Payment[];
+  const obligations: RentObligation[] = (obligationsRaw ?? []) as RentObligation[];
+  const obligationIds = obligations.map((o) => o.id);
+
+  const { data: attemptsRaw } = obligationIds.length
+    ? await supabase
+        .from("payment_attempts")
+        .select("*")
+        .in("obligation_id", obligationIds)
+        .order("created_at", { ascending: false })
+    : { data: [] };
+
+  const attempts: PaymentAttempt[] = (attemptsRaw ?? []) as PaymentAttempt[];
+  const latestAttemptByObligation = new Map<string, PaymentAttempt>();
+  for (const a of attempts) {
+    if (!latestAttemptByObligation.has(a.obligation_id)) {
+      latestAttemptByObligation.set(a.obligation_id, a); // first = most recent (query ordered desc)
+    }
+  }
+
+  const obligationsWithAttempt = obligations.map((o) => ({
+    ...o,
+    latest_attempt: latestAttemptByObligation.get(o.id) ?? null,
+  }));
 
   // Fetch queries
   const { data: queriesRaw } = await supabase
@@ -102,11 +124,19 @@ export default async function TenantPortalPage({
   const serviceProviders: ServiceProvider[] = (provs ??
     []) as ServiceProvider[];
 
-  // Next unpaid payment
+  // Next payable obligation: soonest upcoming due date, falling back to the
+  // most recently overdue one if nothing is upcoming.
   const today = new Date().toISOString().split("T")[0];
-  const nextPayment =
-    payments.find((p) => p.status !== "paid" && p.due_date >= today) ??
-    payments.find((p) => p.status !== "paid");
+  const payableObligations = obligations.filter(
+    (o) => o.status !== "paid" && o.status !== "waived",
+  );
+  const upcoming = payableObligations
+    .filter((o) => o.due_date >= today)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date));
+  const overdue = payableObligations
+    .filter((o) => o.due_date < today)
+    .sort((a, b) => b.due_date.localeCompare(a.due_date));
+  const nextObligation = upcoming[0] ?? overdue[0] ?? null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
@@ -172,12 +202,13 @@ export default async function TenantPortalPage({
             email: landlord.email,
             phone: landlord.phone,
           }}
-          initialPayments={payments}
+          initialObligations={obligationsWithAttempt}
           initialQueries={queries}
           serviceCategories={serviceCategories}
           serviceProviders={serviceProviders}
-          nextPayment={nextPayment ?? null}
+          nextObligation={nextObligation}
           initialLease={leaseRaw ?? null}
+          devMode={process.env.NODE_ENV !== "production"}
         />
       </div>
     </div>
