@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
 import { rentLedgerTotals } from "@/lib/rent/ledger";
+import { PropertyLegalStatusPill } from "@/components/xpello/PropertyLegalStatusPill";
 import type { Tenant, PropertyWithFinance, RentObligation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +66,19 @@ export default async function PortfolioPage() {
     Tenant,
     "id" | "property_id" | "full_name" | "monthly_rent"
   >[] = tenantsRaw ?? [];
+
+  // Xpello legal status (concept) per property
+  const { data: leasesForXpello } = propertyIds.length
+    ? await supabase
+        .from("lease_agreements")
+        .select("property_id, xpello_enrolled")
+        .in("property_id", propertyIds)
+    : { data: [] };
+
+  const xpelloEnrolledPropertyIds = new Set(
+    (leasesForXpello ?? []).filter((l) => l.xpello_enrolled).map((l) => l.property_id),
+  );
+
   // Current month rent obligations
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -355,6 +369,20 @@ export default async function PortfolioPage() {
                           <p className="text-xs text-slate-400 truncate">
                             {p.address}
                           </p>
+                          <div className="mt-1.5">
+                            <PropertyLegalStatusPill
+                              status={
+                                xpelloEnrolledPropertyIds.has(p.id)
+                                  ? "protected"
+                                  : propTenants.length === 0
+                                    ? "incomplete"
+                                    : "ready"
+                              }
+                              propertyId={p.id}
+                              propertyName={p.name}
+                              size="sm"
+                            />
+                          </div>
                         </div>
                         {hasFinance ? (
                           <span

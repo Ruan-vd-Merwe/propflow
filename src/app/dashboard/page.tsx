@@ -9,6 +9,8 @@ import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { getComponentHealth } from "@/lib/maintenance";
 import { rentLedgerTotals, lateTenantIds } from "@/lib/rent/ledger";
 import { PaymentWarningsButton } from "./PaymentWarningsButton";
+import { LegalProtectionCard } from "@/components/xpello/LegalProtectionCard";
+import { PropertyLegalStatusPill } from "@/components/xpello/PropertyLegalStatusPill";
 import type {
   Payment,
   Property,
@@ -210,13 +212,16 @@ export default async function DashboardPage({
   // ── Lease / Xpello stats ─────────────────────────────────────────────────────
   const { data: leasesRaw } = await supabase
     .from("lease_agreements")
-    .select("id, xpello_enrolled")
+    .select("id, property_id, xpello_enrolled")
     .eq("landlord_id", user.id)
     .in("status", ["sent", "signed"]);
 
   const leaseList = leasesRaw ?? [];
   const xpelloEnrolled = leaseList.filter((l) => l.xpello_enrolled).length;
   const xpelloUnenrolled = leaseList.filter((l) => !l.xpello_enrolled).length;
+  const xpelloEnrolledPropertyIds = new Set(
+    leaseList.filter((l) => l.xpello_enrolled).map((l) => l.property_id),
+  );
 
   // ── Computed stats ────────────────────────────────────────────────────────
   const paymentsByTenant = new Map<string, Payment[]>();
@@ -768,6 +773,8 @@ export default async function DashboardPage({
                 </>
               )}
             </div>
+
+            <LegalProtectionCard />
 
             {/* ── Portfolio nudge ────────────────────────────────────────────── */}
             {isLandlord &&
@@ -1329,6 +1336,22 @@ export default async function DashboardPage({
                               </Link>
                             </div>
                           )}
+
+                        {/* Xpello legal status */}
+                        <div className="border-t border-slate-100 px-4 py-2.5">
+                          <PropertyLegalStatusPill
+                            status={
+                              xpelloEnrolledPropertyIds.has(property.id)
+                                ? "protected"
+                                : propertyTenants.length === 0
+                                  ? "incomplete"
+                                  : "ready"
+                            }
+                            propertyId={property.id}
+                            propertyName={property.name}
+                            size="sm"
+                          />
+                        </div>
                       </div>
                     );
                   })}

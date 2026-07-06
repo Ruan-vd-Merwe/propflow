@@ -9,6 +9,10 @@ import { calculateMatchScore, displayName } from "@/lib/matching";
 import { IntroduceButton } from "./IntroduceButton";
 import { SharePortalButton } from "./SharePortalButton";
 import { PropertyPhotoUpload } from "./PropertyPhotoUpload";
+import {
+  PropertyLegalStatusPill,
+  type PropertyLegalStatus,
+} from "@/components/xpello/PropertyLegalStatusPill";
 import type {
   Payment,
   Tenant,
@@ -234,6 +238,19 @@ export default async function PropertyPage({
     }))
     .sort((a, b) => a.risk.score - b.risk.score);
 
+  // ── Xpello legal status (concept) ─────────────────────────────────────────
+  const { data: propertyLeases } = await supabase
+    .from("lease_agreements")
+    .select("xpello_enrolled")
+    .eq("property_id", property.id);
+
+  const isXpelloEnrolled = (propertyLeases ?? []).some((l) => l.xpello_enrolled);
+  const legalStatus: PropertyLegalStatus = isXpelloEnrolled
+    ? "protected"
+    : tenantList.length === 0
+      ? "incomplete"
+      : "ready";
+
   // ── Recommended tab — only fetched when active ────────────────────────────
   type MatchRow = {
     tenantId: string;
@@ -326,6 +343,13 @@ export default async function PropertyPage({
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
             <p className="mt-1 text-sm text-slate-500">{property.address}</p>
+            <div className="mt-3">
+              <PropertyLegalStatusPill
+                status={legalStatus}
+                propertyId={property.id}
+                propertyName={property.name}
+              />
+            </div>
           </div>
           <Link
             href={`/properties/${params.id}/edit`}

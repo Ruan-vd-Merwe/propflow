@@ -16,6 +16,7 @@ import { DiscoverableToggle } from "./DiscoverableToggle";
 import { LogMaintenanceButton } from "./LogMaintenanceButton";
 import { RentPaymentCard } from "./RentPaymentCard";
 import { FlatmateListingPanel } from "./FlatmateListingPanel";
+import { LeaseReviewCard } from "@/components/xpello/LeaseReviewCard";
 
 export const dynamic = "force-dynamic";
 
@@ -685,6 +686,8 @@ export default async function TenantDashboardPage() {
                 </Link>
               </div>
             </div>
+
+            <LeaseReviewCard />
           </div>
         </section>
 
