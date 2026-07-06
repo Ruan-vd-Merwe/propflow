@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { grantLandlordRole, grantTenantRole } from "@/lib/auth/role-actions";
 
 const PROVINCES = [
   "Eastern Cape",
@@ -68,49 +69,34 @@ export default function SettingsPage() {
     if (!profile) return;
     setSaving(true);
     setError(null);
-    const { error: err } = await supabase
-      .from("profiles")
-      .update({
-        is_landlord: true,
-        user_type: "landlord",
-        province: province || null,
-        city: city || null,
-      })
-      .eq("id", profile.id);
+    const { error: err } = await grantLandlordRole(supabase, profile.id, {
+      province: province || null,
+      city: city || null,
+    });
     if (err) {
-      setError(err.message);
+      console.error("[settings] addLandlordRole failed:", err);
+      setError(err);
       setSaving(false);
       return;
     }
     setProfile((p) => (p ? { ...p, is_landlord: true } : p));
     setShowLandlordForm(false);
     setSaving(false);
-    showToast(
-      "Landlord role added! Head to the dashboard to add your first property.",
-    );
+    showToast("Landlord role added! Taking you to your dashboard…");
+    setTimeout(() => router.push("/dashboard"), 900);
   }
 
   async function addTenantRole() {
     if (!profile) return;
     setAddingTenant(true);
     setError(null);
-    // Create a minimal tenant_profiles row if not exists
-    const { data: existing } = await supabase
-      .from("tenant_profiles")
-      .select("id")
-      .eq("user_id", profile.id)
-      .single();
-    if (!existing) {
-      await supabase.from("tenant_profiles").insert({
-        user_id: profile.id,
-        budget_min: 300000, // R3 000 in cents
-        budget_max: 1500000,
-      });
+    const { error: err } = await grantTenantRole(supabase, profile.id);
+    if (err) {
+      console.error("[settings] addTenantRole failed:", err);
+      setError(err);
+      setAddingTenant(false);
+      return;
     }
-    await supabase
-      .from("profiles")
-      .update({ is_tenant: true })
-      .eq("id", profile.id);
     setAddingTenant(false);
     router.push("/tenant/profile");
   }

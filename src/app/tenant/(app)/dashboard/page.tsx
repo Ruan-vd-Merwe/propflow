@@ -554,6 +554,46 @@ export default async function TenantDashboardPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Become a landlord */}
+            <div className="card p-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
+                <svg
+                  className="h-5 w-5 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
+                </svg>
+              </div>
+              <p className="mt-4 font-semibold text-slate-900">
+                Become a landlord
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                List a property, screen tenants and track payments without an
+                agent. Add the landlord role to this account any time, free.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  href="/solutions/landlords"
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+                >
+                  How it works
+                </Link>
+                <Link
+                  href="/settings"
+                  className="rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                >
+                  Get started
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 
