@@ -263,6 +263,18 @@ export default async function DashboardPage({
   const rentObligations: RentObligation[] = rentObligationsRaw ?? [];
   const rentTotals = rentLedgerTotals(rentObligations);
   const rentLateTenantCount = lateTenantIds(rentObligations).length;
+  const rentFailedCount = rentObligations.filter((o) => o.status === "failed").length;
+
+  const todayStr = now.toISOString().split("T")[0];
+  const dueSoonDate = new Date(now);
+  dueSoonDate.setDate(now.getDate() + 3);
+  const dueSoonStr = dueSoonDate.toISOString().split("T")[0];
+  const rentDueSoonCount = rentObligations.filter(
+    (o) =>
+      (o.status === "pending" || o.status === "processing") &&
+      o.due_date >= todayStr &&
+      o.due_date <= dueSoonStr,
+  ).length;
 
   // ── Payment warnings stats ─────────────────────────────────────────────────
   const todayMidnight = new Date();
@@ -590,16 +602,16 @@ export default async function DashboardPage({
                   </svg>
                   Add Property
                 </Link>
-                <PaymentWarningsButton
-                  overdueCount={overdueTenantsCount}
-                  warningWindowCount={paymentsInWindow.length}
-                />
               </div>
             </div>
 
             {/* Top stats */}
             <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard label="Properties" value={String(totalProperties)} />
+              <StatCard
+                label="Properties"
+                value={String(totalProperties)}
+                href="/portfolio"
+              />
               <StatCard label="Tenants" value={String(totalTenants)} />
               <StatCard
                 label="High Risk"
@@ -612,60 +624,150 @@ export default async function DashboardPage({
               />
             </div>
 
-            {/* ── Rent this month ──────────────────────────────────────────────── */}
-            {tenantList.length > 0 && (
-              <div className="card mb-8 p-5">
-                <h2 className="mb-4 font-semibold text-slate-900">
-                  💰 Rent this month
-                </h2>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                      Expected
-                    </p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">
-                      {formatRand(rentTotals.expectedCents)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                      Collected
-                    </p>
-                    <p className="mt-1 text-xl font-bold text-emerald-600">
-                      {formatRand(rentTotals.collectedCents)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                      Outstanding
-                    </p>
-                    <p
-                      className={`mt-1 text-xl font-bold ${
-                        rentTotals.outstandingCents > 0
-                          ? "text-red-600"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {formatRand(rentTotals.outstandingCents)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                      Late tenants
-                    </p>
-                    <p
-                      className={`mt-1 text-xl font-bold ${
-                        rentLateTenantCount > 0
-                          ? "text-red-600"
-                          : "text-emerald-600"
-                      }`}
-                    >
-                      {rentLateTenantCount}
-                    </p>
+            {/* ── Rent tracking ────────────────────────────────────────────────── */}
+            <div className="card mb-8 p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-slate-900">
+                    💰 Rent tracking
+                  </h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Know who has paid without opening your bank account.
+                  </p>
+                </div>
+                {(rentLateTenantCount > 0 ||
+                  rentTotals.outstandingCents > 0 ||
+                  overdueTenantsCount > 0) && (
+                  <PaymentWarningsButton
+                    overdueCount={overdueTenantsCount}
+                    warningWindowCount={paymentsInWindow.length}
+                  />
+                )}
+              </div>
+
+              {rentObligations.length === 0 ? (
+                <div className="rounded-xl bg-slate-50 px-4 py-6 text-center">
+                  <p className="text-sm font-medium text-slate-600">
+                    {totalProperties === 0
+                      ? "Set up rent tracking by adding a property and a tenant."
+                      : totalTenants === 0
+                        ? "Set up rent tracking by adding a tenant to a property."
+                        : "No rent obligations yet this month — set up a rent schedule to start tracking payments automatically."}
+                  </p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {totalTenants === 0 ? (
+                      <Link
+                        href={
+                          totalProperties > 0
+                            ? `/properties/${propertyList[0].id}`
+                            : "/properties/new"
+                        }
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      >
+                        {totalProperties > 0
+                          ? "Add a tenant"
+                          : "Add your first property"}
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/leases"
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      >
+                        Set up rent schedule
+                      </Link>
+                    )}
+                    {totalTenants > 0 && (
+                      <Link
+                        href={`/tenants/${tenantList[0].id}`}
+                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        View rent ledger
+                      </Link>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Expected
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-slate-900">
+                        {formatRand(rentTotals.expectedCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Collected
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-emerald-600">
+                        {formatRand(rentTotals.collectedCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Outstanding
+                      </p>
+                      <p
+                        className={`mt-1 text-xl font-bold ${
+                          rentTotals.outstandingCents > 0
+                            ? "text-red-600"
+                            : "text-slate-900"
+                        }`}
+                      >
+                        {formatRand(rentTotals.outstandingCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Late tenants
+                      </p>
+                      <p
+                        className={`mt-1 text-xl font-bold ${
+                          rentLateTenantCount > 0
+                            ? "text-red-600"
+                            : "text-emerald-600"
+                        }`}
+                      >
+                        {rentLateTenantCount}
+                      </p>
+                    </div>
+                  </div>
+
+                  {(rentFailedCount > 0 || rentDueSoonCount > 0) && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {rentFailedCount > 0 && (
+                        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                          ⚠ {rentFailedCount} failed payment
+                          {rentFailedCount !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {rentDueSoonCount > 0 && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                          ⏳ {rentDueSoonCount} due soon
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                    <Link
+                      href={`/tenants/${rentObligations[0].tenant_id}`}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View rent ledger
+                    </Link>
+                    <Link
+                      href="/leases"
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Set up rent schedule
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* ── Portfolio nudge ────────────────────────────────────────────── */}
             {isLandlord &&
@@ -1457,19 +1559,34 @@ function StatCard({
   label,
   value,
   valueClass = "text-slate-900",
+  href,
 }: {
   label: string;
   value: string;
   valueClass?: string;
+  href?: string;
 }) {
-  return (
-    <div className="card p-5">
+  const content = (
+    <>
       <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
         {label}
       </p>
       <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="card block p-5 transition hover:border-slate-300 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="card p-5">{content}</div>;
 }
 
 function MiniStat({

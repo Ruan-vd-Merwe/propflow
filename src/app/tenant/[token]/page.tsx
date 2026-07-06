@@ -24,8 +24,10 @@ type ServiceProvider = {
 
 export default async function TenantPortalPage({
   params,
+  searchParams,
 }: {
   params: { token: string };
+  searchParams: { tab?: string };
 }) {
   const supabase = createServiceClient();
 
@@ -209,6 +211,7 @@ export default async function TenantPortalPage({
           nextObligation={nextObligation}
           initialLease={leaseRaw ?? null}
           devMode={process.env.NODE_ENV !== "production"}
+          initialTab={searchParams.tab}
         />
       </div>
     </div>

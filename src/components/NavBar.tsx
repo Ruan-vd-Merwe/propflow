@@ -165,11 +165,18 @@ const MORE_ACCOUNT: MoreLink[] = [
   { href: "/settings",   label: "Settings",   Icon: IconCog         },
 ];
 
+// Matches a pathname against a route section without false-matching sibling
+// routes that merely share a string prefix (e.g. "/tenants/browse" is a
+// landlord route and must NOT match the "/tenant" tenant-surface section).
+function isInSection(pathname: string, section: string): boolean {
+  return pathname === section || pathname.startsWith(`${section}/`);
+}
+
 // Pick primary links based on the page the user is currently on.
 // Multi-role users see the nav that matches their current surface.
 function getPrimaryLinks(roles: UserRoles, pathname: string): NavLink[] {
-  if (pathname.startsWith("/connector") && roles.is_connector) return PRIMARY_CONNECTOR;
-  if (pathname.startsWith("/tenant") && roles.is_tenant) return PRIMARY_TENANT;
+  if (isInSection(pathname, "/connector") && roles.is_connector) return PRIMARY_CONNECTOR;
+  if (isInSection(pathname, "/tenant") && roles.is_tenant) return PRIMARY_TENANT;
   if (roles.is_landlord) return PRIMARY_LANDLORD;
   if (roles.is_connector) return PRIMARY_CONNECTOR;
   if (roles.is_tenant) return PRIMARY_TENANT;
@@ -178,8 +185,8 @@ function getPrimaryLinks(roles: UserRoles, pathname: string): NavLink[] {
 
 // Home route — matches the current surface for multi-role users
 function getHomeHref(roles: UserRoles, pathname: string): string {
-  if (pathname.startsWith("/connector") && roles.is_connector) return "/connector/tasks";
-  if (pathname.startsWith("/tenant") && roles.is_tenant) return "/tenant/dashboard";
+  if (isInSection(pathname, "/connector") && roles.is_connector) return "/connector/tasks";
+  if (isInSection(pathname, "/tenant") && roles.is_tenant) return "/tenant/dashboard";
   if (roles.is_landlord) return "/dashboard";
   if (roles.is_connector) return "/connector/tasks";
   if (roles.is_tenant) return "/tenant/dashboard";
@@ -209,8 +216,8 @@ const SURFACE_LINKS: { surface: Surface; label: string; href: string; roleKey: k
 ];
 
 function getActiveSurface(pathname: string): Surface {
-  if (pathname.startsWith("/connector")) return "connector";
-  if (pathname.startsWith("/tenant")) return "tenant";
+  if (isInSection(pathname, "/connector")) return "connector";
+  if (isInSection(pathname, "/tenant")) return "tenant";
   return "landlord";
 }
 
@@ -224,9 +231,9 @@ export function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [roles, setRoles] = useState<UserRoles>({
-    is_landlord: !pathname.startsWith("/connector") && !pathname.startsWith("/tenant"),
-    is_tenant: pathname.startsWith("/tenant"),
-    is_connector: pathname.startsWith("/connector"),
+    is_landlord: !isInSection(pathname, "/connector") && !isInSection(pathname, "/tenant"),
+    is_tenant: isInSection(pathname, "/tenant"),
+    is_connector: isInSection(pathname, "/connector"),
   });
 
   const navRef         = useRef<HTMLElement>(null);

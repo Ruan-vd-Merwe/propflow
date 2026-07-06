@@ -162,6 +162,7 @@ export function TenantPortal({
   nextObligation,
   initialLease,
   devMode,
+  initialTab,
 }: {
   token: string;
   tenant: TenantInfo;
@@ -174,8 +175,13 @@ export function TenantPortal({
   nextObligation: RentObligation | null;
   initialLease: LeaseInfo | null;
   devMode: boolean;
+  initialTab?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const isValidTab = (t: string | undefined): t is TabId =>
+    !!t && TABS.some((tab) => tab.id === t);
+  const [activeTab, setActiveTab] = useState<TabId>(
+    isValidTab(initialTab) ? initialTab : "home",
+  );
   const [queries, setQueries] = useState<TenantQuery[]>(initialQueries);
   const [lease, setLease] = useState<LeaseInfo | null>(initialLease);
   const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(

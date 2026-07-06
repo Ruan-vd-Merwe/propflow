@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
-import type { TenantProfile, PropertyListing } from "@/lib/types";
+import type { TenantProfile, PropertyListing, RentObligation, PaymentAttempt } from "@/lib/types";
 import { DiscoverableToggle } from "./DiscoverableToggle";
 import { LogMaintenanceButton } from "./LogMaintenanceButton";
+import { RentPaymentCard } from "./RentPaymentCard";
 
 export const dynamic = "force-dynamic";
 
@@ -114,16 +115,66 @@ export default async function TenantDashboardPage() {
   // lease record). Match by email, the same bridge used by
   // /api/tenant/maintenance, to see if this account has an active lease.
   let hasActiveLease = false;
+  let rentToken: string | null = null;
+  let nextObligationForCard:
+    | (RentObligation & { latest_attempt: PaymentAttempt | null })
+    | null = null;
+
   if (profile?.email) {
     const today = new Date().toISOString().split("T")[0];
-    const { data: activeTenant } = await createServiceClient()
+    const service = createServiceClient();
+    const { data: activeTenant } = await service
       .from("tenants")
-      .select("id")
+      .select("id, portal_token, access_token")
       .eq("email", profile.email)
       .or(`lease_end.is.null,lease_end.gte.${today}`)
       .limit(1)
       .maybeSingle();
     hasActiveLease = !!activeTenant;
+
+    if (activeTenant) {
+      rentToken = activeTenant.portal_token ?? activeTenant.access_token;
+
+      const { data: obligationsRaw } = await service
+        .from("rent_obligations")
+        .select("*")
+        .eq("tenant_id", activeTenant.id)
+        .order("due_date", { ascending: false });
+      const obligations: RentObligation[] = (obligationsRaw ?? []) as RentObligation[];
+      const obligationIds = obligations.map((o) => o.id);
+
+      const { data: attemptsRaw } = obligationIds.length
+        ? await service
+            .from("payment_attempts")
+            .select("*")
+            .in("obligation_id", obligationIds)
+            .order("created_at", { ascending: false })
+        : { data: [] };
+      const attempts: PaymentAttempt[] = (attemptsRaw ?? []) as PaymentAttempt[];
+      const latestAttemptByObligation = new Map<string, PaymentAttempt>();
+      for (const a of attempts) {
+        if (!latestAttemptByObligation.has(a.obligation_id)) {
+          latestAttemptByObligation.set(a.obligation_id, a);
+        }
+      }
+
+      // Soonest upcoming payable obligation, falling back to the most
+      // recently overdue one — same rule as the tenant portal token page.
+      const payable = obligations.filter(
+        (o) => o.status !== "paid" && o.status !== "waived",
+      );
+      const upcoming = payable
+        .filter((o) => o.due_date >= today)
+        .sort((a, b) => a.due_date.localeCompare(b.due_date));
+      const overdue = payable
+        .filter((o) => o.due_date < today)
+        .sort((a, b) => b.due_date.localeCompare(a.due_date));
+      const chosen = upcoming[0] ?? overdue[0] ?? null;
+
+      nextObligationForCard = chosen
+        ? { ...chosen, latest_attempt: latestAttemptByObligation.get(chosen.id) ?? null }
+        : null;
+    }
   }
 
   const tenantProfile = tp as TenantProfile | null;
@@ -206,6 +257,15 @@ export default async function TenantDashboardPage() {
             />
             <LogMaintenanceButton hasActiveLease={hasActiveLease} />
           </div>
+        </div>
+
+        {/* ── Rent ──────────────────────────────────────────────────────────── */}
+        <div className="mb-6">
+          <RentPaymentCard
+            token={rentToken ?? ""}
+            initialObligation={nextObligationForCard}
+            devMode={process.env.NODE_ENV !== "production"}
+          />
         </div>
 
         {nextStep && (
@@ -475,22 +535,6 @@ export default async function TenantDashboardPage() {
               </div>
             </div>
           )}
-        </section>
-
-        {/* ── Current tenancy — PARKED ────────────────────────────────────── */}
-        <section className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Current Tenancy
-          </h2>
-          <div className="card p-8 text-center">
-            <p className="text-sm font-medium text-slate-500">
-              No active lease on PropTrust yet.
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Lease tracking will appear here once your landlord adds you to a
-              lease.
-            </p>
-          </div>
         </section>
 
         {/* ── Get involved ──────────────────────────────────────────────────── */}
