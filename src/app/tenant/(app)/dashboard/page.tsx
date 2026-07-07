@@ -293,7 +293,11 @@ export default async function TenantDashboardPage() {
               aria-hidden="true"
               className="hidden h-6 w-px bg-slate-200 sm:block"
             />
-            <LogMaintenanceButton hasActiveLease={hasActiveLease} />
+            <LogMaintenanceButton
+              hasActiveLease={hasActiveLease}
+              tenantEmail={profile?.email}
+              tenantName={profile?.full_name}
+            />
           </div>
         </div>
 

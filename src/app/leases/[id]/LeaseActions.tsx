@@ -26,10 +26,12 @@ function fmtDate(iso: string) {
 export function StatusBar({
   status,
   leaseId,
+  tenantPortalLink,
   onStatusChange,
 }: {
   status: LeaseStatus;
   leaseId: string;
+  tenantPortalLink: string;
   onStatusChange: (s: LeaseStatus) => void;
 }) {
   const map: Record<LeaseStatus, { label: string; cls: string }> = {
@@ -64,6 +66,7 @@ export function StatusBar({
       {status === "draft" && (
         <SendToTenantButton
           leaseId={leaseId}
+          tenantPortalLink={tenantPortalLink}
           onSent={() => onStatusChange("sent")}
           showStatusChange
         />
@@ -74,10 +77,12 @@ export function StatusBar({
 
 function SendToTenantButton({
   leaseId,
+  tenantPortalLink,
   onSent,
   showStatusChange,
 }: {
   leaseId: string;
+  tenantPortalLink: string;
   onSent?: () => void;
   showStatusChange?: boolean;
 }) {
@@ -87,8 +92,7 @@ function SendToTenantButton({
   async function send() {
     setLoading(true);
     try {
-      const link = `${window.location.origin}/tenant-lease/${leaseId}`;
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(tenantPortalLink);
       if (showStatusChange) {
         await fetch(`/api/leases/${leaseId}`, {
           method: "PATCH",

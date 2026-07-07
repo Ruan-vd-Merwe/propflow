@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
 import { TenantPageClient } from "./TenantPageClient";
 import type { Payment, RentObligation } from "@/lib/types";
 
@@ -87,7 +87,7 @@ export default async function TenantPage({
     paid_via_provider: providerByObligation.get(o.id) ?? null,
   }));
 
-  const risk = calculateRiskScore(paymentList);
+  const risk = riskForTenant(paymentList, obligations);
 
   return (
     <div className="min-h-screen bg-slate-50">

@@ -3,11 +3,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
 import { RiskBadge } from "@/components/RiskBadge";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { getComponentHealth } from "@/lib/maintenance";
-import { rentLedgerTotals, lateTenantIds } from "@/lib/rent/ledger";
+import {
+  rentLedgerTotals,
+  lateTenantIds,
+  groupObligationsByTenant,
+} from "@/lib/rent/ledger";
 import { PaymentWarningsButton } from "./PaymentWarningsButton";
 import { LegalProtectionCard } from "@/components/xpello/LegalProtectionCard";
 import { PropertyLegalStatusPill } from "@/components/xpello/PropertyLegalStatusPill";
@@ -132,6 +136,20 @@ export default async function DashboardPage({
 
   const paymentList: Payment[] = payments ?? [];
 
+  // All-time obligations per tenant, for risk scoring. Tenants on a rent
+  // schedule stop getting new "payments" rows after onboarding, so risk
+  // must prefer this live ledger over the legacy table when it has data.
+  const { data: allObligationsRaw } = propertyIds.length
+    ? await supabase
+        .from("rent_obligations")
+        .select("*")
+        .eq("landlord_id", user.id)
+    : { data: [] };
+
+  const obligationsByTenant = groupObligationsByTenant(
+    (allObligationsRaw ?? []) as RentObligation[],
+  );
+
   // ── Intelligence data ─────────────────────────────────────────────────────
   // Maintenance jobs
   const { data: jobsRaw } = propertyIds.length
@@ -244,7 +262,10 @@ export default async function DashboardPage({
   const totalTenants = tenantList.length;
   const atRisk = tenantList.filter((t) => {
     return (
-      calculateRiskScore(paymentsByTenant.get(t.id) ?? []).colour === "red"
+      riskForTenant(
+        paymentsByTenant.get(t.id) ?? [],
+        obligationsByTenant.get(t.id) ?? [],
+      ).colour === "red"
     );
   }).length;
   const totalRentCents = tenantList.reduce((s, t) => s + t.monthly_rent, 0);
@@ -758,7 +779,10 @@ export default async function DashboardPage({
 
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                     <Link
-                      href={`/tenants/${rentObligations[0].tenant_id}`}
+                      href={`/tenants/${
+                        lateTenantIds(rentObligations)[0] ??
+                        rentObligations[0].tenant_id
+                      }`}
                       className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
                       View rent ledger
@@ -1247,8 +1271,9 @@ export default async function DashboardPage({
                           {propertyTenants.length > 0 && (
                             <div className="mt-4 flex flex-wrap gap-2">
                               {propertyTenants.map((t) => {
-                                const risk = calculateRiskScore(
+                                const risk = riskForTenant(
                                   paymentsByTenant.get(t.id) ?? [],
+                                  obligationsByTenant.get(t.id) ?? [],
                                 );
                                 return (
                                   <div
@@ -1386,22 +1411,40 @@ export default async function DashboardPage({
 
                   <div className="divide-y divide-slate-100">
                     {tenantList.map((tenant) => {
-                      const risk = calculateRiskScore(
-                        paymentsByTenant.get(tenant.id) ?? [],
-                      );
                       const pmts = paymentsByTenant.get(tenant.id) ?? [];
-                      const paid = pmts.filter(
-                        (p) => p.status === "paid",
-                      ).length;
+                      const obls = obligationsByTenant.get(tenant.id) ?? [];
+                      const usingLedger = obls.length > 0;
+                      const risk = riskForTenant(pmts, obls);
+
+                      // Tenants on a rent schedule are tracked in
+                      // rent_obligations, not the legacy payments table, so
+                      // this summary must draw from whichever one has data.
+                      const totalCount = usingLedger ? obls.length : pmts.length;
+                      const paidCount = usingLedger
+                        ? obls.filter((o) => o.status === "paid").length
+                        : pmts.filter((p) => p.status === "paid").length;
                       const pctOnTime =
-                        pmts.length > 0
-                          ? Math.round((paid / pmts.length) * 100)
+                        totalCount > 0
+                          ? Math.round((paidCount / totalCount) * 100)
                           : null;
-                      const lastPmt = [...pmts].sort(
-                        (a, b) =>
-                          new Date(b.due_date).getTime() -
-                          new Date(a.due_date).getTime(),
-                      )[0];
+                      const lastObligation = usingLedger
+                        ? [...obls].sort(
+                            (a, b) =>
+                              new Date(b.due_date).getTime() -
+                              new Date(a.due_date).getTime(),
+                          )[0]
+                        : null;
+                      const lastPmt = usingLedger
+                        ? null
+                        : [...pmts].sort(
+                            (a, b) =>
+                              new Date(b.due_date).getTime() -
+                              new Date(a.due_date).getTime(),
+                          )[0];
+                      const lastStatusLabel =
+                        lastObligation?.status ?? lastPmt?.status ?? null;
+                      const lastStatusOk =
+                        lastStatusLabel === "paid";
                       const riskCls =
                         risk.colour === "green"
                           ? "bg-green-100 text-green-800"
@@ -1443,18 +1486,18 @@ export default async function DashboardPage({
                               </p>
                               {pctOnTime !== null ? (
                                 <p className="text-xs text-slate-400">
-                                  {pctOnTime}% on time · {pmts.length} payment
-                                  {pmts.length !== 1 ? "s" : ""}
-                                  {lastPmt && (
+                                  {pctOnTime}% on time · {totalCount} payment
+                                  {totalCount !== 1 ? "s" : ""}
+                                  {lastStatusLabel && (
                                     <span
                                       className={
-                                        lastPmt.status === "paid"
+                                        lastStatusOk
                                           ? " text-emerald-600"
                                           : " text-red-600"
                                       }
                                     >
                                       {" "}
-                                      · last {lastPmt.status}
+                                      · last {lastStatusLabel}
                                     </span>
                                   )}
                                 </p>

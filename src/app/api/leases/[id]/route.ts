@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { syncSignedLeaseToTenant } from "@/lib/lease/sync-tenant";
 
 export async function GET(
   _req: Request,
@@ -42,7 +43,8 @@ export async function PATCH(
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { action } = await req.json();
+  const body = await req.json();
+  const { action } = body;
 
   // Fetch current lease to verify ownership and get current state
   const { data: current, error: fetchErr } = await supabase
@@ -66,6 +68,27 @@ export async function PATCH(
   } else if (action === "enroll_xpello") {
     updates.xpello_enrolled = true;
     updates.xpello_enrolled_at = new Date().toISOString();
+  } else if (action === "update_terms") {
+    if (current.status !== "draft") {
+      return NextResponse.json(
+        { error: "Only draft leases can be edited" },
+        { status: 400 },
+      );
+    }
+    const editable = [
+      "lease_start",
+      "lease_end",
+      "monthly_rent",
+      "deposit_amount",
+      "payment_due_day",
+      "notice_period_days",
+      "pet_allowed",
+      "subletting_allowed",
+      "special_conditions",
+    ] as const;
+    for (const key of editable) {
+      if (key in body) updates[key] = body[key];
+    }
   } else {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
@@ -79,5 +102,10 @@ export async function PATCH(
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (data.status === "signed") {
+    await syncSignedLeaseToTenant(supabase, data);
+  }
+
   return NextResponse.json({ lease: data });
 }

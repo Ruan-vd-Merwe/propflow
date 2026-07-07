@@ -1,5 +1,6 @@
 import type {
   Payment,
+  RentObligation,
   RiskScore,
   TenantProfile as DbTenantProfile,
 } from "./types";
@@ -100,6 +101,63 @@ export function calculateRiskScore(payments: Payment[]): RiskScore {
     label,
     breakdown: { missed, late, veryLate, streak: streakBonuses },
   };
+}
+
+/**
+ * Same score buckets and penalty weights as calculateRiskScore, but read
+ * from rent_obligations instead of the legacy payments table.
+ */
+export function riskFromObligations(obligations: RentObligation[]): RiskScore {
+  let score = 100;
+  let missed = 0;
+  let late = 0;
+
+  for (const o of obligations) {
+    if (o.status === "failed") {
+      score -= 20;
+      missed++;
+    } else if (o.status === "late") {
+      score -= 8;
+      late++;
+    }
+  }
+
+  score = Math.max(0, Math.min(100, score));
+
+  let colour: RiskScore["colour"];
+  let label: string;
+  if (score >= 80) {
+    colour = "green";
+    label = "Low Risk";
+  } else if (score >= 50) {
+    colour = "amber";
+    label = "Medium Risk";
+  } else {
+    colour = "red";
+    label = "High Risk";
+  }
+
+  return {
+    score,
+    colour,
+    label,
+    breakdown: { missed, late, veryLate: 0, streak: 0 },
+  };
+}
+
+/**
+ * Tenants on a rent schedule are tracked in rent_obligations going forward;
+ * the legacy payments table only ever gets a one-time row at onboarding and
+ * never updates after that. Preferring obligations when present avoids
+ * showing a stale "Low Risk / no payments recorded" badge for a tenant who
+ * is actually late or failed on the live ledger.
+ */
+export function riskForTenant(
+  payments: Payment[],
+  obligations: RentObligation[],
+): RiskScore {
+  if (obligations.length > 0) return riskFromObligations(obligations);
+  return calculateRiskScore(payments);
 }
 
 /**

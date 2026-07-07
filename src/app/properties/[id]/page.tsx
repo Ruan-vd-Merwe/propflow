@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NavBar } from "@/components/NavBar";
 import { RiskBadge } from "@/components/RiskBadge";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
+import { groupObligationsByTenant } from "@/lib/rent/ledger";
 import { calculateMatchScore, displayName } from "@/lib/matching";
 import { IntroduceButton } from "./IntroduceButton";
 import { SharePortalButton } from "./SharePortalButton";
@@ -15,6 +16,7 @@ import {
 } from "@/components/xpello/PropertyLegalStatusPill";
 import type {
   Payment,
+  RentObligation,
   Tenant,
   PropertyListing,
   TenantProfile,
@@ -231,10 +233,26 @@ export default async function PropertyPage({
     paymentsByTenant.get(p.tenant_id)!.push(p);
   }
 
+  // Tenants on a rent schedule are tracked in rent_obligations, not the
+  // legacy payments table, so risk must prefer this ledger when present.
+  const { data: obligationsRaw } = tenantIds.length
+    ? await supabase
+        .from("rent_obligations")
+        .select("*")
+        .in("tenant_id", tenantIds)
+    : { data: [] };
+
+  const obligationsByTenant = groupObligationsByTenant(
+    (obligationsRaw ?? []) as RentObligation[],
+  );
+
   const tenantsWithRisk = tenantList
     .map((t) => ({
       ...t,
-      risk: calculateRiskScore(paymentsByTenant.get(t.id) ?? []),
+      risk: riskForTenant(
+        paymentsByTenant.get(t.id) ?? [],
+        obligationsByTenant.get(t.id) ?? [],
+      ),
     }))
     .sort((a, b) => a.risk.score - b.risk.score);
 

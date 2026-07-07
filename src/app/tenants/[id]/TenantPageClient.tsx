@@ -193,9 +193,19 @@ export function TenantPageClient({
   const [docType, setDocType] = useState("id_document");
   const [docDeleting, setDocDeleting] = useState<string | null>(null);
 
-  const paid = payments.filter((p) => p.status === "paid").length;
-  const late = payments.filter((p) => p.status === "late").length;
-  const missed = payments.filter((p) => p.status === "missed").length;
+  // Tenants on a rent schedule are tracked in rent_obligations, not the
+  // legacy payments table — mirror whichever one risk was computed from
+  // (see riskForTenant) so this breakdown never contradicts the score above.
+  const usingLedger = obligations.length > 0;
+  const paid = usingLedger
+    ? obligations.filter((o) => o.status === "paid").length
+    : payments.filter((p) => p.status === "paid").length;
+  const late = usingLedger
+    ? obligations.filter((o) => o.status === "late").length
+    : payments.filter((p) => p.status === "late").length;
+  const missed = usingLedger
+    ? obligations.filter((o) => o.status === "failed").length
+    : payments.filter((p) => p.status === "missed").length;
 
   async function sendWhatsApp() {
     if (!waMessage.trim()) return;

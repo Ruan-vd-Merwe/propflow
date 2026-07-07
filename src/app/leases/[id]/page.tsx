@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { NavBar } from "@/components/NavBar";
 import { StatusBar, SignatureSection, XpelloPanel } from "./LeaseActions";
+import { EditLeaseTermsForm } from "./EditLeaseTermsForm";
 import type { LeaseStatus } from "@/lib/types";
 
 type LeaseData = {
@@ -154,7 +155,29 @@ export default function LeasePage() {
         </div>
 
         {/* Status bar */}
-        <StatusBar status={status} leaseId={id} onStatusChange={setStatus} />
+        <StatusBar
+          status={status}
+          leaseId={id}
+          tenantPortalLink={portalLink}
+          onStatusChange={setStatus}
+        />
+
+        {/* Draft terms editor — replaces guessed defaults from the application trigger */}
+        {status === "draft" && (
+          <EditLeaseTermsForm
+            leaseId={id}
+            leaseStart={lease.lease_start}
+            leaseEnd={lease.lease_end}
+            monthlyRentCents={lease.monthly_rent}
+            depositAmountCents={lease.deposit_amount}
+            paymentDueDay={lease.payment_due_day}
+            noticePeriodDays={lease.notice_period_days}
+            petAllowed={lease.pet_allowed}
+            sublettingAllowed={lease.subletting_allowed}
+            specialConditions={lease.special_conditions}
+            onSaved={(fields) => setLease({ ...lease, ...fields })}
+          />
+        )}
 
         {/* Lease document */}
         <div

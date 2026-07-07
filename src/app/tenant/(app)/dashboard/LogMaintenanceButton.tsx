@@ -5,8 +5,12 @@ import { useState } from "react";
 
 export function LogMaintenanceButton({
   hasActiveLease,
+  tenantEmail,
+  tenantName,
 }: {
   hasActiveLease: boolean;
+  tenantEmail?: string;
+  tenantName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -43,24 +47,39 @@ export function LogMaintenanceButton({
     }
   }
 
-  function saveUnlinkedIssue() {
+  async function submitUnlinkedIssue() {
     if (!title.trim() || !description.trim() || !propertyDetails.trim()) return;
     setSubmitting(true);
     setError(null);
-
     try {
-      const issue = {
-        title: title.trim(),
-        description: description.trim(),
-        propertyDetails: propertyDetails.trim(),
-        landlordDetails: landlordDetails.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      window.localStorage.setItem("proptrust_unlinked_maintenance_issue", JSON.stringify(issue));
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: tenantName?.trim() || tenantEmail || "PropTrust tenant",
+          email: tenantEmail ?? "",
+          subject: `Maintenance issue: ${title.trim()}`,
+          message: [
+            description.trim(),
+            `Property details: ${propertyDetails.trim()}`,
+            `Landlord or manager details: ${landlordDetails.trim() || "Not provided"}`,
+          ].join("\n\n"),
+          source: "tenant_maintenance_unlinked",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setError(json.error ?? "Could not submit. Try again.");
+        return;
+      }
       setSuccess(true);
+      setTitle("");
+      setDescription("");
+      setPropertyDetails("");
+      setLandlordDetails("");
       setOpen(false);
     } catch {
-      setError("Could not save this issue on your device. Please try again.");
+      setError("Network error. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -82,9 +101,9 @@ export function LogMaintenanceButton({
 
         {success && !open && (
           <div className="mt-2 max-w-[260px] rounded-lg border border-blue-100 bg-blue-50 p-3 text-left text-xs text-blue-900">
-            <p className="font-semibold">Issue saved.</p>
+            <p className="font-semibold">Issue sent to PropTrust.</p>
             <p className="mt-1 text-blue-800">
-              Link your lease so PropTrust can route maintenance to the right landlord.
+              Link your lease so future issues can go straight to your landlord.
             </p>
             <Link
               href="/contact?subject=Link%20my%20lease"
@@ -164,10 +183,10 @@ export function LogMaintenanceButton({
                 <button
                   type="button"
                   disabled={submitting || !title.trim() || !description.trim() || !propertyDetails.trim()}
-                  onClick={saveUnlinkedIssue}
+                  onClick={submitUnlinkedIssue}
                   className="btn-primary min-h-[44px] flex-1"
                 >
-                  {submitting ? "Saving..." : "Save issue"}
+                  {submitting ? "Sending..." : "Send issue"}
                 </button>
               </div>
             </div>

@@ -31,7 +31,11 @@ export async function POST(req: Request) {
   }
 
   const safeSource =
-    source === "contact_page" ? "contact_page" : "homepage";
+    source === "contact_page"
+      ? "contact_page"
+      : source === "tenant_maintenance_unlinked"
+        ? "tenant_maintenance_unlinked"
+        : "homepage";
 
   const db = createServiceClient();
 
