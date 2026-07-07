@@ -16,6 +16,10 @@ import { DiscoverableToggle } from "./DiscoverableToggle";
 import { LogMaintenanceButton } from "./LogMaintenanceButton";
 import { RentPaymentCard } from "./RentPaymentCard";
 import { FlatmateListingPanel } from "./FlatmateListingPanel";
+import { RentingStatusSection } from "./RentingStatusSection";
+import { CurrentHomeCard } from "./CurrentHomeCard";
+import { GoodNeighbourActions } from "./GoodNeighbourActions";
+import { MatchWithPeople } from "./MatchWithPeople";
 import { LeaseReviewCard } from "@/components/xpello/LeaseReviewCard";
 
 export const dynamic = "force-dynamic";
@@ -130,13 +134,24 @@ export default async function TenantDashboardPage() {
     | null = null;
   let flatmateListing: FlatmateListing | null = null;
   let flatmateApplicants: FlatmateApplicant[] = [];
+  let currentLease: {
+    lease_start: string | null;
+    lease_end: string | null;
+    monthly_rent: number | null;
+    deposit_amount: number | null;
+    notice_period_days: number | null;
+    pet_allowed: boolean | null;
+    subletting_allowed: boolean | null;
+  } | null = null;
 
   if (profile?.email) {
     const today = new Date().toISOString().split("T")[0];
     const service = createServiceClient();
     const { data: activeTenant } = await service
       .from("tenants")
-      .select("id, portal_token, access_token, property_id")
+      .select(
+        "id, portal_token, access_token, property_id, lease_start, lease_end, monthly_rent",
+      )
       .eq("email", profile.email)
       .or(`lease_end.is.null,lease_end.gte.${today}`)
       .limit(1)
@@ -145,6 +160,27 @@ export default async function TenantDashboardPage() {
 
     if (activeTenant) {
       rentToken = activeTenant.portal_token ?? activeTenant.access_token;
+
+      // lease_agreements RLS only grants the landlord (auth.uid() =
+      // landlord_id) read access, so this needs the same service client
+      // already used above for the email-bridged tenants lookup.
+      const { data: leaseAgreement } = await service
+        .from("lease_agreements")
+        .select("deposit_amount, notice_period_days, pet_allowed, subletting_allowed")
+        .eq("tenant_id", activeTenant.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      currentLease = {
+        lease_start: activeTenant.lease_start,
+        lease_end: activeTenant.lease_end,
+        monthly_rent: activeTenant.monthly_rent,
+        deposit_amount: leaseAgreement?.deposit_amount ?? null,
+        notice_period_days: leaseAgreement?.notice_period_days ?? null,
+        pet_allowed: leaseAgreement?.pet_allowed ?? null,
+        subletting_allowed: leaseAgreement?.subletting_allowed ?? null,
+      };
 
       const { data: obligationsRaw } = await service
         .from("rent_obligations")
@@ -244,8 +280,11 @@ export default async function TenantDashboardPage() {
           href: "/onboarding/verification",
         };
   const readinessItems = [
-    { label: "Complete profile", done: Boolean(profile?.full_name) && prefsDone && affordDone },
     { label: "Verify identity", done: isVerified },
+    { label: "Add current lease", done: hasActiveLease },
+    { label: "Add rent details", done: hasActiveLease && !!currentLease?.monthly_rent },
+    { label: "Add landlord reference", done: false },
+    { label: "Add inspection photos", done: false },
     { label: "Set rental preferences", done: prefsDone },
     { label: "Apply for first property", done: hasApplications },
   ];
@@ -278,8 +317,14 @@ export default async function TenantDashboardPage() {
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Hi {firstName}</h1>
-            <p className="mt-1 text-sm text-slate-500">Your rental dashboard</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
+              Renting
+            </p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900">Hi {firstName}</h1>
+            <p className="mt-1 max-w-xl text-sm text-slate-500">
+              Manage where you live now, build your renter profile, and get ready
+              for your next place.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -301,6 +346,8 @@ export default async function TenantDashboardPage() {
           </div>
         </div>
 
+        <RentingStatusSection />
+
         {/* ── Rent ──────────────────────────────────────────────────────────── */}
         <div className="mb-6">
           <RentPaymentCard
@@ -310,9 +357,20 @@ export default async function TenantDashboardPage() {
           />
         </div>
 
+        <CurrentHomeCard
+          hasActiveLease={hasActiveLease}
+          leaseStart={currentLease?.lease_start ?? null}
+          leaseEnd={currentLease?.lease_end ?? null}
+          monthlyRentCents={currentLease?.monthly_rent ?? null}
+          depositAmountCents={currentLease?.deposit_amount ?? null}
+          noticePeriodDays={currentLease?.notice_period_days ?? null}
+          petAllowed={currentLease?.pet_allowed ?? null}
+          sublettingAllowed={currentLease?.subletting_allowed ?? null}
+        />
+
         {/* ── Flatmate Finder ──────────────────────────────────────────────── */}
         {hasActiveLease && (
-          <div className="mb-6">
+          <div id="flatmate" className="mb-6 scroll-mt-24">
             <FlatmateListingPanel
               initialListing={flatmateListing}
               initialApplicants={flatmateApplicants}
@@ -365,8 +423,10 @@ export default async function TenantDashboardPage() {
 
         <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
           <div className="card p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              Rental readiness
+            <p className="font-semibold text-slate-900">Build your renter profile</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-500">
+              Your profile gets stronger when landlords can see proof that you
+              pay, communicate, and care for the property.
             </p>
             <ul className="mt-4 space-y-3">
               {readinessItems.map((item) => (
@@ -694,6 +754,10 @@ export default async function TenantDashboardPage() {
             <LeaseReviewCard />
           </div>
         </section>
+
+        <GoodNeighbourActions />
+
+        <MatchWithPeople hasActiveLease={hasActiveLease} />
 
         {/* ── Matched properties ───────────────────────────────────────────── */}
         <section>

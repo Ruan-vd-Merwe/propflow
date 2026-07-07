@@ -211,7 +211,7 @@ type Surface = "landlord" | "tenant" | "connector";
 
 const SURFACE_LINKS: { surface: Surface; label: string; href: string; roleKey: keyof UserRoles }[] = [
   { surface: "landlord",  label: "My Properties", href: "/dashboard",       roleKey: "is_landlord"  },
-  { surface: "tenant",    label: "My Rentals",    href: "/tenant/dashboard", roleKey: "is_tenant"   },
+  { surface: "tenant",    label: "Renting",       href: "/tenant/dashboard", roleKey: "is_tenant"   },
   { surface: "connector", label: "My Connector",  href: "/connector/tasks", roleKey: "is_connector" },
 ];
 
