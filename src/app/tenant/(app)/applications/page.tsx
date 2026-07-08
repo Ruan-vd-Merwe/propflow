@@ -71,7 +71,9 @@ export default async function TenantApplicationsPage() {
           </Link>
         </div>
 
-        <LeaseUploadSection initialExtractions={leaseExtractions} />
+        <div id="lease-upload" className="scroll-mt-24">
+          <LeaseUploadSection initialExtractions={leaseExtractions} />
+        </div>
 
         {applications.length === 0 ? (
           <div className="card p-12 text-center">

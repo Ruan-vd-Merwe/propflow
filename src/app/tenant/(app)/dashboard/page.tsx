@@ -13,7 +13,6 @@ import type {
   FlatmateApplicant,
 } from "@/lib/types";
 import { DiscoverableToggle } from "./DiscoverableToggle";
-import { LogMaintenanceButton } from "./LogMaintenanceButton";
 import { RentPaymentCard } from "./RentPaymentCard";
 import { FlatmateListingPanel } from "./FlatmateListingPanel";
 import { RentingStatusSection } from "./RentingStatusSection";
@@ -266,25 +265,28 @@ export default async function TenantDashboardPage() {
   const hasAnyIncomplete = !prefsDone || !affordDone;
   const hasApplications = applications.length > 0;
   const isVerified = verStatus === "verified";
-  const nextStep = hasApplications
-    ? null
-    : isVerified
-      ? {
-          body: "Set your rental search and apply for your first property.",
-          cta: "Find properties",
-          href: "/browse",
-        }
-      : {
-          body: "Verify your identity once to build trust and start applying.",
-          cta: "Verify now",
-          href: "/onboarding/verification",
-        };
-  const readinessItems = [
-    { label: "Complete profile", done: prefsDone && affordDone },
-    { label: "Identity status recorded", done: isVerified },
-    { label: "Add rental preferences", done: prefsDone },
-    { label: "Review introductions or applications", done: hasApplications || introductions.length > 0 },
+  const verBadge = VERIFICATION_BADGE[verStatus] ?? VERIFICATION_BADGE.unverified;
+
+  type ReadinessItem = {
+    label: string;
+    done: boolean;
+    badge?: { label: string; cls: string };
+  };
+  const readinessItems: ReadinessItem[] = [
+    { label: "Profile details", done: prefsDone && affordDone },
+    { label: "Identity verification", done: isVerified, badge: verBadge },
+    { label: "Rental preferences", done: prefsDone },
+    { label: "Applications or introductions", done: hasApplications || introductions.length > 0 },
   ];
+  const doneCount = readinessItems.filter((item) => item.done).length;
+
+  const profileNextAction = !prefsDone
+    ? { label: "Complete your preferences", href: "/onboarding/preferences" }
+    : !affordDone
+      ? { label: "Add affordability details", href: "/onboarding/affordability" }
+      : !isVerified
+        ? { label: "Verify your identity", href: "/onboarding/verification" }
+        : null;
 
   // ── Matched properties ──────────────────────────────────────────────────────
   const scoredProperties = (() => {
@@ -304,8 +306,6 @@ export default async function TenantDashboardPage() {
       }));
   })();
 
-  const verBadge = VERIFICATION_BADGE[verStatus] ?? VERIFICATION_BADGE.unverified;
-
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -318,118 +318,66 @@ export default async function TenantDashboardPage() {
               Renting
             </p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Hi {firstName}</h1>
-            <p className="mt-1 max-w-xl text-sm text-slate-500">
-              Manage where you live now, build your renter profile, and get ready
-              for your next place.
-            </p>
+            <p className="mt-1 text-sm text-slate-500">Choose what you want to do next.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/tenant/browse"
-              className="rounded-full bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              Find properties
-            </Link>
-            <DiscoverableToggle initial={isLooking} />
-            <div
-              aria-hidden="true"
-              className="hidden h-6 w-px bg-slate-200 sm:block"
-            />
-            <LogMaintenanceButton
-              hasActiveLease={hasActiveLease}
-              tenantEmail={profile?.email}
-              tenantName={profile?.full_name}
-            />
-          </div>
+          <DiscoverableToggle initial={isLooking} />
         </div>
 
-        {nextStep && (
-          <div className="card mb-6 border-blue-100 bg-blue-50 p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-                  Your next step
-                </p>
-                <p className="mt-1 text-base font-semibold leading-relaxed text-slate-900">
-                  {nextStep.body}
-                </p>
-              </div>
-              <Link
-                href={nextStep.href}
-                className="shrink-0 rounded-lg bg-[#1e40af] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
-              >
-                {nextStep.cta}
-              </Link>
-            </div>
-          </div>
-        )}
+        {/* ── Journey selector ──────────────────────────────────────────────── */}
+        <RentingStatusSection
+          hasActiveLease={hasActiveLease}
+          tenantEmail={profile?.email}
+          tenantName={profile?.full_name}
+        />
 
-        {/* ── TrustScore + verify ──────────────────────────────────────────── */}
-        <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-            <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">TrustScore</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">
-              {isVerified ? "Verified renter profile" : "Renter trust status"}
-            </p>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
-              {isVerified
-                ? "Landlords can see that your TrustScore is verified when they review your profile."
-                : "Verification improves trust signals for landlords and keeps your profile ready for applications."}
-            </p>
-            <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${verBadge.cls}`}>
-              {verBadge.label}
+        {/* ── Renter profile progress ─────────────────────────────────────── */}
+        <div className="card mb-6 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-semibold text-slate-900">Your renter profile</p>
+            <span className="shrink-0 text-xs font-semibold text-slate-400">
+              {doneCount} of {readinessItems.length} complete
             </span>
           </div>
-          {verStatus === "pending" && (
-            <p className="shrink-0 text-xs text-slate-400">Review in progress</p>
-          )}
-        </div>
-
-        <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
-          <div className="card p-5">
-            <p className="font-semibold text-slate-900">Build your renter profile</p>
-            <p className="mt-1 text-sm leading-relaxed text-slate-500">
-              Your profile gets stronger when landlords can see proof that you
-              pay, communicate, and care for the property.
-            </p>
-            <ul className="mt-4 space-y-3">
-              {readinessItems.map((item) => (
-                <li key={item.label} className="flex items-center gap-3 text-sm text-slate-600">
+          <p className="mt-1 text-sm leading-relaxed text-slate-500">
+            A stronger profile helps landlords understand your rental history and trust signals.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {readinessItems.map((item) => (
+              <li key={item.label} className="flex items-center gap-3 text-sm text-slate-600">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                    item.done
+                      ? "border-blue-200 bg-blue-50 text-blue-700"
+                      : "border-slate-200 text-slate-300"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {item.done ? (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : null}
+                </span>
+                <span className={item.done ? "text-slate-700" : "text-slate-500"}>
+                  {item.label}
+                </span>
+                {item.badge && (
                   <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                      item.done
-                        ? "border-blue-200 bg-blue-50 text-blue-700"
-                        : "border-slate-200 text-slate-300"
-                    }`}
-                    aria-hidden="true"
+                    className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${item.badge.cls}`}
                   >
-                    {item.done ? (
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : null}
+                    {item.badge.label}
                   </span>
-                  <span className={item.done ? "text-slate-700" : "text-slate-500"}>
-                    {item.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {(applications.length > 0 || introductions.length > 0) && (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
-              {applications.length > 0 && (
-                <StatCard label="Applications sent" value={String(applications.length)} />
-              )}
-              {introductions.length > 0 && (
-                <StatCard label="Introductions" value={String(introductions.length)} />
-              )}
-            </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          {profileNextAction && (
+            <Link
+              href={profileNextAction.href}
+              className="mt-4 inline-block text-sm font-semibold text-blue-700 hover:underline"
+            >
+              {profileNextAction.label} →
+            </Link>
           )}
         </div>
 
@@ -483,8 +431,6 @@ export default async function TenantDashboardPage() {
           </div>
         )}
 
-        <RentingStatusSection hasActiveLease={hasActiveLease} />
-
         {/* ── Current home and rent ───────────────────────────────────────── */}
         <div className="mb-6">
           <RentPaymentCard
@@ -494,16 +440,18 @@ export default async function TenantDashboardPage() {
           />
         </div>
 
-        <CurrentHomeCard
-          hasActiveLease={hasActiveLease}
-          leaseStart={currentLease?.lease_start ?? null}
-          leaseEnd={currentLease?.lease_end ?? null}
-          monthlyRentCents={currentLease?.monthly_rent ?? null}
-          depositAmountCents={currentLease?.deposit_amount ?? null}
-          noticePeriodDays={currentLease?.notice_period_days ?? null}
-          petAllowed={currentLease?.pet_allowed ?? null}
-          sublettingAllowed={currentLease?.subletting_allowed ?? null}
-        />
+        <div id="current-home" className="scroll-mt-24">
+          <CurrentHomeCard
+            hasActiveLease={hasActiveLease}
+            leaseStart={currentLease?.lease_start ?? null}
+            leaseEnd={currentLease?.lease_end ?? null}
+            monthlyRentCents={currentLease?.monthly_rent ?? null}
+            depositAmountCents={currentLease?.deposit_amount ?? null}
+            noticePeriodDays={currentLease?.notice_period_days ?? null}
+            petAllowed={currentLease?.pet_allowed ?? null}
+            sublettingAllowed={currentLease?.subletting_allowed ?? null}
+          />
+        </div>
 
         {/* ── Flatmate Finder ──────────────────────────────────────────────── */}
         {hasActiveLease && (
@@ -681,145 +629,132 @@ export default async function TenantDashboardPage() {
           )}
         </section>
 
-        {/* ── Applications ─────────────────────────────────────────────────── */}
-        <section className="mb-8">
-          <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-              Applications
-            </h2>
-            {applications.length > 5 && (
-              <Link
-                href="/tenant/applications"
-                className="text-xs font-medium text-blue-600 hover:underline"
-              >
-                View all {applications.length} →
-              </Link>
-            )}
-          </div>
+        {/* ── Applications and introductions ──────────────────────────────── */}
+        <section id="applications" className="mb-8 scroll-mt-24">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Applications and introductions
+          </h2>
 
-          {applications.length === 0 ? (
+          {applications.length === 0 && introductions.length === 0 ? (
             <div className="card p-10 text-center">
-              <p className="text-base font-semibold text-slate-900">
-                No applications yet.
+              <p className="text-slate-500">
+                You do not have active applications yet.
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                Once your profile is ready, you can apply faster and stand out to landlords.
+              <p className="mt-1 text-sm text-slate-400">
+                When you apply or get introduced to a landlord, it will appear here.
               </p>
               <Link
-                href="/browse"
+                href="/tenant/browse"
                 className="mt-4 inline-block rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
-                Find properties
+                Browse properties
               </Link>
-              <p className="mt-3 text-xs text-slate-400">
-                Verified profiles are more trusted by landlords.
-              </p>
             </div>
           ) : (
-            <div className="card overflow-hidden">
-              <div className="divide-y divide-slate-100">
-                {applications.slice(0, 5).map((app) => {
-                  const s =
-                    APP_STATUS[app.status] ?? {
-                      label: app.status,
-                      cls: "bg-slate-100 text-slate-500",
-                    };
-                  const prop = app.properties;
-                  return (
-                    <div
-                      key={app.id}
-                      className="flex items-center gap-4 px-5 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-900">
-                          {prop?.name ?? "Property"}
-                        </p>
-                        {prop?.suburb && (
-                          <p className="text-xs text-slate-400">{prop.suburb}</p>
-                        )}
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.cls}`}
+            <div className="space-y-4">
+              {applications.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Applications
+                    </p>
+                    {applications.length > 5 && (
+                      <Link
+                        href="/tenant/applications"
+                        className="text-xs font-medium text-blue-600 hover:underline"
                       >
-                        {s.label}
-                      </span>
-                      <span className="shrink-0 text-xs text-slate-400">
-                        {fmtDate(app.created_at)}
-                      </span>
+                        View all {applications.length} →
+                      </Link>
+                    )}
+                  </div>
+                  <div className="card overflow-hidden">
+                    <div className="divide-y divide-slate-100">
+                      {applications.slice(0, 5).map((app) => {
+                        const s =
+                          APP_STATUS[app.status] ?? {
+                            label: app.status,
+                            cls: "bg-slate-100 text-slate-500",
+                          };
+                        const prop = app.properties;
+                        return (
+                          <div
+                            key={app.id}
+                            className="flex items-center gap-4 px-5 py-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-slate-900">
+                                {prop?.name ?? "Property"}
+                              </p>
+                              {prop?.suburb && (
+                                <p className="text-xs text-slate-400">{prop.suburb}</p>
+                              )}
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.cls}`}
+                            >
+                              {s.label}
+                            </span>
+                            <span className="shrink-0 text-xs text-slate-400">
+                              {fmtDate(app.created_at)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-              {applications.length > 5 && (
-                <div className="border-t border-slate-100 px-5 py-3 text-center">
-                  <Link
-                    href="/tenant/applications"
-                    className="text-xs font-medium text-blue-600 hover:underline"
-                  >
-                    View all {applications.length} applications →
-                  </Link>
+                  </div>
+                </div>
+              )}
+
+              {introductions.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Introductions
+                  </p>
+                  <div className="card overflow-hidden">
+                    <div className="divide-y divide-slate-100">
+                      {introductions.map((intro) => {
+                        const s =
+                          INTRO_STATUS[intro.status] ?? {
+                            label: intro.status,
+                            cls: "bg-slate-100 text-slate-500",
+                          };
+                        const prop = intro.properties;
+                        return (
+                          <div
+                            key={intro.id}
+                            className="flex items-center gap-4 px-5 py-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-slate-900">
+                                {prop?.name ?? "Property"}
+                              </p>
+                              {prop?.suburb && (
+                                <p className="text-xs text-slate-400">{prop.suburb}</p>
+                              )}
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.cls}`}
+                            >
+                              {s.label}
+                            </span>
+                            <span className="shrink-0 text-xs text-slate-400">
+                              {fmtDate(intro.created_at)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           )}
         </section>
 
-        {/* ── Introductions ───────────────────────────────────────────────── */}
+        {/* ── More ways to build trust ─────────────────────────────────────── */}
         <section className="mb-8">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Introductions
-          </h2>
-
-          {introductions.length === 0 ? (
-            <div className="card p-10 text-center">
-              <p className="text-slate-500">No introductions yet.</p>
-              <p className="mt-1 text-sm text-slate-400">
-                When a landlord contacts you, their invitation will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="card overflow-hidden">
-              <div className="divide-y divide-slate-100">
-                {introductions.map((intro) => {
-                  const s =
-                    INTRO_STATUS[intro.status] ?? {
-                      label: intro.status,
-                      cls: "bg-slate-100 text-slate-500",
-                    };
-                  const prop = intro.properties;
-                  return (
-                    <div
-                      key={intro.id}
-                      className="flex items-center gap-4 px-5 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-900">
-                          {prop?.name ?? "Property"}
-                        </p>
-                        {prop?.suburb && (
-                          <p className="text-xs text-slate-400">{prop.suburb}</p>
-                        )}
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.cls}`}
-                      >
-                        {s.label}
-                      </span>
-                      <span className="shrink-0 text-xs text-slate-400">
-                        {fmtDate(intro.created_at)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ── Useful services and community ────────────────────────────────── */}
-        <section className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Useful services
+            More ways to build trust
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Services */}
@@ -927,27 +862,6 @@ export default async function TenantDashboardPage() {
         <MatchWithPeople />
 
       </main>
-    </div>
-  );
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  valueClass = "text-slate-900",
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-}) {
-  return (
-    <div className="card p-5">
-      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-        {label}
-      </p>
-      <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
     </div>
   );
 }

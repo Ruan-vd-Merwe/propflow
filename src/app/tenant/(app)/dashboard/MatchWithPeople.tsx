@@ -4,8 +4,6 @@ type MatchAction = {
 
 export function MatchWithPeople() {
   const actions: MatchAction[] = [
-    { label: "Find a flatmate" },
-    { label: "Replace a flatmate" },
     { label: "Find someone to take over a lease" },
     { label: "Match by budget, area, and lifestyle" },
   ];
@@ -20,7 +18,7 @@ export function MatchWithPeople() {
           </span>
         </div>
         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-          Future tools for sharing, replacing a flatmate, or planning your next move.
+          Future tools for sharing, planning your next move, or connecting with other tenants.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
