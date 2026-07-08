@@ -13,31 +13,35 @@ const ACTIONS = [
  * Buttons are intentionally disabled rather than wired to a fake save.
  */
 export function GoodNeighbourActions() {
+  const visibleActions = ACTIONS.slice(0, 3);
+
   return (
     <section className="mb-8">
-      <div className="card p-5">
-        <p className="font-semibold text-slate-900">Good neighbour actions</p>
+      <div className="rounded-2xl border border-slate-200 bg-white/70 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-semibold text-slate-900">Good neighbour actions</p>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+            Coming soon
+          </span>
+        </div>
         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-          Add actions that show you care about the property and community.
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          Some actions may need proof or landlord confirmation before they count
-          toward your renter profile.
+          Actions that show care for the property and community will sit here
+          once they can be confirmed.
         </p>
 
-        <ul className="mt-4 divide-y divide-slate-100">
-          {ACTIONS.map((action) => (
-            <li
+        <div className="mt-4 flex flex-wrap gap-2">
+          {visibleActions.map((action) => (
+            <span
               key={action}
-              className="flex items-center justify-between gap-4 py-2.5 text-sm"
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500"
             >
-              <span className="text-slate-600">{action}</span>
-              <span className="rounded-full border border-dashed border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-400">
-                Coming soon
-              </span>
-            </li>
+              {action}
+            </span>
           ))}
-        </ul>
+          <span className="rounded-full border border-dashed border-slate-200 px-3 py-1 text-xs font-medium text-slate-400">
+            {ACTIONS.length - visibleActions.length} more planned
+          </span>
+        </div>
       </div>
     </section>
   );

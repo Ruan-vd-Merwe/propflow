@@ -48,7 +48,7 @@ type IntroRow = {
 const VERIFICATION_BADGE: Record<string, { label: string; cls: string }> = {
   unverified: { label: "Unverified",       cls: "bg-slate-100 text-slate-500"  },
   pending:    { label: "Pending review",   cls: "bg-amber-100 text-amber-700"  },
-  verified:   { label: "TrustScore ✓",    cls: "bg-green-100 text-green-700"  },
+  verified:   { label: "TrustScore verified", cls: "bg-green-100 text-green-700"  },
   rejected:   { label: "Review rejected",  cls: "bg-red-100 text-red-700"     },
 };
 
@@ -270,23 +270,20 @@ export default async function TenantDashboardPage() {
     ? null
     : isVerified
       ? {
-          body: "Your next step: Set your rental search and apply for your first property.",
+          body: "Set your rental search and apply for your first property.",
           cta: "Find properties",
           href: "/browse",
         }
       : {
-          body: "Your next step: Verify your profile to increase your chances of getting approved.",
+          body: "Verify your identity once to build trust and start applying.",
           cta: "Verify now",
           href: "/onboarding/verification",
         };
   const readinessItems = [
-    { label: "Verify identity", done: isVerified },
-    { label: "Add current lease", done: hasActiveLease },
-    { label: "Add rent details", done: hasActiveLease && !!currentLease?.monthly_rent },
-    { label: "Add landlord reference", done: false },
-    { label: "Add inspection photos", done: false },
-    { label: "Set rental preferences", done: prefsDone },
-    { label: "Apply for first property", done: hasApplications },
+    { label: "Complete profile", done: prefsDone && affordDone },
+    { label: "Identity status recorded", done: isVerified },
+    { label: "Add rental preferences", done: prefsDone },
+    { label: "Review introductions or applications", done: hasApplications || introductions.length > 0 },
   ];
 
   // ── Matched properties ──────────────────────────────────────────────────────
@@ -346,49 +343,24 @@ export default async function TenantDashboardPage() {
           </div>
         </div>
 
-        <RentingStatusSection />
-
-        {/* ── Rent ──────────────────────────────────────────────────────────── */}
-        <div className="mb-6">
-          <RentPaymentCard
-            token={rentToken ?? ""}
-            initialObligation={nextObligationForCard}
-            devMode={process.env.NODE_ENV !== "production"}
-          />
-        </div>
-
-        <CurrentHomeCard
-          hasActiveLease={hasActiveLease}
-          leaseStart={currentLease?.lease_start ?? null}
-          leaseEnd={currentLease?.lease_end ?? null}
-          monthlyRentCents={currentLease?.monthly_rent ?? null}
-          depositAmountCents={currentLease?.deposit_amount ?? null}
-          noticePeriodDays={currentLease?.notice_period_days ?? null}
-          petAllowed={currentLease?.pet_allowed ?? null}
-          sublettingAllowed={currentLease?.subletting_allowed ?? null}
-        />
-
-        {/* ── Flatmate Finder ──────────────────────────────────────────────── */}
-        {hasActiveLease && (
-          <div id="flatmate" className="mb-6 scroll-mt-24">
-            <FlatmateListingPanel
-              initialListing={flatmateListing}
-              initialApplicants={flatmateApplicants}
-            />
-          </div>
-        )}
-
         {nextStep && (
-          <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium leading-relaxed text-slate-700">
-              {nextStep.body}
-            </p>
-            <Link
-              href={nextStep.href}
-              className="shrink-0 rounded-lg bg-[#1e40af] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              {nextStep.cta}
-            </Link>
+          <div className="card mb-6 border-blue-100 bg-blue-50 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+                  Your next step
+                </p>
+                <p className="mt-1 text-base font-semibold leading-relaxed text-slate-900">
+                  {nextStep.body}
+                </p>
+              </div>
+              <Link
+                href={nextStep.href}
+                className="shrink-0 rounded-lg bg-[#1e40af] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                {nextStep.cta}
+              </Link>
+            </div>
           </div>
         )}
 
@@ -402,20 +374,17 @@ export default async function TenantDashboardPage() {
           <div className="flex-1">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">TrustScore</p>
             <p className="mt-1 text-lg font-bold text-slate-900">
-              Increase your approval chances
+              {isVerified ? "Verified renter profile" : "Renter trust status"}
             </p>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
-              Verify your identity and rental profile so landlords can trust your application from the start.
+              {isVerified
+                ? "Landlords can see that your TrustScore is verified when they review your profile."
+                : "Verification improves trust signals for landlords and keeps your profile ready for applications."}
             </p>
             <span className={`mt-1.5 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${verBadge.cls}`}>
               {verBadge.label}
             </span>
           </div>
-          {verStatus === "unverified" && (
-            <Link href="/onboarding/verification" className="shrink-0 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50">
-              Verify now
-            </Link>
-          )}
           {verStatus === "pending" && (
             <p className="shrink-0 text-xs text-slate-400">Review in progress</p>
           )}
@@ -513,6 +482,204 @@ export default async function TenantDashboardPage() {
 
           </div>
         )}
+
+        <RentingStatusSection />
+
+        {/* ── Current home and rent ───────────────────────────────────────── */}
+        <div className="mb-6">
+          <RentPaymentCard
+            token={rentToken ?? ""}
+            initialObligation={nextObligationForCard}
+            devMode={process.env.NODE_ENV !== "production"}
+          />
+        </div>
+
+        <CurrentHomeCard
+          hasActiveLease={hasActiveLease}
+          leaseStart={currentLease?.lease_start ?? null}
+          leaseEnd={currentLease?.lease_end ?? null}
+          monthlyRentCents={currentLease?.monthly_rent ?? null}
+          depositAmountCents={currentLease?.deposit_amount ?? null}
+          noticePeriodDays={currentLease?.notice_period_days ?? null}
+          petAllowed={currentLease?.pet_allowed ?? null}
+          sublettingAllowed={currentLease?.subletting_allowed ?? null}
+        />
+
+        {/* ── Flatmate Finder ──────────────────────────────────────────────── */}
+        {hasActiveLease && (
+          <div id="flatmate" className="mb-6 scroll-mt-24">
+            <FlatmateListingPanel
+              initialListing={flatmateListing}
+              initialApplicants={flatmateApplicants}
+            />
+          </div>
+        )}
+
+        {/* ── Rental preferences and matches ──────────────────────────────── */}
+        <section className="mb-8">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+              Rental Preferences
+            </h2>
+            <Link
+              href="/tenant/preferences"
+              className="text-xs font-medium text-slate-400 hover:text-slate-700 hover:underline"
+            >
+              Edit preferences →
+            </Link>
+          </div>
+
+          {(tenantProfile.looking_in_area || tenantProfile.budget_max) && (
+            <div className="card mb-4 p-4">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+                {tenantProfile.looking_in_area && (
+                  <span>
+                    <span className="font-medium">Looking in:</span>{" "}
+                    {tenantProfile.looking_in_area}
+                    {tenantProfile.looking_in_province
+                      ? `, ${tenantProfile.looking_in_province}`
+                      : ""}
+                  </span>
+                )}
+                {tenantProfile.budget_max && (
+                  <span>
+                    <span className="font-medium">Budget:</span> R
+                    {((tenantProfile.budget_min ?? 0) / 100).toLocaleString()} –
+                    R{(tenantProfile.budget_max / 100).toLocaleString()}/mo
+                  </span>
+                )}
+                {tenantProfile.move_in_date && (
+                  <span>
+                    <span className="font-medium">Move in:</span>{" "}
+                    {new Date(tenantProfile.move_in_date).toLocaleDateString(
+                      "en-ZA",
+                      { month: "short", year: "numeric" },
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {scoredProperties.length === 0 ? (
+            <div className="card p-10 text-center">
+              <p className="text-slate-500">No matching properties yet.</p>
+              {!prefsDone ? (
+                <Link
+                  href="/onboarding/preferences"
+                  className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
+                >
+                  Add preferences to see matches →
+                </Link>
+              ) : (
+                <Link
+                  href="/tenant/browse"
+                  className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
+                >
+                  Browse all properties →
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {scoredProperties.map(({ property: p, score, match_reasons }) => (
+                <div
+                  key={p.id}
+                  className="card flex items-center gap-4 overflow-hidden p-0"
+                >
+                  <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
+                    {p.photos?.length > 0 ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.photos[0]}
+                        alt={p.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                        <svg
+                          className="h-8 w-8 text-slate-300"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 py-3">
+                    <p className="truncate font-semibold text-slate-900">
+                      {p.name}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {p.suburb}
+                      {p.province ? `, ${p.province}` : ""}
+                    </p>
+                    {p.asking_rent && (
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        R{(p.asking_rent / 100).toLocaleString("en-ZA")}
+                        <span className="text-xs font-normal text-slate-400">
+                          /mo
+                        </span>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
+                        score >= 75
+                          ? "bg-green-100 text-green-700"
+                          : score >= 45
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {score}/100
+                    </span>
+                    {match_reasons.length > 0 && (
+                      <ul className="max-w-[180px] space-y-1 text-right">
+                        {match_reasons.slice(0, 2).map((r, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start justify-end gap-1.5"
+                          >
+                            <span className="text-xs leading-snug text-green-700">
+                              {r}
+                            </span>
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <Link
+                      href={`/browse/${p.id}`}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-2 text-center">
+                <Link
+                  href="/tenant/browse"
+                  className="text-sm font-medium text-blue-600 hover:underline"
+                >
+                  Browse all properties →
+                </Link>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* ── Applications ─────────────────────────────────────────────────── */}
         <section className="mb-8">
@@ -649,10 +816,10 @@ export default async function TenantDashboardPage() {
           )}
         </section>
 
-        {/* ── Get involved ──────────────────────────────────────────────────── */}
+        {/* ── Useful services and community ────────────────────────────────── */}
         <section className="mb-8">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            Get involved
+            Useful services
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Services */}
@@ -682,6 +849,8 @@ export default async function TenantDashboardPage() {
                 </Link>
               </div>
             </div>
+
+            <LeaseReviewCard />
 
             {/* Good Neighbour */}
             <div className="card p-5">
@@ -750,184 +919,13 @@ export default async function TenantDashboardPage() {
                 </Link>
               </div>
             </div>
-
-            <LeaseReviewCard />
           </div>
         </section>
 
         <GoodNeighbourActions />
 
-        <MatchWithPeople hasActiveLease={hasActiveLease} />
+        <MatchWithPeople />
 
-        {/* ── Matched properties ───────────────────────────────────────────── */}
-        <section>
-          <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-              Matched Properties
-            </h2>
-            <Link
-              href="/tenant/preferences"
-              className="text-xs font-medium text-slate-400 hover:text-slate-700 hover:underline"
-            >
-              Edit preferences →
-            </Link>
-          </div>
-
-          {/* Preferences summary pill-row */}
-          {(tenantProfile.looking_in_area || tenantProfile.budget_max) && (
-            <div className="card mb-4 p-4">
-              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
-                {tenantProfile.looking_in_area && (
-                  <span>
-                    <span className="font-medium">Looking in:</span>{" "}
-                    {tenantProfile.looking_in_area}
-                    {tenantProfile.looking_in_province
-                      ? `, ${tenantProfile.looking_in_province}`
-                      : ""}
-                  </span>
-                )}
-                {tenantProfile.budget_max && (
-                  <span>
-                    <span className="font-medium">Budget:</span> R
-                    {((tenantProfile.budget_min ?? 0) / 100).toLocaleString()} –
-                    R{(tenantProfile.budget_max / 100).toLocaleString()}/mo
-                  </span>
-                )}
-                {tenantProfile.move_in_date && (
-                  <span>
-                    <span className="font-medium">Move in:</span>{" "}
-                    {new Date(tenantProfile.move_in_date).toLocaleDateString(
-                      "en-ZA",
-                      { month: "short", year: "numeric" },
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {scoredProperties.length === 0 ? (
-            <div className="card p-10 text-center">
-              <p className="text-slate-500">No matching properties yet.</p>
-              {!prefsDone ? (
-                <Link
-                  href="/onboarding/preferences"
-                  className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
-                >
-                  Add preferences to see matches →
-                </Link>
-              ) : (
-                <Link
-                  href="/tenant/browse"
-                  className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
-                >
-                  Browse all properties →
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {scoredProperties.map(({ property: p, score, match_reasons }) => (
-                <div
-                  key={p.id}
-                  className="card flex items-center gap-4 overflow-hidden p-0"
-                >
-                  {/* Thumbnail */}
-                  <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
-                    {p.photos?.length > 0 ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.photos[0]}
-                        alt={p.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                        <svg
-                          className="h-8 w-8 text-slate-300"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1}
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="min-w-0 flex-1 py-3">
-                    <p className="truncate font-semibold text-slate-900">
-                      {p.name}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {p.suburb}
-                      {p.province ? `, ${p.province}` : ""}
-                    </p>
-                    {p.asking_rent && (
-                      <p className="mt-1 text-sm font-bold text-slate-900">
-                        R{(p.asking_rent / 100).toLocaleString("en-ZA")}
-                        <span className="text-xs font-normal text-slate-400">
-                          /mo
-                        </span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Score + actions */}
-                  <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
-                        score >= 75
-                          ? "bg-green-100 text-green-700"
-                          : score >= 45
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {score}/100
-                    </span>
-                    {match_reasons.length > 0 && (
-                      <ul className="max-w-[180px] space-y-1 text-right">
-                        {match_reasons.slice(0, 2).map((r, i) => (
-                          <li
-                            key={i}
-                            className="flex items-start justify-end gap-1.5"
-                          >
-                            <span className="text-xs leading-snug text-green-700">
-                              {r}
-                            </span>
-                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <Link
-                      href={`/browse/${p.id}`}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      View
-                    </Link>
-                  </div>
-                </div>
-              ))}
-
-              <div className="pt-2 text-center">
-                <Link
-                  href="/tenant/browse"
-                  className="text-sm font-medium text-blue-600 hover:underline"
-                >
-                  Browse all properties →
-                </Link>
-              </div>
-            </div>
-          )}
-        </section>
       </main>
     </div>
   );
