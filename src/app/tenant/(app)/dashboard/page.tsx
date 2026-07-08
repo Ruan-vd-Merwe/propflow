@@ -483,7 +483,7 @@ export default async function TenantDashboardPage() {
           </div>
         )}
 
-        <RentingStatusSection />
+        <RentingStatusSection hasActiveLease={hasActiveLease} />
 
         {/* ── Current home and rent ───────────────────────────────────────── */}
         <div className="mb-6">

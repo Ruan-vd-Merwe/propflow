@@ -9,30 +9,44 @@ type StatusCard = {
   badge?: string;
 };
 
-const CARDS: StatusCard[] = [
-  {
-    title: "Currently renting",
-    body: "Add your current lease, rent details, and property information.",
-    cta: "Manage current home",
-    href: "/tenant/applications",
-  },
-  {
-    title: "Looking for a place",
-    body: "Set your budget, areas, and move in date so you can apply faster.",
-    cta: "Browse properties",
-    href: "/tenant/browse",
-  },
-  {
-    title: "Replacing a flatmate",
-    body: "Find someone suitable to join or take over your rental.",
-    cta: "Coming soon",
-    href: null,
-    secondary: true,
-    badge: "Coming soon",
-  },
-];
+function buildCards(hasActiveLease: boolean): StatusCard[] {
+  return [
+    {
+      title: "Currently renting",
+      body: "Add your current lease, rent details, and property information.",
+      cta: "Manage current home",
+      href: "/tenant/applications",
+    },
+    {
+      title: "Looking for a place",
+      body: "Set your budget, areas, and move in date so you can apply faster.",
+      cta: "Browse properties",
+      href: "/tenant/browse",
+    },
+    hasActiveLease
+      ? {
+          title: "Replacing a flatmate",
+          body: "Create a flatmate opportunity for your current place. Share it with people you trust, then review applicants through PropTrust.",
+          cta: "Set up flatmate opportunity",
+          href: "#flatmate",
+        }
+      : {
+          title: "Replacing a flatmate",
+          body: "For tenants who already have a place and need someone to join or take over. Add your current lease first to set this up.",
+          cta: "Add your lease",
+          href: "/tenant/applications",
+          secondary: true,
+          badge: "Needs a lease",
+        },
+  ];
+}
 
-export function RentingStatusSection() {
+export function RentingStatusSection({
+  hasActiveLease,
+}: {
+  hasActiveLease: boolean;
+}) {
+  const CARDS = buildCards(hasActiveLease);
   return (
     <section className="mb-8">
       <h2 className="mb-1 text-base font-semibold text-slate-900">
