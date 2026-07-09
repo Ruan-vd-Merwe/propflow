@@ -1,13 +1,6 @@
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
-import { HomeReveal } from "@/components/marketing/home/HomeReveal";
-import { Gate } from "@/components/marketing/home/Gate";
-import { TheScene } from "@/components/marketing/home/TheScene";
-import { ThreeDoors } from "@/components/marketing/home/ThreeDoors";
-import { LandlordScene } from "@/components/marketing/home/LandlordScene";
-import { LandlordDoors } from "@/components/marketing/home/LandlordDoors";
-import { Convergence } from "@/components/marketing/home/Convergence";
-import { SwitchFlowLink } from "@/components/marketing/home/SwitchFlowLink";
+import { MarketingJourneys } from "@/components/marketing/home/MarketingJourneys";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -37,41 +30,12 @@ function CheckIcon() {
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F7F7F5] font-sans text-slate-900 antialiased">
-      <HomeReveal />
       <MarketingNav />
 
-      {/* ── 1. THE SPLIT GATE ─────────────────────────────────────────────────── */}
-      <Gate />
+      {/* ── JOURNEY-BASED HERO + STORY ────────────────────────────────────────── */}
+      <MarketingJourneys />
 
-      {/* ── 2. TENANT FLOW: scene → convergence → doors ─────────────────────────── */}
-      <div data-flow-section="tenant">
-        <TheScene />
-      </div>
-
-      <div data-flow-section="any">
-        <Convergence />
-      </div>
-
-      <div data-flow-section="tenant">
-        <ThreeDoors />
-        <div className="bg-[#F7F7F5] px-6 pb-14">
-          <SwitchFlowLink to="landlord" />
-        </div>
-      </div>
-
-      {/* ── 3. LANDLORD FLOW: scene → doors ─────────────────────────────────────── */}
-      <div data-flow-section="landlord">
-        <LandlordScene />
-      </div>
-
-      <div data-flow-section="landlord">
-        <LandlordDoors />
-        <div className="bg-[#F7F7F5] px-6 pb-14">
-          <SwitchFlowLink to="tenant" />
-        </div>
-      </div>
-
-      {/* ── 4. TRUST STRIP ────────────────────────────────────────────────────── */}
+      {/* ── TRUST STRIP ───────────────────────────────────────────────────────── */}
       <section className="bg-[#F7F7F5] px-6 py-14">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
           {TRUST_CHIPS.map((chip) => (
