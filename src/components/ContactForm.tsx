@@ -15,6 +15,7 @@ const SUBJECTS = [
   "I am a tenant with a question",
   "I am a landlord with a question",
   "I would like a product demo",
+  "I have a legal question about my lease",
   "I have a privacy or security question",
   "I have a technical issue",
   "Other",

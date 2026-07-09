@@ -82,6 +82,12 @@ export function XpelloLandlordConcept({
           PropTrust keeps your rental file organised. Xpello helps with
           breach management and eviction support when things go wrong.
         </p>
+        <Link
+          href="/xpello/how-it-works"
+          className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
+        >
+          How Xpello works &rarr;
+        </Link>
       </div>
 
       {/* A. Protection overview */}

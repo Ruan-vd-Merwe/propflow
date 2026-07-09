@@ -12,6 +12,44 @@ const STATUS_META: Record<ClauseStatus, { label: string; cls: string }> = {
   review: { label: "Ask for review", cls: "bg-red-100 text-red-700" },
 };
 
+const LEGAL_HEALTH_META: Record<
+  "healthy" | "check" | "closer_look",
+  { label: string; cls: string }
+> = {
+  healthy: { label: "Looks healthy", cls: "bg-blue-100 text-blue-700" },
+  check: { label: "Mostly solid, a few things to check", cls: "bg-amber-100 text-amber-700" },
+  closer_look: { label: "Needs a closer look", cls: "bg-rose-100 text-rose-700" },
+};
+
+type RightsTopic = { key: string; question: string; answer: string };
+
+const RIGHTS_TOPICS: RightsTopic[] = [
+  {
+    key: "lockout",
+    question: "Can I be locked out of my home?",
+    answer:
+      "A landlord generally cannot lock you out or remove your belongings without following the proper legal process, even if the lease says otherwise. If this happens, contact Xpello for guidance on what to do next.",
+  },
+  {
+    key: "deposit",
+    question: "What happens to my deposit when I move out?",
+    answer:
+      "Your deposit is usually held until a move-out inspection confirms the condition of the property, then refunded within the timeframe set out in the lease, minus any agreed deductions. Ask for an itemised list if deductions are made.",
+  },
+  {
+    key: "utilities",
+    question: "Can utilities be cut off if there is a dispute?",
+    answer:
+      "A landlord is generally not allowed to cut off water or electricity to force a resolution to a dispute, even during a disagreement about rent or other issues. If this happens, contact Xpello for guidance.",
+  },
+  {
+    key: "eviction",
+    question: "Can I be evicted without notice?",
+    answer:
+      "Evictions in South Africa generally require a court process and proper notice; a landlord cannot remove a tenant on their own without following that process. If you receive an eviction notice, contact Xpello before responding.",
+  },
+];
+
 const CLAUSES: { title: string; status: ClauseStatus; note: string }[] = [
   {
     title: "Rent and escalation",
@@ -82,6 +120,14 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 export function TenantLeaseReviewConcept() {
   const [showExample, setShowExample] = useState(false);
   const [reviewRequested, setReviewRequested] = useState(false);
+  const [openRightsTopic, setOpenRightsTopic] = useState<string | null>(null);
+
+  const reviewCount = CLAUSES.filter((c) => c.status === "review").length;
+  const attentionCount = CLAUSES.filter((c) => c.status === "attention").length;
+  const standardCount = CLAUSES.filter((c) => c.status === "standard").length;
+  const legalHealth =
+    reviewCount > 0 ? "closer_look" : attentionCount > 0 ? "check" : "healthy";
+  const legalHealthMeta = LEGAL_HEALTH_META[legalHealth];
 
   return (
     <div>
@@ -106,6 +152,12 @@ export function TenantLeaseReviewConcept() {
           Upload or review a lease, understand key terms, and request a
           human review before you sign.
         </p>
+        <Link
+          href="/xpello/how-it-works"
+          className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:underline"
+        >
+          How Xpello works &rarr;
+        </Link>
       </div>
 
       {/* A. Lease review overview */}
@@ -158,6 +210,21 @@ export function TenantLeaseReviewConcept() {
 
       {/* C. Clause cards */}
       <SectionCard title="Clause by clause">
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
+          <span className="text-sm font-bold text-slate-900">Legal Health:</span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${legalHealthMeta.cls}`}
+          >
+            {legalHealthMeta.label}
+          </span>
+          <span className="text-xs text-slate-500">
+            {standardCount} standard, {attentionCount} need attention, {reviewCount} flagged for review
+          </span>
+          <p className="w-full text-xs text-slate-400">
+            Reviewed against common South African residential leasing patterns. Not a legal
+            certification.
+          </p>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {CLAUSES.map((clause) => {
             const meta = STATUS_META[clause.status];
@@ -182,6 +249,61 @@ export function TenantLeaseReviewConcept() {
               </div>
             );
           })}
+        </div>
+      </SectionCard>
+
+      {/* C2. Legal Confidence: know your rights */}
+      <SectionCard title="Legal Confidence: know your rights">
+        <p className="mb-4 text-sm leading-relaxed text-slate-600">
+          Even if a lease clause sounds harsh, a landlord still has to operate within South
+          African law. Here is what generally applies to common situations.
+        </p>
+        <div className="space-y-2">
+          {RIGHTS_TOPICS.map((topic) => {
+            const isOpen = openRightsTopic === topic.key;
+            return (
+              <div key={topic.key} className="rounded-xl border border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setOpenRightsTopic(isOpen ? null : topic.key)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                >
+                  <span className="text-sm font-semibold text-slate-900">{topic.question}</span>
+                  <svg
+                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isOpen && (
+                  <div className="border-t border-slate-100 px-4 py-3">
+                    <p className="text-sm leading-relaxed text-slate-600">{topic.answer}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Still unsure about something?</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              You never have to figure a legal question out on your own.
+            </p>
+          </div>
+          <Link
+            href="/contact?subject=I%20have%20a%20legal%20question%20about%20my%20lease"
+            className="shrink-0 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+          >
+            Ask Xpello a question
+          </Link>
         </div>
       </SectionCard>
 

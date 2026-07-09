@@ -1,3 +1,4 @@
+import Link from "next/link";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import {
@@ -67,6 +68,12 @@ export default function TenantVerificationPrototypePage() {
                   affordability, references, documents, and bureau-derived risk
                   without turning one credit score into an automatic rejection.
                 </p>
+                <Link
+                  href="/rental-ecosystem"
+                  className="mt-4 inline-block text-sm font-semibold text-blue-700 hover:underline"
+                >
+                  See how this fits the wider PropTrust ecosystem &rarr;
+                </Link>
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
                 <div className="flex items-start justify-between gap-4">

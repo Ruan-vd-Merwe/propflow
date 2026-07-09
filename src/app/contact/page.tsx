@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import ContactForm from "@/components/ContactForm";
 
-export default function ContactPage() {
-  const [subject, setSubject] = useState("");
+function ContactPageBody() {
+  const searchParams = useSearchParams();
+  const [subject, setSubject] = useState(searchParams.get("subject") ?? "");
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 antialiased">
@@ -195,5 +197,13 @@ export default function ContactPage() {
 
       <MarketingFooter />
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense>
+      <ContactPageBody />
+    </Suspense>
   );
 }

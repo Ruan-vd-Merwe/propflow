@@ -53,6 +53,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/unsubscribe" ||
     pathname === "/trust" ||
     pathname === "/tenant-verification" ||
+    pathname === "/rental-ecosystem" ||
     pathname === "/become-a-connector" ||
     pathname.startsWith("/browse") ||
     pathname.startsWith("/solutions/") ||
