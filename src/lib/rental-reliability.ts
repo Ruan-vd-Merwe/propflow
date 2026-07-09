@@ -194,7 +194,12 @@ function scoreAffordability(input: RentalReliabilityInput) {
   return {
     normalized: clamp(normalized, 0, 1),
     confidence: input.incomeMonthsVerified >= 3 ? ("High" as ConfidenceLevel) : ("Medium" as ConfidenceLevel),
-    explanation: `Rent is ${Math.round(ratio * 100)}% of verified monthly income.`,
+    explanation:
+      ratio <= 0.35
+        ? "Rent appears comfortably aligned with the verified affordability evidence."
+        : ratio <= 0.45
+          ? "Rent may be manageable with the verified affordability evidence."
+          : "Rent may place pressure on the verified affordability evidence.",
   };
 }
 

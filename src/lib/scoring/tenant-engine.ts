@@ -24,7 +24,13 @@ export function financial_insight(
   const budget = profile.rental_budget;
 
   if (income === 0)
-    return { score: 0.5, message: "No income data to assess affordability." };
+    return {
+      score: budget > 0 && rent <= budget ? 0.8 : 0.5,
+      message:
+        budget > 0 && rent <= budget
+          ? "Within your stated rental budget. Add affordability details for a more complete view."
+          : "Add affordability details for a more complete budget view.",
+    };
 
   const income_ratio = safe_div(rent, income);
   const budget_ratio = safe_div(rent, budget);
@@ -32,27 +38,27 @@ export function financial_insight(
   if (income_ratio <= 0.25 && budget_ratio <= 0.9) {
     return {
       score: 0.95,
-      message: `Excellent fit. Rent is ${Math.round(income_ratio * 100)}% of income, well within budget.`,
+      message: "Comfortably within your stated rental budget.",
     };
   } else if (income_ratio <= 0.3 && budget_ratio <= 1.0) {
     return {
       score: 0.8,
-      message: `Good fit. Rent is ${Math.round(income_ratio * 100)}% of income, within budget.`,
+      message: "Within your stated rental budget.",
     };
   } else if (income_ratio <= 0.35 || budget_ratio <= 1.1) {
     return {
       score: 0.6,
-      message: `Manageable. Rent is ${Math.round(income_ratio * 100)}% of income. Slightly stretched.`,
+      message: "Close to your stated budget. Review total monthly costs.",
     };
   } else if (income_ratio <= 0.45) {
     return {
       score: 0.35,
-      message: `Stretched. Rent takes ${Math.round(income_ratio * 100)}% of income. Consider your full cost of living.`,
+      message: "This may stretch your budget. Consider your full cost of living.",
     };
   } else {
     return {
       score: 0.1,
-      message: `High financial strain. Rent exceeds ${Math.round(income_ratio * 100)}% of income.`,
+      message: "This is likely to place pressure on your budget.",
     };
   }
 }

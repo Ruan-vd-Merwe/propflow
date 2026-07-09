@@ -1,7 +1,10 @@
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface TenantInterestProfile {
-  monthly_income: number;
+  monthly_income?: number | null;
+  income_band?: string | null;
+  affordability_min?: number | null;
+  affordability_max?: number | null;
   rental_budget: number;
   total_living_budget: number;
   preferred_suburbs?: string[];
@@ -127,6 +130,47 @@ export function safe_div(a: number, b: number, fallback = 0): number {
   return a / b;
 }
 
+function hasExactIncome(profile: TenantInterestProfile): profile is TenantInterestProfile & {
+  monthly_income: number;
+} {
+  return typeof profile.monthly_income === "number" && profile.monthly_income > 0;
+}
+
+function affordabilityRangeScore(
+  rent: number,
+  min?: number | null,
+  max?: number | null,
+): { score: number; message: string | null } {
+  if (!min && !max) return { score: 0.65, message: null };
+  if (max && rent <= max && rent >= (min ?? 0)) {
+    return {
+      score: 0.9,
+      message: "Within the typical range for your income band.",
+    };
+  }
+  if (max && rent > max) {
+    return {
+      score: rent <= max * 1.25 ? 0.55 : 0.35,
+      message:
+        "Above the typical range for your income band, but your stated budget is still considered first.",
+    };
+  }
+  if (min && rent < min) {
+    return {
+      score: 0.8,
+      message: "Below the typical range for your income band.",
+    };
+  }
+  return {
+    score: 0.72,
+    message: "Income band is available as a soft affordability signal.",
+  };
+}
+
+function formatRand(value: number): string {
+  return `R${Math.round(value).toLocaleString("en-ZA")}`;
+}
+
 export function normalize(value: number, min: number, max: number): number {
   if (max === min) return 0;
   return clamp((value - min) / (max - min), 0, 1);
@@ -159,22 +203,96 @@ export function affordability_score(
   const rent = property.rent ?? 0;
   if (rent === 0) return 0.5;
 
-  const income_ratio = safe_div(rent, profile.monthly_income);
   const budget_ratio = safe_div(rent, profile.rental_budget);
+  const budget_score = budgetFitMessage(
+    budget_ratio,
+    profile.rental_budget,
+    rent,
+  ).score;
 
-  const income_score =
-    income_ratio <= 0.25
-      ? 1.0
-      : income_ratio <= 0.3
-        ? 0.85
-        : income_ratio <= 0.35
-          ? 0.65
-          : income_ratio <= 0.4
-            ? 0.45
-            : income_ratio <= 0.5
-              ? 0.25
-              : 0.05;
+  const band_score = affordabilityRangeScore(
+    rent,
+    profile.affordability_min,
+    profile.affordability_max,
+  ).score;
 
+  return weighted_sum([
+    [budget_score, 0.85],
+    [band_score, 0.15],
+  ]);
+}
+
+function budgetFitMessage(
+  budget_ratio: number,
+  rental_budget: number,
+  rent: number,
+): {
+  score: number;
+  message: string;
+} {
+  if (rental_budget <= 0) {
+    return {
+      score: 0.5,
+      message:
+        "Add a rental budget to make this match score more personalised.",
+    };
+  }
+
+  const delta = Math.abs(rental_budget - rent);
+  if (budget_ratio <= 0.75) {
+    return {
+      score: clamp(1 - budget_ratio * 0.12, 0.9, 1),
+      message: `Comfortably within your stated rental budget, with about ${formatRand(delta)} below your budget cap.`,
+    };
+  }
+  if (budget_ratio <= 0.9) {
+    return {
+      score: clamp(0.9 - (budget_ratio - 0.75) * 0.5, 0.82, 0.9),
+      message: `Within your stated rental budget, with about ${formatRand(delta)} below your budget cap.`,
+    };
+  }
+  if (budget_ratio <= 1.0) {
+    return {
+      score: clamp(0.82 - (budget_ratio - 0.9) * 0.6, 0.76, 0.82),
+      message: `Near the top of your stated rental budget, with about ${formatRand(delta)} below your budget cap.`,
+    };
+  }
+  if (budget_ratio <= 1.1) {
+    return {
+      score: clamp(0.58 - (budget_ratio - 1) * 0.8, 0.5, 0.58),
+      message: `Slightly above your stated budget by about ${formatRand(delta)}. You can still consider it if the fit is strong.`,
+    };
+  }
+  if (budget_ratio <= 1.25) {
+    return {
+      score: clamp(0.38 - (budget_ratio - 1.1) * 0.8, 0.26, 0.38),
+      message: `Above your stated budget by about ${formatRand(delta)}. Treat this as a stretch option, not a rejection.`,
+    };
+  }
+  return {
+    score: 0.18,
+    message: `Well above your stated budget by about ${formatRand(delta)}. This remains visible only because budget filtering is currently relaxed.`,
+  };
+}
+
+function exactIncomeSoftScore(profile: TenantInterestProfile, rent: number): number | null {
+  if (!hasExactIncome(profile)) return null;
+  const income_ratio = rent / profile.monthly_income;
+  return income_ratio <= 0.3
+    ? 0.9
+    : income_ratio <= 0.4
+      ? 0.7
+      : income_ratio <= 0.5
+        ? 0.45
+        : 0.25;
+}
+
+function approvalProfileScore(
+  profile: TenantInterestProfile,
+  property: PropertyData,
+): number {
+  const rent = property.rent ?? 0;
+  const budget_ratio = safe_div(rent, profile.rental_budget, 1);
   const budget_score =
     budget_ratio <= 0.85
       ? 1.0
@@ -183,12 +301,20 @@ export function affordability_score(
         : budget_ratio <= 1.1
           ? 0.5
           : budget_ratio <= 1.25
-            ? 0.25
-            : 0.05;
+          ? 0.25
+          : 0.05;
+
+  const band_score = affordabilityRangeScore(
+    rent,
+    profile.affordability_min,
+    profile.affordability_max,
+  ).score;
+  const income_score = exactIncomeSoftScore(profile, rent);
 
   return weighted_sum([
-    [income_score, 0.55],
-    [budget_score, 0.45],
+    [budget_score, 0.75],
+    [band_score, 0.15],
+    [income_score ?? 0.65, income_score == null ? 0.1 : 0.1],
   ]);
 }
 
@@ -305,7 +431,7 @@ export function tenant_affordability_insight(
 ): {
   score: number;
   message: string;
-  income_ratio: number;
+  income_ratio: number | null;
   budget_ratio: number;
 } {
   const rent = property.rent ?? 0;
@@ -316,32 +442,27 @@ export function tenant_affordability_insight(
     elec + water + internet + (property.tenant_extra_costs ?? 0);
   const total_cost = rent + total_extras;
 
-  const income_ratio = safe_div(rent, profile.monthly_income);
+  const income_ratio = hasExactIncome(profile)
+    ? safe_div(rent, profile.monthly_income)
+    : null;
   const budget_ratio = safe_div(rent, profile.rental_budget);
   const living_ratio = safe_div(total_cost, profile.total_living_budget);
+  const budgetFit = budgetFitMessage(budget_ratio, profile.rental_budget, rent);
+  const bandFit = affordabilityRangeScore(
+    rent,
+    profile.affordability_min,
+    profile.affordability_max,
+  );
 
-  let score: number;
-  let message: string;
-
-  if (income_ratio <= 0.25 && budget_ratio <= 0.9) {
-    score = 0.95;
-    message = `Excellent fit. Rent is ${Math.round(income_ratio * 100)}% of income, well within budget.`;
-  } else if (income_ratio <= 0.3 && budget_ratio <= 1.0) {
-    score = 0.8;
-    message = `Good fit. Rent is ${Math.round(income_ratio * 100)}% of income, within budget.`;
-  } else if (income_ratio <= 0.35) {
-    score = 0.6;
-    message = `Manageable. Rent is ${Math.round(income_ratio * 100)}% of income. Slightly stretched.`;
-  } else if (income_ratio <= 0.45) {
-    score = 0.35;
-    message = `Stretched. Rent takes ${Math.round(income_ratio * 100)}% of your income.`;
-  } else {
-    score = 0.1;
-    message = `High financial strain. Rent is ${Math.round(income_ratio * 100)}% of income.`;
-  }
+  let score = weighted_sum([
+    [budgetFit.score, 0.85],
+    [bandFit.score, 0.15],
+  ]);
+  let message = budgetFit.message;
+  if (bandFit.message) message += ` ${bandFit.message}`;
 
   if (living_ratio > 1.0 && total_extras > 0) {
-    score = Math.max(score - 0.15, 0.05);
+    score = Math.max(score - 0.08, 0.05);
     message += ` Total living costs exceed your budget by ${Math.round((living_ratio - 1) * 100)}%.`;
   }
 
@@ -698,25 +819,13 @@ export function tenant_approval_insight(
   profile: TenantInterestProfile,
   property: PropertyData,
 ): { score: number; message: string; probability_pct: number } {
-  const rent = property.rent ?? 0;
-  const income_ratio = safe_div(rent, profile.monthly_income);
   const apps = property.applications_count ?? 2;
-
-  const income_score =
-    income_ratio <= 0.25
-      ? 1.0
-      : income_ratio <= 0.3
-        ? 0.85
-        : income_ratio <= 0.35
-          ? 0.65
-          : income_ratio <= 0.4
-            ? 0.4
-            : 0.2;
+  const profile_score = approvalProfileScore(profile, property);
 
   const competition_score = inverse_normalize(apps, 0, 20);
 
   const score = weighted_sum([
-    [income_score, 0.7],
+    [profile_score, 0.7],
     [competition_score, 0.3],
   ]);
   const probability_pct = Math.round(score * 100);

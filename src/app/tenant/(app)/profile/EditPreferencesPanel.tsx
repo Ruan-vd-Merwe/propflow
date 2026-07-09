@@ -343,11 +343,11 @@ export function EditPreferencesPanel({
               </div>
               {income && parseInt(income) > 0 && (
                 <p className="mt-1 text-xs text-slate-400">
-                  Affordable rent: up to{" "}
+                  Indicative rent range: up to{" "}
                   <strong className="text-slate-600">
                     R{Math.round(parseInt(income) / 3).toLocaleString()}
                   </strong>
-                  /mo (30% rule)
+                  /mo based on the amount entered.
                 </p>
               )}
             </div>

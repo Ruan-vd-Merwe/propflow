@@ -1,10 +1,43 @@
 import type { TenantInterestProfile, PropertyData } from "./interest-engine";
+import { deriveAffordability } from "../affordability";
+import type { IncomeBand } from "../types";
+
+function numberFromCents(value: unknown): number | null {
+  if (value == null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed / 100 : null;
+}
+
+function affordabilityRangeFromProfile(
+  tenantProfile: Record<string, unknown>,
+): { min: number | null; max: number | null } {
+  const storedMin = numberFromCents(tenantProfile.affordability_min_cents);
+  const storedMax = numberFromCents(tenantProfile.affordability_max_cents);
+  if (storedMin || storedMax) return { min: storedMin, max: storedMax };
+
+  const band = tenantProfile.income_band;
+  if (typeof band !== "string") return { min: null, max: null };
+
+  const derived = deriveAffordability(band as IncomeBand);
+  return {
+    min: derived.min ? derived.min / 100 : null,
+    max: derived.max ? derived.max / 100 : null,
+  };
+}
 
 export function mapTenantProfile(
   tenantProfile: Record<string, unknown>,
 ): TenantInterestProfile {
+  const affordability = affordabilityRangeFromProfile(tenantProfile);
+
   return {
-    monthly_income: Number(tenantProfile.monthly_income || 0) / 100,
+    monthly_income: numberFromCents(tenantProfile.monthly_income),
+    income_band:
+      typeof tenantProfile.income_band === "string"
+        ? tenantProfile.income_band
+        : null,
+    affordability_min: affordability.min,
+    affordability_max: affordability.max,
     rental_budget: Number(tenantProfile.budget_max || 0) / 100,
     total_living_budget: (Number(tenantProfile.budget_max || 0) / 100) * 1.4,
     preferred_suburbs: tenantProfile.looking_in_area
