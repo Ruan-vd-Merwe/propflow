@@ -15,7 +15,6 @@ const NAV: NavSection[] = [
     label: "For Tenants",
     items: [
       { label: "Find a place to live", href: "/browse", desc: "Browse verified rental properties" },
-      { label: "Find my area", href: "/area-match", desc: "Match suburbs by budget, commute, and lifestyle" },
       { label: "Tenant profile", href: "/solutions/tenants", desc: "Create and manage your rental profile" },
     ],
   },
@@ -379,7 +378,7 @@ export default function MarketingNav() {
                     className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
                     style={{ height: 48, background: "#1e40af", fontSize: 15 }}
                   >
-                    Get started
+                    Register
                   </Link>
                   <Link
                     href="/login"

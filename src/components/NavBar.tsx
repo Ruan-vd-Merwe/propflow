@@ -42,14 +42,6 @@ function IconChat({ className }: { className?: string }) {
   );
 }
 
-function IconSearch({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  );
-}
-
 function IconShoppingBag({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -129,12 +121,6 @@ const PRIMARY_TENANT: NavLink[] = [
   { href: "/contact",             label: "Contact"         },
 ];
 
-const PRIMARY_CONNECTOR: NavLink[] = [
-  { href: "/connector/tasks",       label: "My Tasks"    },
-  { href: "/connector/inspections", label: "Inspections" },
-  { href: "/connector/earnings",    label: "Earnings"    },
-];
-
 // "More" dropdown — Property Management section (landlord-only)
 const MORE_PROPERTY_MGMT: MoreLink[] = [
   { href: "/documents",        label: "Documents",      Icon: IconDocument },
@@ -148,14 +134,6 @@ const MORE_PROPERTY_MGMT: MoreLink[] = [
 const MORE_TENANT_SEARCH: MoreLink[] = [
   { href: "/tenant/preferences", label: "My Rental Search", Icon: IconWrench },
   { href: "/tenant/areas",       label: "Find by Area",     Icon: IconHouse  },
-];
-
-// "More" dropdown — Connector tasks
-const MORE_CONNECTOR_TASKS: MoreLink[] = [
-  { href: "/connector/tasks",       label: "My Tasks",    Icon: IconShoppingBag },
-  { href: "/connector/inspections", label: "Inspections", Icon: IconSearch      },
-  { href: "/connector/earnings",    label: "Earnings",    Icon: IconDocument    },
-  { href: "/connector/profile",     label: "My Profile",  Icon: IconPeople     },
 ];
 
 // "More" dropdown — Account (shared)
@@ -175,20 +153,16 @@ function isInSection(pathname: string, section: string): boolean {
 // Pick primary links based on the page the user is currently on.
 // Multi-role users see the nav that matches their current surface.
 function getPrimaryLinks(roles: UserRoles, pathname: string): NavLink[] {
-  if (isInSection(pathname, "/connector") && roles.is_connector) return PRIMARY_CONNECTOR;
   if (isInSection(pathname, "/tenant") && roles.is_tenant) return PRIMARY_TENANT;
   if (roles.is_landlord) return PRIMARY_LANDLORD;
-  if (roles.is_connector) return PRIMARY_CONNECTOR;
   if (roles.is_tenant) return PRIMARY_TENANT;
   return PRIMARY_LANDLORD;
 }
 
 // Home route — matches the current surface for multi-role users
 function getHomeHref(roles: UserRoles, pathname: string): string {
-  if (isInSection(pathname, "/connector") && roles.is_connector) return "/connector/tasks";
   if (isInSection(pathname, "/tenant") && roles.is_tenant) return "/tenant/dashboard";
   if (roles.is_landlord) return "/dashboard";
-  if (roles.is_connector) return "/connector/tasks";
   if (roles.is_tenant) return "/tenant/dashboard";
   return "/dashboard";
 }
@@ -197,12 +171,11 @@ function getHomeHref(roles: UserRoles, pathname: string): string {
 const MORE_HREFS = new Set([
   ...MORE_PROPERTY_MGMT.map((l) => l.href),
   ...MORE_TENANT_SEARCH.map((l) => l.href),
-  ...MORE_CONNECTOR_TASKS.map((l) => l.href),
   ...MORE_ACCOUNT.map((l) => l.href),
 ]);
 
 // ─── Surface switcher ───────────────────────────────────────────────────────
-// Role flags (is_landlord, is_tenant, is_connector) determine which surfaces
+// Role flags (is_landlord, is_tenant) determine which surfaces
 // a user may access. The active surface is derived from the current pathname
 // and controls which pill is highlighted. Clicking a pill navigates to that
 // surface's home route.
@@ -212,7 +185,6 @@ type Surface = "landlord" | "tenant" | "connector";
 const SURFACE_LINKS: { surface: Surface; label: string; href: string; roleKey: keyof UserRoles }[] = [
   { surface: "landlord",  label: "My Properties", href: "/dashboard",       roleKey: "is_landlord"  },
   { surface: "tenant",    label: "Renting",       href: "/tenant/dashboard", roleKey: "is_tenant"   },
-  { surface: "connector", label: "My Connector",  href: "/connector/tasks", roleKey: "is_connector" },
 ];
 
 function getActiveSurface(pathname: string): Surface {
@@ -423,22 +395,6 @@ export function NavBar() {
                 {roles.is_tenant && (
                   <DropdownSection label="Rental Search">
                     {MORE_TENANT_SEARCH.map(({ href, label, Icon }) => (
-                      <DropdownLink
-                        key={href}
-                        href={href}
-                        label={label}
-                        Icon={Icon}
-                        active={isActive(href)}
-                        onClose={() => setMoreOpen(false)}
-                      />
-                    ))}
-                  </DropdownSection>
-                )}
-
-                {/* Connector — connector or multi-role */}
-                {roles.is_connector && (
-                  <DropdownSection label="Connector">
-                    {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => (
                       <DropdownLink
                         key={href}
                         href={href}
@@ -714,34 +670,6 @@ export function NavBar() {
                             }`}
                           >
                             <Icon className={`h-5 w-5 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
-                            <span>{label}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </>
-                )}
-
-                {/* Connector tasks */}
-                {roles.is_connector && (
-                  <>
-                    <li className="bg-amber-50 px-6 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">
-                        Connector
-                      </p>
-                    </li>
-                    {MORE_CONNECTOR_TASKS.map(({ href, label, Icon }) => {
-                      const active = isActive(href);
-                      return (
-                        <li key={href}>
-                          <Link
-                            href={href}
-                            onClick={() => setMenuOpen(false)}
-                            className={`flex min-h-[48px] items-center gap-4 px-6 py-3 text-sm font-medium transition ${
-                              active ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-amber-50 hover:text-amber-700"
-                            }`}
-                          >
-                            <Icon className={`h-5 w-5 shrink-0 ${active ? "text-amber-600" : "text-slate-400"}`} />
                             <span>{label}</span>
                           </Link>
                         </li>

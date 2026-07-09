@@ -17,16 +17,6 @@ const OWNER_ITEMS: { label: string; cost: string; type: "free" | "once" | "month
   { label: "Full property management", cost: "Monthly subscription", type: "monthly" },
 ];
 
-const CONNECTOR_TASKS = [
-  "Viewing a property for someone",
-  "Meeting a tenant or owner",
-  "Helping with move-in admin",
-  "Checking on a property",
-  "Walking a dog",
-  "Helping an elderly person with a local errand",
-  "Being a trusted person in the area",
-];
-
 const FAQS = [
   {
     q: "Do tenants ever pay?",
@@ -39,14 +29,6 @@ const FAQS = [
   {
     q: "Are there contracts or lock-in periods?",
     a: "No. Once-off tools are paid when you use them. Monthly services can be cancelled at any time.",
-  },
-  {
-    q: "How do Local Connectors get paid?",
-    a: "Connectors earn per completed task. Payment is handled through PropTrust after the task is confirmed as done.",
-  },
-  {
-    q: "What is a Local Connector?",
-    a: "A verified person in your area who can help with property viewings, tenant check-ins, move-in support, and other local tasks. Not a sales agent — a helpful person nearby.",
   },
 ];
 
@@ -74,10 +56,10 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* THREE ROLES */}
+      {/* TWO ROLES */}
       <section className="bg-[#f8fafc] px-6 py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2">
             {/* Tenant */}
             <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
               <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#1e40af]">
@@ -155,36 +137,6 @@ export default function PricingPage() {
                 List property
               </Link>
             </div>
-
-            {/* Local Connector */}
-            <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <p className="mb-5 text-xs font-bold uppercase tracking-wider text-green-700">
-                Local Connector
-              </p>
-              <div className="mb-6 flex items-center gap-2 text-sm font-medium text-slate-700">
-                <span>Meet People</span>
-                <span className="text-slate-300">&rarr;</span>
-                <span>Help Nearby</span>
-                <span className="text-slate-300">&rarr;</span>
-                <span>Earn Per Job</span>
-              </div>
-              <p className="mb-2 text-3xl font-extrabold text-[#0f172a]">
-                Free to join
-              </p>
-              <p className="mb-8 flex-1 text-sm leading-relaxed text-slate-500">
-                Local people can help with viewings, check-ins, errands, and
-                real human support.
-              </p>
-              <p className="mb-8 text-xs text-slate-400">
-                Connectors are verified before taking paid tasks.
-              </p>
-              <Link
-                href="/register?role=connector"
-                className="block rounded-xl border-2 border-green-700 py-3.5 text-center text-sm font-bold text-green-700 transition hover:bg-green-50"
-              >
-                Become a connector
-              </Link>
-            </div>
           </div>
         </div>
       </section>
@@ -196,7 +148,7 @@ export default function PricingPage() {
             What might cost money?
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2">
             {/* Tenant breakdown */}
             <div className="rounded-2xl bg-[#f8fafc] p-7">
               <p className="mb-5 text-sm font-bold text-[#0f172a]">Tenant</p>
@@ -262,55 +214,7 @@ export default function PricingPage() {
                 </div>
               </div>
             </div>
-
-            {/* Local Connector breakdown */}
-            <div className="rounded-2xl bg-[#f8fafc] p-7">
-              <p className="mb-5 text-sm font-bold text-[#0f172a]">
-                Local Connector
-              </p>
-              <ul className="space-y-3 text-sm text-slate-600">
-                <li className="flex items-center gap-2.5">
-                  <span className="text-green-600">&#10003;</span>
-                  Free to join
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="mt-0.5 text-slate-400">&middot;</span>
-                  Paid per completed task
-                </li>
-              </ul>
-
-              <p className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Tasks could include
-              </p>
-              <ul className="space-y-1.5 text-sm text-slate-500">
-                {CONNECTOR_TASKS.map((task) => (
-                  <li key={task}>{task}</li>
-                ))}
-              </ul>
-
-              <p className="mt-6 text-sm italic text-slate-500">
-                &ldquo;Sometimes people do not need another salesperson. They
-                need a helpful person nearby.&rdquo;
-              </p>
-              <p className="mt-3 text-xs text-slate-400">
-                Connectors are verified before taking paid tasks.
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
-
-      {/* WHO ARE CONNECTORS */}
-      <section className="bg-[#f8fafc] px-6 py-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-xl font-extrabold text-[#0f172a]">
-            Who are Local Connectors?
-          </h2>
-          <p className="mx-auto max-w-xl text-sm leading-relaxed text-slate-500">
-            Psychology students, semi-retired people, community-minded locals,
-            or anyone looking for flexible work in their area. Not sales agents
-            — helpful people who keep a real person in the loop.
-          </p>
         </div>
       </section>
 
