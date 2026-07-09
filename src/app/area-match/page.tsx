@@ -263,13 +263,13 @@ function StepCommute({
         </label>
         <input
           type="text"
-          placeholder="e.g. Cape Town CBD, Stellenbosch, Remote"
+          placeholder="e.g. Cape Town CBD, Bellville, Century City, Stellenbosch, or Remote"
           value={inputs.workLocation}
           onChange={(e) => onChange({ workLocation: e.target.value })}
           className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1e40af] focus:outline-none focus:ring-2 focus:ring-[#1e40af]/20"
         />
         <p className="mt-1.5 text-xs text-slate-400">
-          Used to estimate commute times. Leave blank if fully remote.
+          We match this to the nearest of a few common work hubs: CBD, Bellville, Century City or Stellenbosch. Other locations get an approximate CBD-based estimate. Type &quot;remote&quot; if you work from home.
         </p>
       </div>
 
@@ -472,7 +472,7 @@ function AreaCard({
   rank: number;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { area, rentRange, commuteMinutes } = rec;
+  const { area, rentRange, commuteMinutes, commuteDestinationLabel, commuteIsEstimate } = rec;
 
   return (
     <div className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
@@ -509,13 +509,16 @@ function AreaCard({
               Commute est.
             </p>
             <p className="mt-0.5 text-sm font-bold text-[#0f172a]">
-              {commuteMinutes >= 999
-                ? "Not practical"
-                : `~${commuteMinutes} min`}
-              {commuteMinutes < 999 && (
+              {commuteDestinationLabel === ""
+                ? "No daily commute"
+                : commuteMinutes >= 999
+                  ? "Not practical"
+                  : `~${commuteMinutes} min`}
+              {commuteDestinationLabel !== "" && commuteMinutes < 999 && (
                 <span className="text-xs font-normal text-slate-400">
                   {" "}
-                  to CBD
+                  to {commuteDestinationLabel}
+                  {commuteIsEstimate ? " (est.)" : ""}
                 </span>
               )}
             </p>
