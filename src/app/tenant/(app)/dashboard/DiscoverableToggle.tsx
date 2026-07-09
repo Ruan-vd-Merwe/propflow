@@ -47,7 +47,7 @@ export function DiscoverableToggle({ initial }: { initial: boolean }) {
         </span>
       )}
       {error && (
-        <span className="text-xs text-red-500">Update failed — try again</span>
+        <span className="text-xs text-red-500">Update failed. Try again.</span>
       )}
     </div>
   );

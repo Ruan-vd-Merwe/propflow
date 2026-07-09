@@ -1,14 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
-import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { EditPreferencesPanel } from "./EditPreferencesPanel";
-import type {
-  TenantProfile,
-  PropertyListing,
-  IntroductionRequest,
-} from "@/lib/types";
+import type { TenantProfile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -36,22 +30,6 @@ const VERIFICATION_BADGE: Record<string, { label: string; cls: string }> = {
 
 function fmt(cents: number) {
   return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
-}
-
-function MatchBadge({ score }: { score: number }) {
-  const cls =
-    score >= 75
-      ? "bg-green-100 text-green-800"
-      : score >= 45
-        ? "bg-amber-100 text-amber-800"
-        : "bg-red-100 text-red-800";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}
-    >
-      {score}/100
-    </span>
-  );
 }
 
 export default async function TenantProfilePage({
@@ -97,50 +75,6 @@ export default async function TenantProfilePage({
       </div>
     );
   }
-
-  // ── Match listed properties ───────────────────────────────────────────────
-  const { data: rawProps } = await supabase
-    .from("properties")
-    .select("*")
-    .in("status", ["available", "available_from"])
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  const tenantMappedProfile = mapTenantProfile(
-    tenantProfile as unknown as Record<string, unknown>,
-  );
-  const props = (rawProps ?? []) as PropertyListing[];
-  const scoredProperties = (() => {
-    if (props.length === 0) return [];
-    const propData = props.map((p) =>
-      mapProperty(p as unknown as Record<string, unknown>),
-    );
-    const results = rank_properties_for_tenant_interests(
-      propData,
-      tenantMappedProfile,
-    );
-    const propById = new Map(props.map((p) => [p.id, p]));
-    return results
-      .filter(
-        (r) =>
-          r.status === "ranked" && r.property_id && propById.has(r.property_id),
-      )
-      .slice(0, 12)
-      .map((r) => ({
-        property: propById.get(r.property_id!)! as PropertyListing,
-        score: r.score,
-        match_reasons: r.match_reasons,
-      }));
-  })();
-
-  // ── Introduction requests ─────────────────────────────────────────────────
-  const { data: introRaw } = await supabase
-    .from("introduction_requests")
-    .select("*")
-    .eq("tenant_id", user.id)
-    .order("created_at", { ascending: false });
-
-  const introductions = (introRaw ?? []) as IntroductionRequest[];
 
   // ── Onboarding state ────────────────────────────────────────────────────────
   const prefsDone = tenantProfile.preferences_complete;
@@ -384,141 +318,34 @@ export default async function TenantProfilePage({
               <span className="ml-3 text-xs text-slate-400">Preferences saved</span>
             ) : (
               <span className="ml-3 text-xs text-amber-600">
-                No preferences set — add some to improve your match scores
+                No preferences set. Add some to improve your match scores.
               </span>
             )}
           </div>
         </div>
 
-        {/* ── Matched properties ────────────────────────────────────────── */}
+        {/* ── Matches and applications live one tap away ──────────────────── */}
         <section className="mb-8">
-          <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-bold text-slate-900">
-              Matched properties
-              <span className="ml-2 text-sm font-normal text-slate-500">
-                {scoredProperties.length} listing
-                {scoredProperties.length !== 1 ? "s" : ""} match your search
-              </span>
-            </h2>
-            <Link
-              href="/how-scoring-works"
-              className="shrink-0 text-xs text-slate-400 hover:text-slate-700 hover:underline"
-            >
-              How scoring works
-            </Link>
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+            <p className="text-sm text-slate-600">
+              Property matches and introduction requests now have their own screens.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/tenant/matches"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+              >
+                View matches
+              </Link>
+              <Link
+                href="/tenant/applications"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-slate-50"
+              >
+                View applications
+              </Link>
+            </div>
           </div>
-
-          {scoredProperties.length === 0 ? (
-            <div className="card p-8 text-center">
-              <p className="text-slate-500">
-                {!prefsDone
-                  ? "Complete your preferences to see property recommendations."
-                  : "No listed properties match your search yet."}
-              </p>
-              <p className="mt-1 text-sm text-slate-400">
-                {!prefsDone
-                  ? "We need your area and budget to start matching."
-                  : !affordDone
-                    ? "Completing your affordability profile will improve match accuracy."
-                    : "Update your preferences or check back soon."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {scoredProperties.map(({ property: p, score, match_reasons }) => (
-                <Link
-                  key={p.id}
-                  href={`/browse/${p.id}`}
-                  className="card overflow-hidden transition hover:shadow-md"
-                >
-                  {p.photos?.length > 0 ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.photos[0]}
-                      alt={p.name}
-                      className="h-40 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-40 items-center justify-center bg-slate-100">
-                      <svg
-                        className="h-10 w-10 text-slate-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <p className="font-semibold leading-snug text-slate-900">
-                        {p.name}
-                      </p>
-                      <MatchBadge score={score} />
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {p.suburb}
-                      {p.province ? `, ${p.province}` : ""}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      {p.asking_rent && (
-                        <span className="text-base font-bold text-slate-900">
-                          {fmt(p.asking_rent)}
-                          <span className="text-xs font-normal text-slate-400">
-                            /mo
-                          </span>
-                        </span>
-                      )}
-                      <div className="flex gap-2 text-xs text-slate-500">
-                        {p.bedrooms != null && (
-                          <span>
-                            {p.bedrooms === 0 ? "Studio" : `${p.bedrooms} bed`}
-                          </span>
-                        )}
-                        {p.property_type && (
-                          <span className="capitalize">{p.property_type}</span>
-                        )}
-                      </div>
-                    </div>
-                    {match_reasons.length > 0 && (
-                      <ul className="mt-2 space-y-1">
-                        {match_reasons.slice(0, 3).map((r, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                            <span className="text-xs text-green-700">{r}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <p className="mt-3 text-xs font-medium text-blue-600">
-                      View score breakdown →
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
         </section>
-
-        {/* ── Introduction requests ──────────────────────────────────────── */}
-        {introductions.length > 0 && (
-          <section id="introductions" className="mb-8">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">
-              Introduction requests
-            </h2>
-            <div className="card divide-y divide-slate-100">
-              {introductions.map((intro) => (
-                <IntroductionRow key={intro.id} intro={intro} />
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );
@@ -543,35 +370,3 @@ function StatEmpty({ label }: { label: string }) {
     </div>
   );
 }
-
-function IntroductionRow({ intro }: { intro: IntroductionRequest }) {
-  const statusCls =
-    intro.status === "pending"
-      ? "bg-amber-100 text-amber-700"
-      : intro.status === "accepted"
-        ? "bg-green-100 text-green-700"
-        : "bg-slate-100 text-slate-500";
-  return (
-    <div className="flex items-center justify-between px-5 py-4">
-      <div>
-        <p className="text-sm font-medium text-slate-900">
-          Introduction request
-        </p>
-        <p className="text-xs text-slate-500">
-          {new Date(intro.created_at).toLocaleDateString("en-ZA", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </p>
-      </div>
-      <span
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusCls}`}
-      >
-        {intro.status}
-      </span>
-    </div>
-  );
-}
-
-
