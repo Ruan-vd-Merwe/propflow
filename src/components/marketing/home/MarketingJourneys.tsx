@@ -35,79 +35,111 @@ function Beat({
 
 function JourneyCard({
   id,
+  index,
   onSelect,
 }: {
   id: JourneyId;
+  index: number;
   onSelect: (id: JourneyId) => void;
 }) {
   const journey = JOURNEYS[id];
   const Icon = JOURNEY_ICONS[id];
+  const idx = String(index + 1).padStart(2, "0");
   return (
     <button
       type="button"
       onClick={() => onSelect(id)}
-      className="group relative flex min-h-[44px] flex-col gap-3.5 overflow-hidden rounded-[10px] border bg-[#F7F5EE] p-[26px_22px] text-left transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none active:translate-y-0 active:scale-[0.99]"
-      style={{ borderColor: "rgba(19,42,61,0.14)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = journey.accent)}
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.borderColor = "rgba(19,42,61,0.14)")
-      }
+      className="group relative flex min-h-[44px] flex-col gap-3.5 overflow-hidden rounded-[10px] border border-[rgba(30,42,46,0.13)] bg-white p-[26px_22px] text-left transition-transform duration-200 ease-out hover:-translate-y-1 hover:border-[#B5613E] focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A5462] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F1ECE1] active:translate-y-0 active:scale-[0.99]"
     >
       <span
-        className="flex h-[38px] w-[38px] items-center justify-center rounded-lg"
-        style={{ background: journey.accentSoft, color: journey.accent }}
+        aria-hidden="true"
+        className="absolute right-[22px] top-5 font-[family-name:var(--font-newsreader)] text-[13px] italic opacity-30"
+        style={{ color: "#1E2A2E" }}
       >
+        {idx}
+      </span>
+      <span className="block h-[34px] w-[34px]">
         <Icon />
       </span>
       <span
         className="font-[family-name:var(--font-ibm-plex-sans)] text-[1.02rem] font-semibold"
-        style={{ color: "#132A3D" }}
+        style={{ color: "#1E2A2E" }}
       >
         {journey.label}
       </span>
-      <span className="font-[family-name:var(--font-ibm-plex-sans)] text-[0.85rem]" style={{ color: "#5C6B76" }}>
+      <span
+        className="font-[family-name:var(--font-ibm-plex-sans)] text-[0.85rem] opacity-85"
+        style={{ color: "#2A5462" }}
+      >
         {journey.sub}
       </span>
     </button>
   );
 }
 
+function SideRail({ side, label }: { side: "left" | "right"; label: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-y-0 hidden w-px min-[1100px]:block ${
+        side === "left" ? "left-16" : "right-16"
+      }`}
+      style={{
+        background:
+          "linear-gradient(to bottom, transparent, rgba(30,42,46,0.13) 15%, rgba(30,42,46,0.13) 85%, transparent)",
+      }}
+    >
+      <span
+        className="absolute left-1/2 top-[38%] -translate-x-1/2 -rotate-90 whitespace-nowrap font-[family-name:var(--font-ibm-plex-sans)] text-[11px] uppercase tracking-[0.14em] opacity-45"
+        style={{ color: "#2A5462" }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function JourneyHero({ onSelect }: { onSelect: (id: JourneyId) => void }) {
   return (
-    <section className="px-6 py-16">
-      <div className="mx-auto max-w-[640px] text-center">
-        <p
-          className="mb-2 flex items-center justify-center gap-2 font-[family-name:var(--font-ibm-plex-mono)] text-[0.7rem] font-medium uppercase tracking-[0.14em]"
-          style={{ color: "#2D6E8E" }}
-        >
-          <span
-            aria-hidden="true"
-            className="h-[7px] w-[7px] rounded-[1px]"
-            style={{ background: "#2D6E8E" }}
-          />
-          Verified rental identity
-        </p>
-        <h1
-          className="font-[family-name:var(--font-fraunces)] text-[clamp(2.1rem,5vw,3.1rem)] font-semibold leading-[1.08] tracking-tight"
-          style={{ color: "#132A3D" }}
-        >
-          Renting, without starting from zero.
-        </h1>
-        <p className="mt-3.5 font-[family-name:var(--font-ibm-plex-sans)] text-[1.05rem]" style={{ color: "#5C6B76" }}>
-          One verified profile. Trusted everywhere you go.
-        </p>
-      </div>
+    <section className="relative pb-16 pt-[76px]">
+      <SideRail side="left" label={"Registry · Cape Town"} />
+      <SideRail side="right" label={"Est. 2026 · proptrust.co.za"} />
 
-      <div className="mx-auto mt-[52px] mb-[22px] max-w-[640px] text-center">
-        <span className="font-[family-name:var(--font-fraunces)] text-[1.15rem] font-medium italic" style={{ color: "#132A3D" }}>
-          Why are you here today?
-        </span>
-      </div>
+      <div className="mx-auto max-w-[1320px] px-6 sm:px-10">
+        <div className="mx-auto max-w-[640px] text-center">
+          <p
+            className="mb-2 flex items-center justify-center gap-2 font-[family-name:var(--font-ibm-plex-sans)] text-[0.75rem] font-semibold uppercase tracking-[0.11em]"
+            style={{ color: "#2A5462" }}
+          >
+            <span
+              aria-hidden="true"
+              className="h-[6px] w-[6px] rounded-full"
+              style={{ background: "#B5613E" }}
+            />
+            Verified rental identity
+          </p>
+          <h1
+            className="font-[family-name:var(--font-newsreader)] text-[clamp(2.1rem,5vw,3.1rem)] font-semibold leading-[1.08] tracking-tight"
+            style={{ color: "#1E2A2E" }}
+          >
+            Renting, without starting from zero.
+          </h1>
+          <p className="mt-3.5 font-[family-name:var(--font-ibm-plex-sans)] text-[1.05rem]" style={{ color: "#2A5462" }}>
+            One verified profile. Trusted everywhere you go.
+          </p>
+        </div>
 
-      <div className="mx-auto grid max-w-[760px] grid-cols-1 gap-3 sm:grid-cols-2">
-        {JOURNEY_ORDER.map((id) => (
-          <JourneyCard key={id} id={id} onSelect={onSelect} />
-        ))}
+        <div className="mx-auto mb-7 mt-10 max-w-[640px] text-center">
+          <span className="font-[family-name:var(--font-newsreader)] text-[1.15rem] font-medium italic" style={{ color: "#1E2A2E" }}>
+            Why are you here today?
+          </span>
+        </div>
+
+        <div className="mx-auto grid max-w-[760px] grid-cols-1 gap-3 sm:grid-cols-2">
+          {JOURNEY_ORDER.map((id, index) => (
+            <JourneyCard key={id} id={id} index={index} onSelect={onSelect} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -243,7 +275,7 @@ export function MarketingJourneys() {
   return (
     <div
       className="pt-journeys font-[family-name:var(--font-ibm-plex-sans)]"
-      style={{ background: "#EFECE3" }}
+      style={{ background: "#F1ECE1" }}
     >
       {selected === null ? (
         <JourneyHero onSelect={select} />

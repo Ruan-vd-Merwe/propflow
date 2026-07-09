@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Sora, Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Sora, Fraunces, Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -24,6 +24,13 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["400", "600", "700"],
   variable: "--font-fraunces",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
 });
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -55,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${sora.variable} ${fraunces.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans`}
+        className={`${geistSans.variable} ${sora.variable} ${fraunces.variable} ${newsreader.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans`}
       >
         {children}
       </body>

@@ -14,7 +14,7 @@ const TRUST_CHIPS = [
 function CheckIcon() {
   return (
     <svg
-      className="h-4 w-4 shrink-0 text-[#2563EB]"
+      className="h-4 w-4 shrink-0 text-[#6E7F5C]"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -29,19 +29,19 @@ function CheckIcon() {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F7F7F5] font-sans text-slate-900 antialiased">
+    <div className="min-h-screen bg-[#F1ECE1] font-sans text-slate-900 antialiased">
       <MarketingNav />
 
       {/* ── JOURNEY-BASED HERO + STORY ────────────────────────────────────────── */}
       <MarketingJourneys />
 
       {/* ── TRUST STRIP ───────────────────────────────────────────────────────── */}
-      <section className="bg-[#F7F7F5] px-6 py-14">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
+      <section className="border-t border-[rgba(30,42,46,0.13)] bg-white py-[26px] font-[family-name:var(--font-ibm-plex-sans)]">
+        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-center gap-x-9 gap-y-4 px-6 sm:px-10">
           {TRUST_CHIPS.map((chip) => (
             <div key={chip} className="flex items-center gap-2">
               <CheckIcon />
-              <span className="text-sm font-semibold text-[#111B29]">
+              <span className="text-sm font-semibold text-[#1E2A2E]/75">
                 {chip}
               </span>
             </div>
