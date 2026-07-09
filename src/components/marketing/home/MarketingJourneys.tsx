@@ -259,15 +259,55 @@ function JourneyStory({
   );
 }
 
+const JOURNEY_PARAM = "journey";
+
+function isJourneyId(value: string | null): value is JourneyId {
+  return value !== null && value in JOURNEYS;
+}
+
+function readJourneyFromLocation(): JourneyId | null {
+  if (typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get(JOURNEY_PARAM);
+  return isJourneyId(value) ? value : null;
+}
+
+function pushJourneyState(id: JourneyId | null) {
+  const url = id
+    ? `${window.location.pathname}?${JOURNEY_PARAM}=${id}`
+    : window.location.pathname;
+  window.history.pushState({ journey: id }, "", url);
+}
+
 export function MarketingJourneys() {
   const [selected, setSelected] = useState<JourneyId | null>(null);
 
+  // Sync from the URL after mount, so a direct link or refresh on ?journey=...
+  // still lands on the right story. Done in an effect (not the useState
+  // initializer) so the client's first render matches the server-rendered
+  // hero exactly, avoiding a hydration mismatch.
+  useEffect(() => {
+    setSelected(readJourneyFromLocation());
+  }, []);
+
+  // The browser back/forward buttons don't re-run our click handlers, they
+  // just change the URL, so this listener is what actually syncs the visible
+  // story back to whatever state the URL now says, every time.
+  useEffect(() => {
+    function onPopState() {
+      setSelected(readJourneyFromLocation());
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   function select(id: JourneyId) {
+    pushJourneyState(id);
     setSelected(id);
     window.scrollTo({ top: 0, behavior: prefersReducedMotionSafe() ? "auto" : "smooth" });
   }
 
   function back() {
+    pushJourneyState(null);
     setSelected(null);
     window.scrollTo({ top: 0, behavior: prefersReducedMotionSafe() ? "auto" : "smooth" });
   }
