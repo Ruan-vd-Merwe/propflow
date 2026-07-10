@@ -653,13 +653,35 @@ export default async function DashboardPage({
             {/* ── Rent tracking ────────────────────────────────────────────────── */}
             <div className="card mb-8 p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold text-slate-900">
-                    Rent tracking
-                  </h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
-                    Know who has paid without opening your bank account.
-                  </p>
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M20.5 12a8.5 8.5 0 1 1-4-7.2"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M20.5 4.5v5h-5"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-slate-900">
+                      Rent tracking
+                    </h2>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      Know who has paid without opening your bank account.
+                    </p>
+                  </div>
                 </div>
                 {(rentLateTenantCount > 0 ||
                   rentTotals.outstandingCents > 0 ||
@@ -678,7 +700,7 @@ export default async function DashboardPage({
                       ? "Set up rent tracking by adding a property and a tenant."
                       : totalTenants === 0
                         ? "Set up rent tracking by adding a tenant to a property."
-                        : "No rent obligations yet this month — set up a rent schedule to start tracking payments automatically."}
+                        : "No rent obligations yet this month. Set up a rent schedule to start tracking payments automatically."}
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
                     {totalTenants === 0 ? (
@@ -1165,10 +1187,10 @@ export default async function DashboardPage({
               <div className="grid gap-4 sm:grid-cols-2">
                 <Link
                   href="/services/list"
-                  className="card flex items-start gap-4 p-5 transition hover:border-violet-300 hover:shadow-md"
+                  className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                    <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg className="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
@@ -1181,7 +1203,7 @@ export default async function DashboardPage({
                         ? "You have an active listing in the services directory."
                         : "Offer your skills to residents in the PropTrust community."}
                     </p>
-                    <span className="mt-2 inline-block text-xs font-semibold text-violet-600">
+                    <span className="mt-2 inline-block text-xs font-semibold text-blue-700">
                       {landlordHasListing ? "Manage →" : "Get started →"}
                     </span>
                   </div>
@@ -1189,10 +1211,10 @@ export default async function DashboardPage({
 
                 <Link
                   href="/neighbour"
-                  className="card flex items-start gap-4 p-5 transition hover:border-emerald-300 hover:shadow-md"
+                  className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
-                    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg className="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                   </div>
@@ -1203,9 +1225,9 @@ export default async function DashboardPage({
                     <p className="mt-0.5 text-sm text-slate-500">
                       {landlordIsGoodNeighbour
                         ? "Your profile is active. Keep helping your community."
-                        : "Small acts of goodwill build your reputation — no money involved."}
+                        : "Small acts of goodwill build your reputation. No money involved."}
                     </p>
-                    <span className="mt-2 inline-block text-xs font-semibold text-emerald-600">
+                    <span className="mt-2 inline-block text-xs font-semibold text-blue-700">
                       {landlordIsGoodNeighbour ? "View profile →" : "Opt in →"}
                     </span>
                   </div>
