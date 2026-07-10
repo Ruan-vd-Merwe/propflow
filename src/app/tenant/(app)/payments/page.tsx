@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { RentObligation, PaymentAttempt } from "@/lib/types";
 import { RentPaymentCard } from "../dashboard/RentPaymentCard";
+import { DetailHeader } from "../DetailHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -80,18 +80,8 @@ export default async function TenantPaymentsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="mx-auto max-w-lg px-4 pb-12 pt-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Payments</h1>
-            <p className="mt-1 text-sm text-slate-500">Your rent payment status.</p>
-          </div>
-          <Link
-            href="/tenant/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 hover:underline"
-          >
-            ← Dashboard
-          </Link>
-        </div>
+        <DetailHeader title="Payments" />
+        <p className="mb-6 text-sm text-slate-500">Your rent payment status.</p>
 
         <RentPaymentCard
           token={rentToken ?? ""}

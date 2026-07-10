@@ -1,24 +1,35 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
-import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
-import type { TenantProfile, PropertyListing } from "@/lib/types";
+import type { TenantProfile } from "@/lib/types";
 import {
-  getFindingPlaceStatus,
+  getSearchStatus,
+  getSearchStripStatus,
   getLeaseStatus,
   getApplicationsStatus,
   getPaymentsStatus,
   getTrustScoreStatus,
+  getRentalHistoryStatus,
 } from "@/lib/tenant-dashboard/status";
 import { DiscoverableToggle } from "./DiscoverableToggle";
 import { JourneyNav } from "./JourneyNav";
-import { PrimaryCard } from "./PrimaryCard";
-import { ResumeSearchButton } from "./ResumeSearchButton";
-import { DoorCard } from "./DoorCard";
+import { StatusStrip } from "./StatusStrip";
+import { ToolCard } from "./ToolCard";
 import { ExploreRow } from "./ExploreRow";
+import {
+  SearchDotIcon,
+  ApplicationsIcon,
+  LeaseVaultIcon,
+  ReceiptIcon,
+  ShieldCheckIcon,
+  RentalHistoryIcon,
+  LeaseReviewIcon,
+  GoodNeighbourIcon,
+  MatchCardsIcon,
+  ServicesIcon,
+  LandlordIcon,
+} from "./icons";
+import styles from "./hub.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -29,25 +40,12 @@ export default async function TenantDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: tp }, { data: profile }, { data: appsRaw }, { data: introRaw }, { data: rawProps }] =
-    await Promise.all([
-      supabase.from("tenant_profiles").select("*").eq("user_id", user.id).single(),
-      supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
-      supabase
-        .from("tenant_applications")
-        .select("id, status")
-        .eq("user_id", user.id),
-      supabase
-        .from("introduction_requests")
-        .select("id, status")
-        .eq("tenant_id", user.id),
-      supabase
-        .from("properties")
-        .select("*")
-        .in("status", ["available", "available_from"])
-        .order("created_at", { ascending: false })
-        .limit(50),
-    ]);
+  const [{ data: tp }, { data: profile }, { data: appsRaw }, { data: introRaw }] = await Promise.all([
+    supabase.from("tenant_profiles").select("*").eq("user_id", user.id).single(),
+    supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
+    supabase.from("tenant_applications").select("id, status").eq("user_id", user.id),
+    supabase.from("introduction_requests").select("id, status").eq("tenant_id", user.id),
+  ]);
 
   const tenantProfile = tp as TenantProfile | null;
   if (!tenantProfile) redirect("/onboarding/preferences");
@@ -96,37 +94,28 @@ export default async function TenantDashboardPage() {
     }
   }
 
-  // ── Onboarding / TrustScore state ──────────────────────────────────────────
+  // ── Onboarding / TrustScore state ──────────────────────────────────────
   const prefsDone = tenantProfile.preferences_complete;
   const affordDone = tenantProfile.affordability_complete;
   const verStatus = tenantProfile.verification_status ?? "unverified";
-  const isVerified = verStatus === "verified";
   const isDiscoverable = tenantProfile.discoverable ?? false;
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const hasApplications = applications.length > 0 || introductions.length > 0;
+  const area = tenantProfile.looking_in_area ?? null;
 
   const readinessDone = [
     prefsDone && affordDone,
-    isVerified,
+    verStatus === "verified",
     prefsDone,
     hasApplications,
   ].filter(Boolean).length;
 
-  // ── Matched properties (count only) ─────────────────────────────────────────
-  const matchCount = (() => {
-    const props = (rawProps ?? []) as PropertyListing[];
-    if (props.length === 0 || !prefsDone) return 0;
-    const mapped = mapTenantProfile(tenantProfile as unknown as Record<string, unknown>);
-    const propData = props.map((p) => mapProperty(p as unknown as Record<string, unknown>));
-    const results = rank_properties_for_tenant_interests(propData, mapped);
-    return results.filter((r) => r.status === "ranked").length;
-  })();
-
-  // ── Door statuses ────────────────────────────────────────────────────────────
-  const findingPlaceStatus = getFindingPlaceStatus({
+  // ── Card statuses ────────────────────────────────────────────────────────
+  const searchStatus = getSearchStatus({ discoverable: isDiscoverable, prefsComplete: prefsDone, area });
+  const searchStripStatus = getSearchStripStatus({
     discoverable: isDiscoverable,
     prefsComplete: prefsDone,
-    matchCount,
+    area,
   });
   const leaseStatus = getLeaseStatus({ hasLease: hasActiveLease, leaseEnd });
   const activeApplicationCount =
@@ -139,141 +128,114 @@ export default async function TenantDashboardPage() {
     totalCount: 4,
     verificationStatus: verStatus,
   });
-
-  // ── Primary card: paused search > incomplete profile > pending application > default ──
-  const profileNextAction = !prefsDone
-    ? { label: "Complete your preferences", href: "/onboarding/preferences" }
-    : !affordDone
-      ? { label: "Add affordability details", href: "/onboarding/affordability" }
-      : !isVerified
-        ? { label: "Verify your identity", href: "/onboarding/verification" }
-        : null;
-
-  let primary: { eyebrow: string; title: string; body: string; action: ReactNode };
-  if (!isDiscoverable) {
-    primary = {
-      eyebrow: "Finding a place",
-      title: "Your search is paused",
-      body: "Turn your search back on to start receiving matching properties again.",
-      action: <ResumeSearchButton />,
-    };
-  } else if (profileNextAction) {
-    primary = {
-      eyebrow: "Your profile",
-      title: profileNextAction.label,
-      body: "A complete, verified profile helps landlords trust you faster.",
-      action: (
-        <Link
-          href={profileNextAction.href}
-          className="mt-4 inline-block min-h-[44px] rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-        >
-          Continue
-        </Link>
-      ),
-    };
-  } else if (activeApplicationCount > 0) {
-    primary = {
-      eyebrow: "Applications",
-      title: "You have applications awaiting a response",
-      body: "Check on the status of your applications and introductions.",
-      action: (
-        <Link
-          href="/tenant/applications"
-          className="mt-4 inline-block min-h-[44px] rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-        >
-          Review applications
-        </Link>
-      ),
-    };
-  } else {
-    primary = {
-      eyebrow: "Finding a place",
-      title: "Browse your matches",
-      body: "See properties matched to your budget and preferences.",
-      action: (
-        <Link
-          href="/tenant/matches"
-          className="mt-4 inline-block min-h-[44px] rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-        >
-          Browse matches
-        </Link>
-      ),
-    };
-  }
+  // No rental history data source exists yet, so this stays empty for now.
+  const rentalHistoryStatus = getRentalHistoryStatus({ count: 0 });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="mx-auto max-w-2xl px-4 pb-12 pt-6 sm:px-6 sm:py-8">
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className={styles.hub}>
+      <main className={styles.main}>
+        <div className={styles.headRow}>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
-              Renting
-            </p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">Hi {firstName}</h1>
-            <p className="mt-1 text-sm text-slate-500">Choose what you want to do next.</p>
+            <p className={styles.eyebrow}>Renting</p>
+            <h1 className={styles.greet}>Hi {firstName}</h1>
           </div>
           <DiscoverableToggle initial={isDiscoverable} />
         </div>
+        <p className={styles.subline}>Where are you at?</p>
 
         <JourneyNav hasActiveLease={hasActiveLease} />
 
-        <PrimaryCard {...primary} />
+        <StatusStrip status={searchStripStatus} />
 
-        {/* ── Your rental ─────────────────────────────────────────────────── */}
-        <section className="mb-6">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Your rental
-          </h2>
-          <div className="space-y-3">
-            <DoorCard href="/tenant/matches" title="Finding a place" status={findingPlaceStatus} />
-            <DoorCard href="/tenant/lease" title="Your lease" status={leaseStatus} />
-            <DoorCard href="/tenant/applications" title="Applications" status={applicationsStatus} />
-            <DoorCard href="/tenant/payments" title="Payments" status={paymentsStatus} />
-          </div>
-        </section>
+        <p className={styles.dashHeading}>Your rental admin</p>
+        <p className={styles.dashSubtext}>Search, apply, and keep the paperwork in one place.</p>
 
-        {/* ── Your profile ────────────────────────────────────────────────── */}
-        <section className="mb-6">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Your profile
-          </h2>
-          <DoorCard href="/tenant/profile" title="TrustScore profile" status={trustScoreStatus} />
-        </section>
+        <div className={styles.toolGrid}>
+          <ToolCard
+            href="/tenant/matches"
+            title="Search preferences"
+            status={searchStatus}
+            icon={<SearchDotIcon />}
+            iconTone={prefsDone ? "blue" : "gray"}
+            isActive={prefsDone}
+          />
+          <ToolCard
+            href="/tenant/applications"
+            title="Applications"
+            status={applicationsStatus}
+            icon={<ApplicationsIcon />}
+            iconTone="gray"
+          />
+          <ToolCard
+            href="/tenant/lease"
+            title="Lease vault"
+            status={leaseStatus}
+            icon={<LeaseVaultIcon />}
+            iconTone={hasActiveLease ? "blue" : "amber"}
+            needsAction={!hasActiveLease}
+          />
+          <ToolCard
+            href="/tenant/payments"
+            title="Payments"
+            status={paymentsStatus}
+            icon={<ReceiptIcon />}
+            iconTone={paymentsStatus.status === "neutral" ? "gray" : "blue"}
+          />
+        </div>
 
-        {/* ── Explore ──────────────────────────────────────────────────────── */}
-        <section className="mb-6">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Explore
-          </h2>
-          <div className="card divide-y divide-slate-100 overflow-hidden">
-            <ExploreRow
-              title="Services"
-              description="Cleaning, garden help, laundry and other local help."
-              href="/services"
-            />
-            <ExploreRow
-              title="Lease Review"
-              description="Understand your lease before you sign."
-              href="/xpello/tenant"
-            />
-            <ExploreRow
-              title="Good Neighbour"
-              description="Connect with people nearby and build your reputation."
-              href="/neighbour"
-            />
-            <ExploreRow
-              title="Match with people"
-              description="Sharing, planning your next move, or connecting with other tenants."
-              comingSoon
-            />
-            <ExploreRow
-              title="Become a landlord"
-              description="List a property, screen tenants and track payments."
-              href="/settings"
-            />
-          </div>
-        </section>
+        <p className={styles.sectionLabel}>Your profile</p>
+        <div className={styles.toolGrid}>
+          <ToolCard
+            href="/tenant/profile"
+            title="TrustScore profile"
+            status={trustScoreStatus}
+            icon={<ShieldCheckIcon />}
+            iconTone="navy"
+          />
+          <ToolCard
+            href="/tenant/rental-history"
+            title="Rental history"
+            status={rentalHistoryStatus}
+            icon={<RentalHistoryIcon />}
+            iconTone="gray"
+          />
+        </div>
+
+        <p className={styles.sectionLabel}>Explore</p>
+        <div className={styles.explore}>
+          <ExploreRow
+            title="Lease review"
+            description="Understand a lease before you sign"
+            href="/xpello/tenant"
+            icon={<LeaseReviewIcon className={styles.exploreIcon} />}
+          />
+          <ExploreRow
+            title="Good Neighbour"
+            description="Build reputation where you live"
+            href="/neighbour"
+            icon={<GoodNeighbourIcon className={styles.exploreIcon} />}
+          />
+          <ExploreRow
+            title="Match with people"
+            description="Find a flatmate or replacement"
+            comingSoon
+            icon={<MatchCardsIcon className={styles.exploreIcon} />}
+          />
+          <ExploreRow
+            title="Services"
+            description="Get help with rental admin"
+            href="/services"
+            icon={<ServicesIcon className={styles.exploreIcon} />}
+          />
+          <ExploreRow
+            title="Become a landlord"
+            description="Switch to owner tools"
+            href="/settings"
+            icon={<LandlordIcon className={styles.exploreIcon} />}
+          />
+        </div>
+
+        <p className={styles.note}>Tap a card to go deeper.</p>
       </main>
     </div>
   );

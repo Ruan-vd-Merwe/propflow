@@ -5,6 +5,7 @@ import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-eng
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import type { TenantProfile, PropertyListing } from "@/lib/types";
 import { MatchesContent } from "./MatchesContent";
+import { DetailHeader } from "../DetailHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -49,20 +50,7 @@ export default async function TenantMatchesPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Finding a place</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Properties matched to your search preferences.
-            </p>
-          </div>
-          <Link
-            href="/tenant/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 hover:underline"
-          >
-            ← Dashboard
-          </Link>
-        </div>
+        <DetailHeader title="Finding a place" />
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
           <p>

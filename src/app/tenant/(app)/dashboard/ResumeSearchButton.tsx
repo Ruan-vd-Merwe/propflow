@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./hub.module.css";
 
 export function ResumeSearchButton() {
   const router = useRouter();
@@ -27,16 +28,14 @@ export function ResumeSearchButton() {
   }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={resume}
-        disabled={pending}
-        className="mt-4 inline-block min-h-[44px] rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
-      >
-        {pending ? "Resuming…" : "Resume search"}
-      </button>
-      {error && <p className="mt-2 text-xs text-red-300">Update failed. Try again.</p>}
-    </div>
+    <button
+      type="button"
+      onClick={resume}
+      disabled={pending}
+      className={styles.resumeBtn}
+      aria-label={error ? "Update failed, tap to try again" : "Resume search"}
+    >
+      {pending ? "Resuming…" : error ? "Try again" : "Resume"}
+    </button>
   );
 }

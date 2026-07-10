@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { LogMaintenanceButton } from "../dashboard/LogMaintenanceButton";
+import { DetailHeader } from "../DetailHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -78,27 +79,17 @@ export default async function TenantLeasePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="mx-auto max-w-2xl px-4 pb-12 pt-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Your lease</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Keep your rental details in one place so your next application is easier.
-            </p>
-          </div>
-          <Link
-            href="/tenant/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 hover:underline"
-          >
-            ← Dashboard
-          </Link>
-        </div>
+        <DetailHeader title="Lease vault" />
 
         {!hasActiveLease ? (
-          <div className="card p-10 text-center">
-            <p className="text-slate-500">No lease or rental agreement on file yet.</p>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+            <p className="text-sm leading-relaxed text-slate-500">
+              Nothing added yet. Add your lease once so rent, deposit, and notice period are all
+              in one place for next time.
+            </p>
             <Link
               href="/tenant/applications#lease-upload"
-              className="mt-4 inline-block rounded-lg bg-[#1e40af] px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+              className="mt-4 inline-block rounded-xl bg-[#0f172a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Add rental details
             </Link>
@@ -109,7 +100,7 @@ export default async function TenantLeasePage() {
               <li className="flex items-center justify-between gap-4 py-2.5 text-sm">
                 <span className="text-slate-600">Lease start and end date</span>
                 <span className="font-medium text-slate-900">
-                  {currentLease?.lease_start ? fmtDate(currentLease.lease_start) : "–"} to{" "}
+                  {currentLease?.lease_start ? fmtDate(currentLease.lease_start) : "Not set"} to{" "}
                   {currentLease?.lease_end ? fmtDate(currentLease.lease_end) : "month to month"}
                 </span>
               </li>

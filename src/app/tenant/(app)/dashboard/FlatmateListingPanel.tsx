@@ -7,7 +7,7 @@ import type { FlatmateListing, FlatmateApplicant } from "@/lib/types";
 const TRUST_LABEL: Record<string, { label: string; cls: string }> = {
   unverified: { label: "Unverified", cls: "bg-slate-100 text-slate-500" },
   pending: { label: "Pending review", cls: "bg-amber-100 text-amber-700" },
-  verified: { label: "TrustScore verified", cls: "bg-green-100 text-green-700" },
+  verified: { label: "TrustScore verified", cls: "bg-blue-100 text-blue-700" },
   rejected: { label: "Review rejected", cls: "bg-red-100 text-red-700" },
 };
 

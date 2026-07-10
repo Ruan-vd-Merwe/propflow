@@ -1,43 +1,40 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import styles from "./hub.module.css";
+import { ChevronIcon } from "./icons";
 
 type ExploreRowProps = {
   title: string;
   description: string;
+  icon: ReactNode;
   href?: string;
   comingSoon?: boolean;
 };
 
-export function ExploreRow({ title, description, href, comingSoon }: ExploreRowProps) {
+export function ExploreRow({ title, description, icon, href, comingSoon }: ExploreRowProps) {
   const content = (
-    <div className="flex min-h-[44px] items-center justify-between gap-4 px-5 py-4">
-      <div className="min-w-0">
-        <p className="font-semibold text-slate-900">{title}</p>
-        <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+    <>
+      <div className={styles.exploreLabel}>
+        {icon}
+        <div className={styles.exploreText}>
+          <p className={styles.exploreRowTitle}>{title}</p>
+          <p className={styles.exploreRowSub}>{description}</p>
+        </div>
       </div>
       {comingSoon ? (
-        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-          Coming soon
-        </span>
+        <span className={styles.exploreTag}>Soon</span>
       ) : (
-        <svg
-          className="h-5 w-5 shrink-0 text-slate-300"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronIcon className={styles.chevron} />
       )}
-    </div>
+    </>
   );
 
   if (comingSoon || !href) {
-    return content;
+    return <div className={styles.exploreRow}>{content}</div>;
   }
 
   return (
-    <Link href={href} className="block transition hover:bg-slate-50">
+    <Link href={href} className={styles.exploreRow}>
       {content}
     </Link>
   );

@@ -7,6 +7,11 @@ export type DoorStatus = {
   label: string;
 };
 
+export type StripStatus = {
+  level: "active" | "attention";
+  label: string;
+} | null;
+
 function fmtRand(cents: number) {
   return `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 }
@@ -19,34 +24,43 @@ function fmtDate(iso: string) {
   });
 }
 
-/**
- * "Finding a place" door status. matchCount should already be filtered to
- * properties within the tenant's budget (the interest-engine scoring already
- * excludes anything the tenant marked as a dealbreaker or over budget).
- */
-export function getFindingPlaceStatus(input: {
+/** "Search preferences" tool card pill. */
+export function getSearchStatus(input: {
   discoverable: boolean;
   prefsComplete: boolean;
-  matchCount: number;
+  area: string | null;
 }): DoorStatus {
+  if (!input.prefsComplete) {
+    return { status: "neutral", label: "Not set up" };
+  }
+  const area = input.area ?? "Your area";
   if (!input.discoverable) {
-    return { status: "attention", label: "Search paused" };
+    return { status: "attention", label: `${area} · Paused` };
   }
-  if (!input.prefsComplete || input.matchCount === 0) {
-    return { status: "neutral", label: "No matches yet" };
-  }
-  return {
-    status: "active",
-    label: `${input.matchCount} match${input.matchCount === 1 ? "" : "es"} within budget`,
-  };
+  return { status: "active", label: area };
 }
 
+/** Hub status strip. Only shown once a search exists (preferences are set). */
+export function getSearchStripStatus(input: {
+  discoverable: boolean;
+  prefsComplete: boolean;
+  area: string | null;
+}): StripStatus {
+  if (!input.prefsComplete) return null;
+  const area = input.area ?? "your area";
+  if (!input.discoverable) {
+    return { level: "attention", label: `Your ${area} search is paused` };
+  }
+  return { level: "active", label: `Matching in ${area}` };
+}
+
+/** "Lease vault" tool card pill. */
 export function getLeaseStatus(input: {
   hasLease: boolean;
   leaseEnd: string | null;
 }): DoorStatus {
   if (!input.hasLease) {
-    return { status: "neutral", label: "Not added yet" };
+    return { status: "attention", label: "Not added yet" };
   }
   return {
     status: "active",
@@ -54,6 +68,7 @@ export function getLeaseStatus(input: {
   };
 }
 
+/** "Applications" tool card pill. */
 export function getApplicationsStatus(input: { activeCount: number }): DoorStatus {
   if (input.activeCount === 0) {
     return { status: "neutral", label: "None active" };
@@ -61,12 +76,13 @@ export function getApplicationsStatus(input: { activeCount: number }): DoorStatu
   return { status: "active", label: `${input.activeCount} active` };
 }
 
+/** "Payments" tool card pill. */
 export function getPaymentsStatus(input: {
   obligation: { amountDueCents: number; dueDate: string; status: string } | null;
 }): DoorStatus {
   const { obligation } = input;
   if (!obligation || obligation.status === "paid" || obligation.status === "waived") {
-    return { status: "neutral", label: "Nothing due yet" };
+    return { status: "neutral", label: "Nothing due" };
   }
   const level: DoorStatusLevel = obligation.status === "failed" || obligation.status === "late"
     ? "attention"
@@ -77,20 +93,38 @@ export function getPaymentsStatus(input: {
   };
 }
 
+/**
+ * "TrustScore profile" tool card pill. Green is reserved for the messaging
+ * prop only (never real product surfaces), so a fully verified profile uses
+ * blue rather than trust-green.
+ */
 export function getTrustScoreStatus(input: {
   doneCount: number;
   totalCount: number;
   verificationStatus: VerificationStatus;
 }): DoorStatus {
-  let label = `${input.doneCount} of ${input.totalCount} complete`;
-  if (input.verificationStatus === "pending") {
-    label += " · ID pending review";
+  if (input.verificationStatus === "rejected") {
+    return { status: "attention", label: "Verification rejected" };
   }
-  const status: DoorStatusLevel =
-    input.verificationStatus === "pending"
-      ? "attention"
-      : input.doneCount >= input.totalCount
-        ? "active"
-        : "neutral";
-  return { status, label };
+  if (input.verificationStatus === "pending") {
+    return { status: "attention", label: "ID pending review" };
+  }
+  if (input.verificationStatus === "unverified" && input.doneCount === 0) {
+    return { status: "attention", label: "ID still needed" };
+  }
+  if (input.doneCount < input.totalCount) {
+    return { status: "attention", label: `${input.doneCount} of ${input.totalCount} complete` };
+  }
+  if (input.verificationStatus === "verified") {
+    return { status: "active", label: "Verified" };
+  }
+  return { status: "attention", label: "ID still needed" };
+}
+
+/** "Rental history" tool card pill. */
+export function getRentalHistoryStatus(input: { count: number }): DoorStatus {
+  if (input.count === 0) {
+    return { status: "neutral", label: "Nothing on record" };
+  }
+  return { status: "active", label: `${input.count} rental${input.count === 1 ? "" : "s"}` };
 }

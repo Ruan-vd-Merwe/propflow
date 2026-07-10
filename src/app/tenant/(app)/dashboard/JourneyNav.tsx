@@ -1,27 +1,50 @@
-import Link from "next/link";
+"use client";
 
-const PILL_CLASS =
-  "flex min-h-[44px] items-center rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-slate-900";
+import { useState } from "react";
+import styles from "./hub.module.css";
 
+type Journey = "finding" | "current" | "flatmate";
+
+const TABS: { id: Journey; label: string }[] = [
+  { id: "finding", label: "Finding a place" },
+  { id: "current", label: "Current rental" },
+];
+
+/**
+ * Visual-only tab switcher. Default tab is derived from the tenant's real
+ * journey context (an active lease implies "current rental"); tapping a pill
+ * only changes which one looks active for now, the hub's content doesn't
+ * change with it yet. Data wiring is a later phase.
+ */
 export function JourneyNav({ hasActiveLease }: { hasActiveLease: boolean }) {
+  const [active, setActive] = useState<Journey>(hasActiveLease ? "current" : "finding");
+
   return (
-    <div className="mb-6 inline-flex flex-wrap gap-1 rounded-full bg-slate-100 p-1">
-      <Link href="/tenant/lease" className={PILL_CLASS}>
-        Current rental
-      </Link>
-      <Link href="/tenant/matches" className={PILL_CLASS}>
-        Finding a place
-      </Link>
+    <div className={styles.switcher}>
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => setActive(tab.id)}
+          aria-pressed={active === tab.id}
+          className={`${styles.switchTab} ${active === tab.id ? styles.switchTabActive : ""}`}
+        >
+          {tab.label}
+        </button>
+      ))}
       {hasActiveLease ? (
-        <Link href="/tenant/flatmate" className={PILL_CLASS}>
-          Replacing a flatmate
-        </Link>
+        <button
+          type="button"
+          onClick={() => setActive("flatmate")}
+          aria-pressed={active === "flatmate"}
+          className={`${styles.switchTab} ${active === "flatmate" ? styles.switchTabActive : ""}`}
+        >
+          Replacing flatmate
+        </button>
       ) : (
-        <span className="flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-400">
-          Replacing a flatmate
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-500">
-            Needs a lease
-          </span>
+        <span className={`${styles.switchTab} ${styles.switchTabDisabled}`}>
+          Replacing flatmate
+          <span className={styles.switchTag}>Needs a lease</span>
         </span>
       )}
     </div>

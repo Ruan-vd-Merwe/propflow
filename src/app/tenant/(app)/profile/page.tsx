@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EditPreferencesPanel } from "./EditPreferencesPanel";
 import type { TenantProfile } from "@/lib/types";
+import { DetailHeader } from "../DetailHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +16,16 @@ const EMPLOYMENT_LABELS: Record<string, string> = {
 
 const INCOME_BAND_LABELS: Record<string, string> = {
   under_10k: "Under R10,000",
-  "10k_20k": "R10k – R20k",
-  "20k_35k": "R20k – R35k",
-  "35k_50k": "R35k – R50k",
+  "10k_20k": "R10k to R20k",
+  "20k_35k": "R20k to R35k",
+  "35k_50k": "R35k to R50k",
   "50k_plus": "R50,000+",
 };
 
 const VERIFICATION_BADGE: Record<string, { label: string; cls: string }> = {
   unverified: { label: "Unverified", cls: "bg-slate-100 text-slate-500" },
   pending: { label: "Verification pending", cls: "bg-amber-100 text-amber-700" },
-  verified: { label: "TrustScore ✓", cls: "bg-green-100 text-green-700" },
+  verified: { label: "TrustScore verified", cls: "bg-blue-100 text-blue-700" },
   rejected: { label: "Verification rejected", cls: "bg-red-100 text-red-700" },
 };
 
@@ -85,9 +86,9 @@ export default async function TenantProfilePage({
     <div className="min-h-screen bg-slate-50">
 
       {isWelcome && (
-        <div className="border-b border-green-500 bg-green-600 px-6 py-4 text-center text-white">
-          <p className="font-semibold">Welcome to PropTrust!</p>
-          <p className="mt-0.5 text-sm text-green-100">
+        <div className="border-b border-blue-800 bg-[#0f172a] px-6 py-4 text-center text-white">
+          <p className="font-semibold">Welcome to PropTrust</p>
+          <p className="mt-0.5 text-sm text-slate-300">
             Your profile is set up. Landlords matching your preferences will be
             able to find and contact you.
           </p>
@@ -95,6 +96,7 @@ export default async function TenantProfilePage({
       )}
 
       <div className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:py-8">
+        <DetailHeader title="TrustScore profile" />
         {/* ── Onboarding prompts based on step completion ─────────────── */}
         {!prefsDone && (
           <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a] p-6">
@@ -184,13 +186,13 @@ export default async function TenantProfilePage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-slate-900">
                   {profile?.full_name}
-                </h1>
+                </h2>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                     tenantProfile.discoverable
-                      ? "bg-green-100 text-green-700"
+                      ? "bg-blue-100 text-blue-700"
                       : "bg-slate-100 text-slate-500"
                   }`}
                 >
@@ -234,7 +236,7 @@ export default async function TenantProfilePage({
             {tenantProfile.budget_max ? (
               <Stat
                 label="Budget"
-                value={`${tenantProfile.budget_min ? fmt(tenantProfile.budget_min) : "–"} – ${fmt(tenantProfile.budget_max)}/mo`}
+                value={`${tenantProfile.budget_min ? fmt(tenantProfile.budget_min) : "R0"} to ${fmt(tenantProfile.budget_max)}/mo`}
               />
             ) : (
               <StatEmpty label="Budget" />
@@ -286,8 +288,8 @@ export default async function TenantProfilePage({
                 <p className="mt-0.5 text-sm font-semibold text-slate-900 group-hover:text-blue-700">
                   {tenantProfile.affordability_min_cents
                     ? fmt(tenantProfile.affordability_min_cents)
-                    : "–"}{" "}
-                  – {fmt(tenantProfile.affordability_max_cents)}/mo
+                    : "R0"}{" "}
+                  to {fmt(tenantProfile.affordability_max_cents)}/mo
                 </p>
               </Link>
             )}

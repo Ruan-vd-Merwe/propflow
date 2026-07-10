@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LeaseUploadSection } from "./LeaseUploadSection";
 import type { LeaseExtraction } from "@/lib/types";
+import { DetailHeader } from "../DetailHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -79,20 +80,10 @@ export default async function TenantApplicationsPage() {
     <div className="min-h-screen bg-slate-50">
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Applications</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Properties you&apos;ve applied to or been introduced to via PropTrust
-            </p>
-          </div>
-          <Link
-            href="/tenant/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 hover:underline"
-          >
-            ← Dashboard
-          </Link>
-        </div>
+        <DetailHeader title="Applications" />
+        <p className="mb-6 text-sm text-slate-500">
+          Properties you&apos;ve applied to or been introduced to via PropTrust.
+        </p>
 
         <div id="lease-upload" className="scroll-mt-24">
           <LeaseUploadSection initialExtractions={leaseExtractions} />
