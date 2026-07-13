@@ -22,7 +22,7 @@
     "resend": "^6.12.4",
     "rss-parser": "^3.13.0",
     "twilio": "^6.0.2",
-    "vercel": "^54.20.1"
+    "vercel": "^55.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
