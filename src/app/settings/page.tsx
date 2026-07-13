@@ -522,7 +522,7 @@ function PayoutSettingsCard({ profile, onSaved }: PayoutSettingsCardProps) {
 type WaStatus = {
   configured: boolean;
   missing: string[];
-  fromNumber: string | null;
+  phoneNumberId: string | null;
 };
 
 function WhatsAppStatusCard() {
@@ -535,7 +535,7 @@ function WhatsAppStatusCard() {
     fetch("/api/whatsapp/status")
       .then((r) => r.json())
       .then((d: WaStatus) => setWaStatus(d))
-      .catch(() => setWaStatus({ configured: false, missing: ["Unable to reach server"], fromNumber: null }));
+      .catch(() => setWaStatus({ configured: false, missing: ["Unable to reach server"], phoneNumberId: null }));
   }, []);
 
   async function sendTest() {
@@ -577,9 +577,9 @@ function WhatsAppStatusCard() {
               WhatsApp connected
             </span>
           </div>
-          {waStatus.fromNumber && (
+          {waStatus.phoneNumberId && (
             <p className="mb-4 text-sm text-slate-600">
-              Sending from: <span className="font-mono text-xs">{waStatus.fromNumber}</span>
+              Phone number ID: <span className="font-mono text-xs">{waStatus.phoneNumberId}</span>
             </p>
           )}
           <div className="mb-3">
@@ -594,8 +594,7 @@ function WhatsAppStatusCard() {
               className="input-field w-full max-w-sm"
             />
             <p className="mt-1 text-xs text-slate-400">
-              SA format: 0XXXXXXXXX or +27XXXXXXXXX. The number must have joined the Twilio
-              sandbox first.
+              SA format: 0XXXXXXXXX or +27XXXXXXXXX.
             </p>
           </div>
           <button
@@ -630,26 +629,26 @@ function WhatsAppStatusCard() {
           </p>
           <ol className="mb-4 space-y-1.5 text-sm text-slate-600">
             <li>
-              1. Sign up at{" "}
-              <a href="https://www.twilio.com" target="_blank" rel="noreferrer" className="font-medium text-blue-700 hover:underline">
-                twilio.com
+              1. Set up a WhatsApp Business app at{" "}
+              <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="font-medium text-blue-700 hover:underline">
+                developers.facebook.com
               </a>
             </li>
-            <li>2. Enable the WhatsApp Sandbox in your Twilio console</li>
+            <li>2. Register your message templates in Meta&apos;s Business Manager</li>
             <li>3. Add these variables to your Vercel project and redeploy:</li>
           </ol>
           <div className="mb-4 rounded-xl bg-slate-900 px-4 py-3 font-mono text-xs text-slate-300">
-            <div>TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxx</div>
-            <div>TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxx</div>
-            <div>TWILIO_WHATSAPP_FROM=whatsapp:+14155238886</div>
+            <div>WHATSAPP_PHONE_NUMBER_ID=xxxxxxxxxxxxxxxx</div>
+            <div>WHATSAPP_BUSINESS_ACCOUNT_ID=xxxxxxxxxxxxxxxx</div>
+            <div>WHATSAPP_ACCESS_TOKEN=xxxxxxxxxxxxxxxx</div>
           </div>
           <a
-            href="https://www.twilio.com/docs/whatsapp"
+            href="https://developers.facebook.com/docs/whatsapp/cloud-api"
             target="_blank"
             rel="noreferrer"
             className="text-sm font-semibold text-blue-700 hover:underline"
           >
-            View Twilio WhatsApp setup guide →
+            View WhatsApp Cloud API setup guide →
           </a>
         </div>
       )}

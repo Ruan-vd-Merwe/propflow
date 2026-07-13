@@ -4,16 +4,12 @@ import { NextResponse } from "next/server";
 export type WhatsAppStatusResponse = {
   configured: boolean;
   missing: string[];
-  fromNumber: string | null;
+  phoneNumberId: string | null;
 };
 
-function maskNumber(raw: string): string {
-  // Keep prefix and last 3 digits, mask the middle
-  if (raw.length <= 8) return raw;
-  const start = raw.slice(0, 10); // e.g. "whatsapp:+"
-  const last3 = raw.slice(-3);
-  const masked = "*".repeat(Math.max(0, raw.length - 13));
-  return `${start}${masked}${last3}`;
+function maskId(raw: string): string {
+  if (raw.length <= 6) return raw;
+  return `${raw.slice(0, 4)}${"*".repeat(raw.length - 7)}${raw.slice(-3)}`;
 }
 
 export async function GET() {
@@ -27,16 +23,16 @@ export async function GET() {
   }
 
   const missing: string[] = [];
-  if (!process.env.TWILIO_ACCOUNT_SID) missing.push("TWILIO_ACCOUNT_SID");
-  if (!process.env.TWILIO_AUTH_TOKEN) missing.push("TWILIO_AUTH_TOKEN");
-  if (!process.env.TWILIO_WHATSAPP_FROM) missing.push("TWILIO_WHATSAPP_FROM");
+  if (!process.env.WHATSAPP_PHONE_NUMBER_ID) missing.push("WHATSAPP_PHONE_NUMBER_ID");
+  if (!process.env.WHATSAPP_BUSINESS_ACCOUNT_ID) missing.push("WHATSAPP_BUSINESS_ACCOUNT_ID");
+  if (!process.env.WHATSAPP_ACCESS_TOKEN) missing.push("WHATSAPP_ACCESS_TOKEN");
 
-  const from = process.env.TWILIO_WHATSAPP_FROM ?? null;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? null;
 
   const body: WhatsAppStatusResponse = {
     configured: missing.length === 0,
     missing,
-    fromNumber: from ? maskNumber(from) : null,
+    phoneNumberId: phoneNumberId ? maskId(phoneNumberId) : null,
   };
 
   return NextResponse.json(body);

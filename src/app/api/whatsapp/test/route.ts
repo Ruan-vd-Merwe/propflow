@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { sendWhatsApp } from "@/lib/whatsapp";
+import { sendCustomMessage } from "@/lib/whatsapp";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -44,27 +44,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await sendWhatsApp(
+  // Self-triggered test send to the logged-in user's own number — sent via
+  // the CUSTOM_MESSAGE template (Meta requires an approved template for any
+  // business-initiated message; see the founder runbook to register it).
+  const result = await sendCustomMessage(
     targetPhone,
-    "PropTrust WhatsApp test message. Your integration is working. ✓\n\n" +
-      "If you are using the Twilio sandbox, ensure your number has joined the " +
-      "sandbox by sending the join code to the sandbox number first.",
+    true,
+    "PropTrust WhatsApp test message. Your integration is working.",
   );
 
-  if (!result.success) {
-    const sandboxNote = result.error?.includes("not a participant")
-      ? " Your phone has not joined the Twilio WhatsApp sandbox yet. " +
-        "Send the join code (e.g. 'join <word>-<word>') to the sandbox number to opt in."
-      : "";
-    return NextResponse.json(
-      { error: result.error + sandboxNote },
-      { status: 500 },
-    );
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
   return NextResponse.json({
     success: true,
-    sid: result.sid,
+    providerMessageId: result.providerMessageId,
     to: targetPhone,
   });
 }

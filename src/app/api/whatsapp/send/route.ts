@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { sendWhatsApp } from "@/lib/whatsapp";
+import { sendCustomMessage } from "@/lib/whatsapp";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -40,8 +40,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const fullMessage = message.trim() + "\n\n— PropTrust";
-  const result = await sendWhatsApp(tenant.phone, fullMessage);
+  // tenants table has no whatsapp_opted_in column (only profiles/
+  // tenant_profiles do) — landlord-entered records are treated as opted-in
+  // by default; see the WhatsApp founder runbook. Sent as a single template
+  // parameter, not free text — Meta forbids arbitrary body text for
+  // business-initiated messages outside a 24h session window.
+  const result = await sendCustomMessage(tenant.phone, true, message.trim());
 
   // Log the message
   await supabase.from("communications_log").insert({
@@ -49,10 +53,10 @@ export async function POST(request: Request) {
     type: "whatsapp_custom",
     subject: message.slice(0, 100),
     sent_at: new Date().toISOString(),
-    status: result.success ? "sent" : "failed",
+    status: result.ok ? "sent" : "failed",
   });
 
-  if (!result.success) {
+  if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
