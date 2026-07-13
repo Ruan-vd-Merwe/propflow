@@ -16,6 +16,7 @@ import { JourneyNav } from "./JourneyNav";
 import { StatusStrip } from "./StatusStrip";
 import { ToolCard } from "./ToolCard";
 import { ExploreRow } from "./ExploreRow";
+import { PropTrustGuide } from "@/components/PropTrustGuide";
 import {
   SearchDotIcon,
   ApplicationsIcon,
@@ -40,11 +41,30 @@ export default async function TenantDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: tp }, { data: profile }, { data: appsRaw }, { data: introRaw }] = await Promise.all([
-    supabase.from("tenant_profiles").select("*").eq("user_id", user.id).single(),
-    supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
-    supabase.from("tenant_applications").select("id, status").eq("user_id", user.id),
-    supabase.from("introduction_requests").select("id, status").eq("tenant_id", user.id),
+  const [
+    { data: tp },
+    { data: profile },
+    { data: appsRaw },
+    { data: introRaw },
+  ] = await Promise.all([
+    supabase
+      .from("tenant_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("tenant_applications")
+      .select("id, status")
+      .eq("user_id", user.id),
+    supabase
+      .from("introduction_requests")
+      .select("id, status")
+      .eq("tenant_id", user.id),
   ]);
 
   const tenantProfile = tp as TenantProfile | null;
@@ -58,7 +78,11 @@ export default async function TenantDashboardPage() {
   // tenant app, to see if this account has an active lease.
   let hasActiveLease = false;
   let leaseEnd: string | null = null;
-  let nextObligation: { amountDueCents: number; dueDate: string; status: string } | null = null;
+  let nextObligation: {
+    amountDueCents: number;
+    dueDate: string;
+    status: string;
+  } | null = null;
 
   if (profile?.email) {
     const today = new Date().toISOString().split("T")[0];
@@ -80,7 +104,9 @@ export default async function TenantDashboardPage() {
         .eq("tenant_id", activeTenant.id)
         .order("due_date", { ascending: false });
       const obligations = obligationsRaw ?? [];
-      const payable = obligations.filter((o) => o.status !== "paid" && o.status !== "waived");
+      const payable = obligations.filter(
+        (o) => o.status !== "paid" && o.status !== "waived",
+      );
       const upcoming = payable
         .filter((o) => o.due_date >= today)
         .sort((a, b) => a.due_date.localeCompare(b.due_date));
@@ -89,7 +115,11 @@ export default async function TenantDashboardPage() {
         .sort((a, b) => b.due_date.localeCompare(a.due_date));
       const chosen = upcoming[0] ?? overdue[0] ?? obligations[0] ?? null;
       nextObligation = chosen
-        ? { amountDueCents: chosen.amount_due_cents, dueDate: chosen.due_date, status: chosen.status }
+        ? {
+            amountDueCents: chosen.amount_due_cents,
+            dueDate: chosen.due_date,
+            status: chosen.status,
+          }
         : null;
     }
   }
@@ -102,6 +132,10 @@ export default async function TenantDashboardPage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const hasApplications = applications.length > 0 || introductions.length > 0;
   const area = tenantProfile.looking_in_area ?? null;
+  const showContextualGuide =
+    !hasActiveLease &&
+    !hasApplications &&
+    (!prefsDone || !affordDone || !isDiscoverable);
 
   const readinessDone = [
     prefsDone && affordDone,
@@ -111,7 +145,11 @@ export default async function TenantDashboardPage() {
   ].filter(Boolean).length;
 
   // ── Card statuses ────────────────────────────────────────────────────────
-  const searchStatus = getSearchStatus({ discoverable: isDiscoverable, prefsComplete: prefsDone, area });
+  const searchStatus = getSearchStatus({
+    discoverable: isDiscoverable,
+    prefsComplete: prefsDone,
+    area,
+  });
   const searchStripStatus = getSearchStripStatus({
     discoverable: isDiscoverable,
     prefsComplete: prefsDone,
@@ -121,7 +159,9 @@ export default async function TenantDashboardPage() {
   const activeApplicationCount =
     applications.filter((a) => a.status === "pending").length +
     introductions.filter((i) => i.status === "pending").length;
-  const applicationsStatus = getApplicationsStatus({ activeCount: activeApplicationCount });
+  const applicationsStatus = getApplicationsStatus({
+    activeCount: activeApplicationCount,
+  });
   const paymentsStatus = getPaymentsStatus({ obligation: nextObligation });
   const trustScoreStatus = getTrustScoreStatus({
     doneCount: readinessDone,
@@ -145,10 +185,27 @@ export default async function TenantDashboardPage() {
 
         <JourneyNav hasActiveLease={hasActiveLease} />
 
+        {showContextualGuide ? (
+          <div className="mb-6">
+            <PropTrustGuide
+              role="tenant"
+              variant="contextual"
+              heading="Not sure where to start?"
+              description="Tell us what you want to achieve and we’ll guide you to the right rental step."
+            />
+          </div>
+        ) : (
+          <div className="-mt-2 mb-6 flex justify-end">
+            <PropTrustGuide role="tenant" hasActiveLease={hasActiveLease} />
+          </div>
+        )}
+
         <StatusStrip status={searchStripStatus} />
 
         <p className={styles.dashHeading}>Your rental admin</p>
-        <p className={styles.dashSubtext}>Search, apply, and keep the paperwork in one place.</p>
+        <p className={styles.dashSubtext}>
+          Search, apply, and keep the paperwork in one place.
+        </p>
 
         <div className={styles.toolGrid}>
           <ToolCard

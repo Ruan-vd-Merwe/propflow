@@ -15,6 +15,7 @@ import {
 import { PaymentWarningsButton } from "./PaymentWarningsButton";
 import { LegalProtectionCard } from "@/components/xpello/LegalProtectionCard";
 import { PropertyLegalStatusPill } from "@/components/xpello/PropertyLegalStatusPill";
+import { PropTrustGuide } from "@/components/PropTrustGuide";
 import type {
   Payment,
   Property,
@@ -224,7 +225,10 @@ export default async function DashboardPage({
     ]);
 
   const landlordHasListing = (activeSvcCount ?? 0) > 0;
-  const landlordNeighbour = landlordNeighbourRaw as { id: string; is_active: boolean } | null;
+  const landlordNeighbour = landlordNeighbourRaw as {
+    id: string;
+    is_active: boolean;
+  } | null;
   const landlordIsGoodNeighbour = landlordNeighbour?.is_active === true;
 
   // ── Lease / Xpello stats ─────────────────────────────────────────────────────
@@ -289,7 +293,9 @@ export default async function DashboardPage({
   const rentObligations: RentObligation[] = rentObligationsRaw ?? [];
   const rentTotals = rentLedgerTotals(rentObligations);
   const rentLateTenantCount = lateTenantIds(rentObligations).length;
-  const rentFailedCount = rentObligations.filter((o) => o.status === "failed").length;
+  const rentFailedCount = rentObligations.filter(
+    (o) => o.status === "failed",
+  ).length;
 
   const todayStr = now.toISOString().split("T")[0];
   const dueSoonDate = new Date(now);
@@ -369,7 +375,7 @@ export default async function DashboardPage({
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {/* ── Tenant tab ──────────────────────────────────────────────────── */}
         {tab === "tenant" && (
           <div>
@@ -497,88 +503,95 @@ export default async function DashboardPage({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {myMatchedProperties.map(({ property: p, score, match_reasons }) => (
-                      <div
-                        key={p.id}
-                        className="card flex items-center gap-4 overflow-hidden p-0"
-                      >
-                        {/* Photo */}
-                        <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
-                          {p.photos?.length > 0 ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.photos[0]}
-                              alt={p.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                              <svg
-                                className="h-8 w-8 text-slate-300"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1}
-                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        {/* Details */}
-                        <div className="min-w-0 flex-1 py-3">
-                          <p className="truncate font-semibold text-slate-900">
-                            {p.name}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {p.suburb}
-                            {p.province ? `, ${p.province}` : ""}
-                          </p>
-                          {p.asking_rent && (
-                            <p className="mt-1 text-sm font-bold text-slate-900">
-                              R{(p.asking_rent / 100).toLocaleString("en-ZA")}
-                              <span className="text-xs font-normal text-slate-400">
-                                /mo
-                              </span>
+                    {myMatchedProperties.map(
+                      ({ property: p, score, match_reasons }) => (
+                        <div
+                          key={p.id}
+                          className="card flex items-center gap-4 overflow-hidden p-0"
+                        >
+                          {/* Photo */}
+                          <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
+                            {p.photos?.length > 0 ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={p.photos[0]}
+                                alt={p.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                                <svg
+                                  className="h-8 w-8 text-slate-300"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1}
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          {/* Details */}
+                          <div className="min-w-0 flex-1 py-3">
+                            <p className="truncate font-semibold text-slate-900">
+                              {p.name}
                             </p>
-                          )}
+                            <p className="text-xs text-slate-400">
+                              {p.suburb}
+                              {p.province ? `, ${p.province}` : ""}
+                            </p>
+                            {p.asking_rent && (
+                              <p className="mt-1 text-sm font-bold text-slate-900">
+                                R{(p.asking_rent / 100).toLocaleString("en-ZA")}
+                                <span className="text-xs font-normal text-slate-400">
+                                  /mo
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                          {/* Score + reasons + action */}
+                          <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
+                                score >= 75
+                                  ? "bg-green-100 text-green-700"
+                                  : score >= 45
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {score}/100
+                            </span>
+                            {match_reasons.length > 0 && (
+                              <ul className="max-w-[180px] space-y-1 text-right">
+                                {match_reasons.slice(0, 3).map((r, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex items-start justify-end gap-1.5"
+                                  >
+                                    <span className="text-[11px] leading-snug text-green-700">
+                                      {r}
+                                    </span>
+                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <Link
+                              href={`/browse/${p.id}`}
+                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                            >
+                              View
+                            </Link>
+                          </div>
                         </div>
-                        {/* Score + reasons + action */}
-                        <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
-                              score >= 75
-                                ? "bg-green-100 text-green-700"
-                                : score >= 45
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {score}/100
-                          </span>
-                          {match_reasons.length > 0 && (
-                            <ul className="max-w-[180px] space-y-1 text-right">
-                              {match_reasons.slice(0, 3).map((r, i) => (
-                                <li key={i} className="flex items-start justify-end gap-1.5">
-                                  <span className="text-[11px] leading-snug text-green-700">{r}</span>
-                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          <Link
-                            href={`/browse/${p.id}`}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                          >
-                            View
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 )}
 
@@ -611,7 +624,7 @@ export default async function DashboardPage({
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/properties/new"
-                  className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
+                  className="flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
                 >
                   <svg
                     className="h-4 w-4"
@@ -628,6 +641,12 @@ export default async function DashboardPage({
                   </svg>
                   Add Property
                 </Link>
+                {totalProperties > 0 && (
+                  <PropTrustGuide
+                    role="landlord"
+                    firstPropertyId={propertyList[0].id}
+                  />
+                )}
               </div>
             </div>
 
@@ -650,8 +669,19 @@ export default async function DashboardPage({
               />
             </div>
 
+            {totalProperties === 0 && (
+              <div className="mb-8">
+                <PropTrustGuide
+                  role="landlord"
+                  variant="contextual"
+                  heading="Not sure where to start?"
+                  description="Choose what you want to manage and we’ll take you to the right PropTrust workflow."
+                />
+              </div>
+            )}
+
             {/* ── Rent tracking ────────────────────────────────────────────────── */}
-            <div className="card mb-8 p-5">
+            <div id="rent-tracking" className="card mb-8 p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100">
@@ -825,9 +855,11 @@ export default async function DashboardPage({
             {/* ── Portfolio nudge ────────────────────────────────────────────── */}
             {isLandlord &&
               propertyList.length > 0 &&
-              (propertyList as (typeof propertyList[0] & { bond_monthly_payment_cents?: number | null })[]).every(
-                (p) => p.bond_monthly_payment_cents == null,
-              ) && (
+              (
+                propertyList as ((typeof propertyList)[0] & {
+                  bond_monthly_payment_cents?: number | null;
+                })[]
+              ).every((p) => p.bond_monthly_payment_cents == null) && (
                 <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
@@ -1190,13 +1222,25 @@ export default async function DashboardPage({
                   className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
-                    <svg className="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">
-                      {landlordHasListing ? "Manage your listing" : "List your service"}
+                      {landlordHasListing
+                        ? "Manage your listing"
+                        : "List your service"}
                     </p>
                     <p className="mt-0.5 text-sm text-slate-500">
                       {landlordHasListing
@@ -1214,13 +1258,25 @@ export default async function DashboardPage({
                   className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
-                    <svg className="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">
-                      {landlordIsGoodNeighbour ? "You're a Good Neighbour" : "Be a Good Neighbour"}
+                      {landlordIsGoodNeighbour
+                        ? "You're a Good Neighbour"
+                        : "Be a Good Neighbour"}
                     </p>
                     <p className="mt-0.5 text-sm text-slate-500">
                       {landlordIsGoodNeighbour
@@ -1441,7 +1497,9 @@ export default async function DashboardPage({
                       // Tenants on a rent schedule are tracked in
                       // rent_obligations, not the legacy payments table, so
                       // this summary must draw from whichever one has data.
-                      const totalCount = usingLedger ? obls.length : pmts.length;
+                      const totalCount = usingLedger
+                        ? obls.length
+                        : pmts.length;
                       const paidCount = usingLedger
                         ? obls.filter((o) => o.status === "paid").length
                         : pmts.filter((p) => p.status === "paid").length;
@@ -1465,8 +1523,7 @@ export default async function DashboardPage({
                           )[0];
                       const lastStatusLabel =
                         lastObligation?.status ?? lastPmt?.status ?? null;
-                      const lastStatusOk =
-                        lastStatusLabel === "paid";
+                      const lastStatusOk = lastStatusLabel === "paid";
                       const riskCls =
                         risk.colour === "green"
                           ? "bg-green-100 text-green-800"

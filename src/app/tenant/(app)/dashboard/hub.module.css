@@ -1,17 +1,17 @@
 .tokens {
-  --surface: #FAF8F3;
-  --card: #FFFFFF;
-  --navy: #101A30;
-  --navy-soft: #1C2A45;
-  --blue: #3458C5;
-  --blue-tint: #EEF2FB;
-  --amber: #B5842A;
-  --amber-tint: #FBF3E4;
-  --gray-tint: #F0EEE8;
-  --border: #E7E2D8;
-  --text: #101A30;
-  --text-muted: #6B7280;
-  --text-faint: #9CA3AF;
+  --surface: #faf8f3;
+  --card: #ffffff;
+  --navy: #101a30;
+  --navy-soft: #1c2a45;
+  --blue: #3458c5;
+  --blue-tint: #eef2fb;
+  --amber: #b5842a;
+  --amber-tint: #fbf3e4;
+  --gray-tint: #f0eee8;
+  --border: #e7e2d8;
+  --text: #101a30;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
 }
 
 .hub {
@@ -81,14 +81,10 @@
 
 .switcher {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 24px;
-  overflow-x: auto;
   padding-bottom: 2px;
-  scrollbar-width: none;
-}
-.switcher::-webkit-scrollbar {
-  display: none;
 }
 
 .switchTab {
@@ -106,7 +102,10 @@
   border: 1.5px solid var(--border);
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.15s ease-out, background-color 0.15s ease-out, color 0.15s ease-out;
+  transition:
+    transform 0.15s ease-out,
+    background-color 0.15s ease-out,
+    color 0.15s ease-out;
 }
 
 .switchTab:active {
@@ -249,14 +248,20 @@
   cursor: pointer;
   min-height: 44px;
   text-align: left;
-  box-shadow: 0 1px 2px rgba(16, 26, 48, 0.05), 0 4px 12px rgba(16, 26, 48, 0.05);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  box-shadow:
+    0 1px 2px rgba(16, 26, 48, 0.05),
+    0 4px 12px rgba(16, 26, 48, 0.05);
+  transition:
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out;
 }
 
 .tool:hover,
 .tool:active {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(16, 26, 48, 0.06), 0 8px 20px rgba(16, 26, 48, 0.09);
+  box-shadow:
+    0 2px 4px rgba(16, 26, 48, 0.06),
+    0 8px 20px rgba(16, 26, 48, 0.09);
 }
 
 .toolIcon {
@@ -284,7 +289,9 @@
 }
 
 .toolIsActive {
-  box-shadow: inset 0 0 0 1.5px var(--blue), 0 4px 12px rgba(52, 88, 197, 0.1);
+  box-shadow:
+    inset 0 0 0 1.5px var(--blue),
+    0 4px 12px rgba(52, 88, 197, 0.1);
 }
 .toolNeedsAction {
   background: var(--amber-tint);
@@ -328,7 +335,9 @@
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 10px;
-  box-shadow: 0 1px 2px rgba(16, 26, 48, 0.05), 0 4px 12px rgba(16, 26, 48, 0.05);
+  box-shadow:
+    0 1px 2px rgba(16, 26, 48, 0.05),
+    0 4px 12px rgba(16, 26, 48, 0.05);
 }
 
 .exploreRow {
