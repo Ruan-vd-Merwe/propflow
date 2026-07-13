@@ -7,7 +7,9 @@ import type { BankTransactionRecord } from "@/lib/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PROPERTY_TYPES = ["apartment","house","townhouse","room","other"] as const;
+// Must match the properties_property_type_check DB constraint exactly -
+// "other" is not an allowed value there and would fail the insert.
+const PROPERTY_TYPES = ["apartment","house","townhouse","room"] as const;
 const BANKS = ["Nedbank","FNB","ABSA","Standard Bank","SA Home Loans","Other"];
 const BOND_TERMS = [10,15,20,25,30];
 const PAY_DAYS = Array.from({ length: 28 }, (_, i) => i + 1);

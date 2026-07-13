@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { buildMockWebhookRequest, mockProvider } from "@/lib/rent/payment-providers/mock";
+import {
+  buildMockWebhookRequest,
+  mockProvider,
+  parseSplitFromCheckoutUrl,
+} from "@/lib/rent/payment-providers/mock";
 import { processProviderWebhookEvent } from "@/lib/rent/payment-service";
 import type { ProviderEventType } from "@/lib/rent/payment-providers/types";
 
@@ -100,12 +104,21 @@ export async function POST(
     );
   }
 
+  // Split config isn't stored on payment_attempts itself; it was embedded
+  // in the checkout URL when the session was created (see mock.ts), so it's
+  // read back out here the same way a real gateway's dashboard would let
+  // you inspect what split a checkout was configured with.
+  const split = attempt.provider_checkout_url
+    ? parseSplitFromCheckoutUrl(attempt.provider_checkout_url)
+    : undefined;
+
   const { rawBody, signatureHeader } = buildMockWebhookRequest({
     provider_payment_id: attempt.provider_ref,
     type: outcome as ProviderEventType,
     amount_cents: attempt.amount_cents,
     failure_reason:
       failure_reason ?? (outcome === "failed" ? "simulated_failure" : undefined),
+    ...(split ? { split } : {}),
   });
 
   const result = await processProviderWebhookEvent(service, mockProvider, {

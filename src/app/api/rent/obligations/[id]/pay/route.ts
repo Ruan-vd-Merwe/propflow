@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { mockProvider } from "@/lib/rent/payment-providers/mock";
 import {
+  buildSplitConfig,
   createCheckoutForObligation,
   isObligationPayable,
   isOwnedByTenant,
@@ -86,11 +87,35 @@ export async function POST(
     });
   }
 
+  // Fetch the landlord's payout destination so a split config can be built.
+  // A single-row lookup by primary key on profiles.id - cheap, no fan-out.
+  // A missing profile or missing payout ref must never fail checkout: the
+  // tenant can always pay, split just doesn't apply until the landlord has
+  // configured a payout destination. buildSplitConfig itself logs a clear
+  // warning for the "no ref configured" case; a genuine fetch failure is
+  // logged separately here since that's a different, real error worth
+  // seeing rather than folding into the same expected-gap warning.
+  const { data: landlordProfile, error: landlordFetchErr } = await supabase
+    .from("profiles")
+    .select("id, payout_provider, payout_provider_ref")
+    .eq("id", obligation.landlord_id)
+    .single();
+
+  if (landlordFetchErr) {
+    console.error(
+      "[pay] failed to fetch landlord payout profile:",
+      landlordFetchErr.message,
+    );
+  }
+
+  const splitConfig = landlordProfile ? buildSplitConfig(landlordProfile) : undefined;
+
   const { attempt, checkoutUrl } = await createCheckoutForObligation(
     supabase,
     mockProvider,
     obligation,
     "tenant",
+    splitConfig,
   );
 
   await supabase

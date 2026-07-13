@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { grantLandlordRole, grantTenantRole } from "@/lib/auth/role-actions";
+import { updatePayoutSettings, type PayoutProvider } from "@/lib/rent/payout-actions";
 
 const PROVINCES = [
   "Eastern Cape",
@@ -28,6 +29,8 @@ type Profile = {
   phone: string | null;
   province: string | null;
   city: string | null;
+  payout_provider: string | null;
+  payout_provider_ref: string | null;
 };
 
 export default function SettingsPage() {
@@ -328,6 +331,16 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Rent payout destination */}
+        {profile.is_landlord && (
+          <PayoutSettingsCard
+            profile={profile}
+            onSaved={(fields) =>
+              setProfile((p) => (p ? { ...p, ...fields } : p))
+            }
+          />
+        )}
+
         {/* Email and auth diagnostics */}
         <EmailStatusCard />
 
@@ -356,6 +369,152 @@ export default function SettingsPage() {
           </dl>
         </div>
       </main>
+    </div>
+  );
+}
+
+function maskPayoutRef(ref: string): string {
+  if (ref.length <= 4) return ref;
+  return `${"•".repeat(ref.length - 4)}${ref.slice(-4)}`;
+}
+
+type PayoutSettingsCardProps = {
+  profile: Profile;
+  onSaved: (fields: { payout_provider: string; payout_provider_ref: string }) => void;
+};
+
+function PayoutSettingsCard({ profile, onSaved }: PayoutSettingsCardProps) {
+  const supabase = createClient();
+
+  const [editing, setEditing] = useState(!profile.payout_provider_ref);
+  const [provider, setProvider] = useState<PayoutProvider>("payfast");
+  const [ref, setRef] = useState(profile.payout_provider_ref ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    const { error: err } = await updatePayoutSettings(supabase, profile.id, {
+      payoutProvider: provider,
+      payoutProviderRef: ref,
+    });
+    if (err) {
+      console.error("[settings] updatePayoutSettings failed:", err);
+      setError(err);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    setEditing(false);
+    onSaved({ payout_provider: provider, payout_provider_ref: ref.trim() });
+  }
+
+  return (
+    <div className="card p-6">
+      <h2 className="text-base font-bold text-slate-900">Rent payouts</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Where PropTrust sends your share of rent collected through the
+        platform.
+      </p>
+
+      {!editing && profile.payout_provider_ref ? (
+        <div className="mt-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              Payout destination set
+            </span>
+          </div>
+          <div className="mb-4 rounded-lg bg-slate-50 px-4 py-3 text-sm">
+            <div className="mb-1 flex gap-2">
+              <span className="w-24 text-xs font-medium text-slate-400">
+                Provider
+              </span>
+              <span className="text-xs font-semibold capitalize text-slate-700">
+                {profile.payout_provider}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-24 text-xs font-medium text-slate-400">
+                Reference
+              </span>
+              <span className="font-mono text-xs text-slate-700">
+                {maskPayoutRef(profile.payout_provider_ref)}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Update payout destination
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              Not configured
+            </span>
+          </div>
+          <p className="mb-4 text-sm text-slate-600">
+            Rent payouts require a payout destination on file. We are still
+            finalising the exact Payfast setup details with them directly.
+            For now, enter the reference Payfast gives you and we will
+            confirm the format together before it is used to route any
+            payment.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">
+                Provider
+              </label>
+              <select
+                className="input-field"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as PayoutProvider)}
+              >
+                <option value="payfast">Payfast</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600">
+                Payout reference
+              </label>
+              <input
+                className="input-field"
+                placeholder="Payfast reference"
+                value={ref}
+                onChange={(e) => setRef(e.target.value)}
+              />
+            </div>
+          </div>
+          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          <div className="mt-4 flex gap-2">
+            {profile.payout_provider_ref && (
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setError(null);
+                  setRef(profile.payout_provider_ref ?? "");
+                }}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={save}
+              disabled={saving || !ref.trim()}
+              className="rounded-xl bg-blue-700 px-5 py-2 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save payout destination"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

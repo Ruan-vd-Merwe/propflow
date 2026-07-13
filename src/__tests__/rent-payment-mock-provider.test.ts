@@ -3,6 +3,7 @@ import {
   mockProvider,
   signMockWebhookBody,
   buildMockWebhookRequest,
+  parseSplitFromCheckoutUrl,
 } from "@/lib/rent/payment-providers/mock";
 
 describe("mockProvider.createCheckoutSession", () => {
@@ -32,6 +33,42 @@ describe("mockProvider.createCheckoutSession", () => {
     expect(session.checkoutUrl).toContain("/dev/mock-checkout/");
     expect(session.checkoutUrl).toContain("obligation_id=ob-42");
     expect(session.checkoutUrl).toContain("amount_cents=55500");
+  });
+
+  it("embeds a split recipient in the checkout URL when a split config is given", async () => {
+    const session = await mockProvider.createCheckoutSession({
+      obligationId: "ob-42",
+      amountCents: 55500,
+      currency: "ZAR",
+      split: { recipientRef: "vendor-abc", amountCents: 40000 },
+    });
+    expect(session.checkoutUrl).toContain("split_recipient_ref=vendor-abc");
+    expect(session.checkoutUrl).toContain("split_amount_cents=40000");
+  });
+
+  it("does not add split params to the checkout URL when no split is given", async () => {
+    const session = await mockProvider.createCheckoutSession({
+      obligationId: "ob-42",
+      amountCents: 55500,
+      currency: "ZAR",
+    });
+    expect(session.checkoutUrl).not.toContain("split_recipient_ref");
+  });
+});
+
+describe("parseSplitFromCheckoutUrl", () => {
+  it("reads the split recipient and amount back out of a checkout URL", () => {
+    const split = parseSplitFromCheckoutUrl(
+      "/dev/mock-checkout/mock_abc?obligation_id=ob-1&split_recipient_ref=vendor-abc&split_amount_cents=40000",
+    );
+    expect(split).toEqual({ recipient_ref: "vendor-abc", amount_cents: 40000 });
+  });
+
+  it("returns undefined when the checkout URL has no split params", () => {
+    const split = parseSplitFromCheckoutUrl(
+      "/dev/mock-checkout/mock_abc?obligation_id=ob-1&amount_cents=10000",
+    );
+    expect(split).toBeUndefined();
   });
 });
 
@@ -106,5 +143,19 @@ describe("buildMockWebhookRequest", () => {
       type: "succeeded",
       amountCents: 12345,
     });
+  });
+
+  it("carries a split config through to the parsed event's raw payload", () => {
+    const { rawBody, signatureHeader } = buildMockWebhookRequest({
+      provider_payment_id: "mock_abc",
+      type: "succeeded",
+      amount_cents: 12345,
+      split: { recipient_ref: "vendor-abc" },
+    });
+    expect(
+      mockProvider.verifyWebhookSignature({ rawBody, signatureHeader }),
+    ).toBe(true);
+    const event = mockProvider.parseWebhookEvent(rawBody);
+    expect(event.raw).toMatchObject({ split: { recipient_ref: "vendor-abc" } });
   });
 });

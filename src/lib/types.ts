@@ -13,6 +13,13 @@ export type Profile = {
   phone: string | null;
   province: string | null;
   city: string | null;
+  // Landlord payout destination: one per landlord, portfolio-wide (not
+  // per-property). Reference/ID only, never raw bank details — the exact
+  // shape depends on the payout provider's vendor model. payout_provider is
+  // provider-agnostic (e.g. 'payfast') so a future provider doesn't need a
+  // schema change. See src/lib/rent/payment-providers/types.ts SplitConfig.
+  payout_provider: string | null;
+  payout_provider_ref: string | null;
   created_at: string;
 };
 

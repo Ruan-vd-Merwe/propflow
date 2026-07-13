@@ -4,9 +4,15 @@ import type {
   PaymentAttempt,
   PaymentAttemptInitiator,
   PaymentAttemptStatus,
+  Profile,
   RentObligation,
 } from "@/lib/types";
-import type { PaymentProvider, ProviderEventType, ProviderWebhookEvent } from "./payment-providers/types";
+import type {
+  PaymentProvider,
+  ProviderEventType,
+  ProviderWebhookEvent,
+  SplitConfig,
+} from "./payment-providers/types";
 
 // ─── Pure decision logic (unit-testable, no DB) ──────────────────────────────
 
@@ -91,6 +97,31 @@ export function resolveObligationAfterPaymentEvent(
   };
 }
 
+/**
+ * Builds the split-recipient config for a checkout from the landlord's
+ * payout fields, or returns undefined if the landlord hasn't configured one
+ * yet. Groundwork only: no real provider reads this today (the mock
+ * provider ignores `split` entirely), but this is the seam a real
+ * PaymentProvider will consume once Payfast vendor registration details are
+ * confirmed (see SplitConfig's TODO in payment-providers/types.ts).
+ *
+ * A landlord with no payout destination is an expected, current-phase
+ * state, not an error — this never throws — but it's logged so the gap is
+ * visible instead of silently proceeding as if nothing were missing.
+ */
+export function buildSplitConfig(
+  landlord: Pick<Profile, "id" | "payout_provider" | "payout_provider_ref">,
+): SplitConfig | undefined {
+  if (!landlord.payout_provider_ref) {
+    console.warn(
+      `[buildSplitConfig] landlord ${landlord.id} has no payout_provider_ref configured — proceeding without a split recipient`,
+    );
+    return undefined;
+  }
+
+  return { recipientRef: landlord.payout_provider_ref };
+}
+
 // ─── DB-touching orchestration ────────────────────────────────────────────────
 
 export type CreateCheckoutResult = {
@@ -98,12 +129,20 @@ export type CreateCheckoutResult = {
   checkoutUrl: string;
 };
 
-/** Creates a provider checkout session and records the payment_attempt row. */
+/**
+ * Creates a provider checkout session and records the payment_attempt row.
+ * splitConfig is optional and pre-resolved by the caller (e.g. via
+ * buildSplitConfig against the landlord's profile) rather than fetched
+ * here, so this function's obligation-shaped input stays unchanged for
+ * callers that don't need split payments yet — including the mock
+ * provider, which ignores `split` completely.
+ */
 export async function createCheckoutForObligation(
   supabase: SupabaseClient,
   provider: PaymentProvider,
   obligation: Pick<RentObligation, "id" | "amount_due_cents" | "amount_paid_cents">,
   initiatedBy: PaymentAttemptInitiator,
+  splitConfig?: SplitConfig,
 ): Promise<CreateCheckoutResult> {
   const outstanding = obligation.amount_due_cents - obligation.amount_paid_cents;
   const currency = "ZAR";
@@ -112,6 +151,7 @@ export async function createCheckoutForObligation(
     obligationId: obligation.id,
     amountCents: outstanding,
     currency,
+    split: splitConfig,
   });
 
   const { data, error } = await supabase

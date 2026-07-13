@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   isObligationPayable,
@@ -9,6 +9,7 @@ import {
   resolveObligationAfterPaymentEvent,
   createCheckoutForObligation,
   processProviderWebhookEvent,
+  buildSplitConfig,
 } from "@/lib/rent/payment-service";
 import { mockProvider, buildMockWebhookRequest } from "@/lib/rent/payment-providers/mock";
 import type { PaymentAttempt, RentObligation } from "@/lib/types";
@@ -279,6 +280,58 @@ describe("createCheckoutForObligation", () => {
     expect(attempt.status).toBe("pending");
     expect(attempt.initiated_by).toBe("tenant");
     expect(checkoutUrl).toContain("/dev/mock-checkout/");
+  });
+
+  it("creates a normal pending session when a splitConfig is passed, and embeds the recipient in the checkout URL", async () => {
+    const { client } = makeFakeSupabase({});
+    const { attempt, checkoutUrl } = await createCheckoutForObligation(
+      client,
+      mockProvider,
+      { id: "ob-1", amount_due_cents: 10000, amount_paid_cents: 0 },
+      "tenant",
+      { recipientRef: "vendor-123" },
+    );
+
+    expect(attempt.provider).toBe("mock");
+    expect(attempt.status).toBe("pending");
+    expect(attempt.amount_cents).toBe(10000);
+    expect(checkoutUrl).toContain("/dev/mock-checkout/");
+    expect(checkoutUrl).toContain("split_recipient_ref=vendor-123");
+  });
+});
+
+describe("buildSplitConfig", () => {
+  it("returns undefined and logs a clear gap message when payout_provider_ref is not set", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = buildSplitConfig({
+      id: "landlord-1",
+      payout_provider: null,
+      payout_provider_ref: null,
+    });
+
+    expect(result).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain("landlord-1");
+    warnSpy.mockRestore();
+  });
+
+  it("does not throw for a landlord with no payout destination configured", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() =>
+      buildSplitConfig({ id: "landlord-1", payout_provider: null, payout_provider_ref: null }),
+    ).not.toThrow();
+    vi.restoreAllMocks();
+  });
+
+  it("builds a split config from a configured payout_provider_ref", () => {
+    const result = buildSplitConfig({
+      id: "landlord-1",
+      payout_provider: "payfast",
+      payout_provider_ref: "vendor-123",
+    });
+
+    expect(result).toEqual({ recipientRef: "vendor-123" });
   });
 });
 

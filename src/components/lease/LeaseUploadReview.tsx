@@ -40,6 +40,9 @@ export function LeaseUploadReview({
   const [error, setError] = useState<string | null>(null);
 
   const [extraction, setExtraction] = useState<LeaseExtraction | null>(null);
+  const [extractionFailureReason, setExtractionFailureReason] = useState<
+    "service_error" | "parse_error" | null
+  >(null);
   const [fields, setFields] = useState<LeaseExtractedFields>(EMPTY_FIELDS);
   const [tenantEmail, setTenantEmail] = useState("");
   const [tenantPhone, setTenantPhone] = useState("");
@@ -82,6 +85,9 @@ export function LeaseUploadReview({
       }
       const result = json.extraction as LeaseExtraction;
       setExtraction(result);
+      setExtractionFailureReason(
+        (json.failure_reason as "service_error" | "parse_error" | null) ?? null,
+      );
       setFields({ ...EMPTY_FIELDS, ...(result.extracted_fields ?? {}) });
       setPhase("reviewing");
     } catch {
@@ -210,8 +216,9 @@ export function LeaseUploadReview({
     <div className="space-y-4">
       {extraction?.status === "failed" && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          The document could not be read automatically. Please fill in the
-          details below manually.
+          {extractionFailureReason === "service_error"
+            ? "The document reader is unavailable right now, so this could not be auto filled. Fill in the details below manually - this is a service issue, not a problem with your file."
+            : "The document could not be read automatically. Please fill in the details below manually."}
         </p>
       )}
 

@@ -114,6 +114,13 @@ export async function POST(req: NextRequest) {
 
   let extractedFields = null;
   let status: "extracted" | "failed" = "failed";
+  // Not persisted (lease_extractions has no column for it) - returned in the
+  // response only, so the frontend can tell "reader is down" apart from
+  // "this scan was hard to read" instead of showing the same message for
+  // both. service_error means the Anthropic call itself never completed
+  // (missing key, network, rate limit, 5xx); parse_error means the call
+  // completed but the response didn't parse into the expected fields.
+  let failureReason: "service_error" | "parse_error" | null = null;
 
   try {
     const result = await extractLeaseFields({
@@ -124,6 +131,7 @@ export async function POST(req: NextRequest) {
       extractedFields = result.fields;
       status = "extracted";
     } else {
+      failureReason = "parse_error";
       console.error(
         "[lease/extract] extraction parse failed for",
         extraction.id,
@@ -131,6 +139,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (err) {
+    failureReason = "service_error";
     console.error(
       "[lease/extract] Anthropic call failed for",
       extraction.id,
@@ -150,5 +159,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ extraction: updated }, { status: 201 });
+  return NextResponse.json(
+    { extraction: updated, failure_reason: failureReason },
+    { status: 201 },
+  );
 }
