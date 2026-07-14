@@ -89,7 +89,7 @@ export default async function TenantLeasePage() {
             </p>
             <Link
               href="/tenant/applications#lease-upload"
-              className="mt-4 inline-block rounded-xl bg-[#0f172a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="mt-4 inline-block rounded-xl bg-[var(--pt-navy)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Add rental details
             </Link>

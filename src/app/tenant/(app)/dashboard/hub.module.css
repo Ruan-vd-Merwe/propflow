@@ -46,13 +46,16 @@
 
 @media (min-width: 769px) {
   .main {
-    max-width: var(--pt-container-max);
+    /* Matches NavBar's max-w-6xl (1152px) directly above this page, not
+       --pt-container-max (1320px), so content lines up with the nav edge
+       instead of overhanging it. */
+    max-width: 1152px;
     padding-top: 32px;
   }
 }
 
 .heroMeasure {
-  max-width: 760px;
+  max-width: 960px;
 }
 
 .eyebrow {
@@ -342,6 +345,7 @@
 /* ── Explore list ──────────────────────────────────────────────────── */
 
 .explore {
+  max-width: 760px;
   background: var(--card);
   border: none;
   border-radius: 18px;

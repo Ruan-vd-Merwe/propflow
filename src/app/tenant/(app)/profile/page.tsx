@@ -86,7 +86,7 @@ export default async function TenantProfilePage({
     <div className="min-h-screen bg-slate-50">
 
       {isWelcome && (
-        <div className="border-b border-blue-800 bg-[#0f172a] px-6 py-4 text-center text-white">
+        <div className="border-b border-blue-800 bg-[var(--pt-navy)] px-6 py-4 text-center text-white">
           <p className="font-semibold">Welcome to PropTrust</p>
           <p className="mt-0.5 text-sm text-slate-300">
             Your profile is set up. Landlords matching your preferences will be
@@ -99,7 +99,7 @@ export default async function TenantProfilePage({
         <DetailHeader title="TrustScore profile" />
         {/* ── Onboarding prompts based on step completion ─────────────── */}
         {!prefsDone && (
-          <div className="mb-6 overflow-hidden rounded-2xl bg-[#0f172a] p-6">
+          <div className="mb-6 overflow-hidden rounded-2xl bg-[var(--pt-navy)] p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex-1">
                 <p className="text-base font-bold text-white">

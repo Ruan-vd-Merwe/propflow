@@ -35,8 +35,8 @@ export function DiscoverableToggle({ initial }: { initial: boolean }) {
         disabled={pending}
         className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
           discoverable
-            ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
-            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            ? "bg-[var(--blue-tint)] text-[var(--blue)] hover:opacity-80"
+            : "bg-[var(--gray-tint)] text-[var(--text-muted)] hover:opacity-80"
         } ${pending ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
       >
         {discoverable ? "Actively looking" : "Paused"}
