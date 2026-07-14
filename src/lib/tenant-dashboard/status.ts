@@ -24,6 +24,24 @@ function fmtDate(iso: string) {
   });
 }
 
+/**
+ * Suburb names are free text on the way in (no normalisation at write time),
+ * so "camps bay" and "Camps Bay" both end up stored as typed. Title-case for
+ * display only; never write this back to the database.
+ */
+export function formatAreaName(area: string | null): string | null {
+  if (!area) return area;
+  return area
+    .split(" ")
+    .map((word) =>
+      word
+        .split("-")
+        .map((part) => (part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part))
+        .join("-"),
+    )
+    .join(" ");
+}
+
 /** "Search preferences" tool card pill. */
 export function getSearchStatus(input: {
   discoverable: boolean;

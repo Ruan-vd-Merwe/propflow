@@ -10,6 +10,7 @@ import {
   getPaymentsStatus,
   getTrustScoreStatus,
   getRentalHistoryStatus,
+  formatAreaName,
 } from "@/lib/tenant-dashboard/status";
 import { DiscoverableToggle } from "./DiscoverableToggle";
 import { JourneyNav } from "./JourneyNav";
@@ -131,7 +132,7 @@ export default async function TenantDashboardPage() {
   const isDiscoverable = tenantProfile.discoverable ?? false;
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const hasApplications = applications.length > 0 || introductions.length > 0;
-  const area = tenantProfile.looking_in_area ?? null;
+  const area = formatAreaName(tenantProfile.looking_in_area ?? null);
   const showContextualGuide =
     !hasActiveLease &&
     !hasApplications &&
@@ -186,7 +187,7 @@ export default async function TenantDashboardPage() {
         <JourneyNav hasActiveLease={hasActiveLease} />
 
         {showContextualGuide ? (
-          <div className="mb-6">
+          <div className="mb-4">
             <PropTrustGuide
               role="tenant"
               variant="contextual"
@@ -195,7 +196,7 @@ export default async function TenantDashboardPage() {
             />
           </div>
         ) : (
-          <div className="-mt-2 mb-6 flex justify-end">
+          <div className="-mt-2 mb-4 flex justify-end">
             <PropTrustGuide role="tenant" hasActiveLease={hasActiveLease} />
           </div>
         )}

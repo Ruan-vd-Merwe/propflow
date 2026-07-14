@@ -7,7 +7,34 @@ import {
   getPaymentsStatus,
   getTrustScoreStatus,
   getRentalHistoryStatus,
+  formatAreaName,
 } from "@/lib/tenant-dashboard/status";
+
+describe("formatAreaName", () => {
+  it("title-cases a lowercase suburb", () => {
+    expect(formatAreaName("camps bay")).toBe("Camps Bay");
+  });
+
+  it("title-cases a shouty suburb", () => {
+    expect(formatAreaName("CAMPS BAY")).toBe("Camps Bay");
+  });
+
+  it("leaves an already title-cased suburb unchanged", () => {
+    expect(formatAreaName("Camps Bay")).toBe("Camps Bay");
+  });
+
+  it("title-cases each side of a hyphen", () => {
+    expect(formatAreaName("sea-point")).toBe("Sea-Point");
+  });
+
+  it("passes null through unchanged", () => {
+    expect(formatAreaName(null)).toBeNull();
+  });
+
+  it("passes an empty string through unchanged", () => {
+    expect(formatAreaName("")).toBe("");
+  });
+});
 
 describe("getSearchStatus", () => {
   it("is neutral when preferences were never set up", () => {
