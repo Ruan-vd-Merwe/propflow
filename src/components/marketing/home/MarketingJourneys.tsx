@@ -105,7 +105,7 @@ function JourneyHero({ onSelect }: { onSelect: (id: JourneyId) => void }) {
       <SideRail side="left" label={"Registry · Cape Town"} />
       <SideRail side="right" label={"Est. 2026 · proptrust.co.za"} />
 
-      <div className="mx-auto max-w-[1320px] px-6 sm:px-10">
+      <div className="mx-auto max-w-[var(--pt-container-max)] px-6 sm:px-10">
         <div className="mx-auto max-w-[640px] text-center">
           <p
             className="mb-2 flex items-center justify-center gap-2 font-[family-name:var(--font-ibm-plex-sans)] text-[0.75rem] font-semibold uppercase tracking-[0.11em]"

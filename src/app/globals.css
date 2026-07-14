@@ -8,6 +8,7 @@
   }
   :root {
     color-scheme: light;
+    --pt-container-max: 1320px;
     --pt-blue: #1e40af;
     --pt-blue-lt: #3b82f6;
     --pt-navy: #0f172a;

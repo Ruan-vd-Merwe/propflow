@@ -175,33 +175,35 @@ export default async function TenantDashboardPage() {
   return (
     <div className={styles.hub}>
       <main className={styles.main}>
-        <div className={styles.headRow}>
-          <div>
-            <p className={styles.eyebrow}>Renting</p>
-            <h1 className={styles.greet}>Hi {firstName}</h1>
+        <div className={styles.heroMeasure}>
+          <div className={styles.headRow}>
+            <div>
+              <p className={styles.eyebrow}>Renting</p>
+              <h1 className={styles.greet}>Hi {firstName}</h1>
+            </div>
+            <DiscoverableToggle initial={isDiscoverable} />
           </div>
-          <DiscoverableToggle initial={isDiscoverable} />
+          <p className={styles.subline}>Where are you at?</p>
+
+          <JourneyNav hasActiveLease={hasActiveLease} />
+
+          {showContextualGuide ? (
+            <div className="mb-4">
+              <PropTrustGuide
+                role="tenant"
+                variant="contextual"
+                heading="Not sure where to start?"
+                description="Tell us what you want to achieve and we’ll guide you to the right rental step."
+              />
+            </div>
+          ) : (
+            <div className="-mt-2 mb-4 flex justify-end">
+              <PropTrustGuide role="tenant" hasActiveLease={hasActiveLease} />
+            </div>
+          )}
+
+          <StatusStrip status={searchStripStatus} />
         </div>
-        <p className={styles.subline}>Where are you at?</p>
-
-        <JourneyNav hasActiveLease={hasActiveLease} />
-
-        {showContextualGuide ? (
-          <div className="mb-4">
-            <PropTrustGuide
-              role="tenant"
-              variant="contextual"
-              heading="Not sure where to start?"
-              description="Tell us what you want to achieve and we’ll guide you to the right rental step."
-            />
-          </div>
-        ) : (
-          <div className="-mt-2 mb-4 flex justify-end">
-            <PropTrustGuide role="tenant" hasActiveLease={hasActiveLease} />
-          </div>
-        )}
-
-        <StatusStrip status={searchStripStatus} />
 
         <p className={styles.dashHeading}>Your rental admin</p>
         <p className={styles.dashSubtext}>

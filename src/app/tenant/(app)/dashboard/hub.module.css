@@ -46,9 +46,13 @@
 
 @media (min-width: 769px) {
   .main {
-    max-width: 760px;
+    max-width: var(--pt-container-max);
     padding-top: 32px;
   }
+}
+
+.heroMeasure {
+  max-width: 760px;
 }
 
 .eyebrow {
@@ -235,6 +239,13 @@
 @media (max-width: 359px) {
   .toolGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .toolGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
 }
 

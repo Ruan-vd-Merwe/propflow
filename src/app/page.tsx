@@ -37,7 +37,7 @@ export default function HomePage() {
 
       {/* ── TRUST STRIP ───────────────────────────────────────────────────────── */}
       <section className="border-t border-[rgba(30,42,46,0.13)] bg-white py-[26px] font-[family-name:var(--font-ibm-plex-sans)]">
-        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-center gap-x-9 gap-y-4 px-6 sm:px-10">
+        <div className="mx-auto flex max-w-[var(--pt-container-max)] flex-wrap items-center justify-center gap-x-9 gap-y-4 px-6 sm:px-10">
           {TRUST_CHIPS.map((chip) => (
             <div key={chip} className="flex items-center gap-2">
               <CheckIcon />
