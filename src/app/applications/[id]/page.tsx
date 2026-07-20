@@ -5,6 +5,8 @@ import { NavBar } from "@/components/NavBar";
 import { ApplicationStatusBadge } from "@/components/ApplicationStatusBadge";
 import { CreditScoreMeter } from "@/components/CreditScoreMeter";
 import { ReferenceCheckPanel } from "./ReferenceCheckPanel";
+import { getVerificationStatusForUser } from "@/lib/listings/trustscore-server";
+import { trustScoreLabel } from "@/lib/listings/trustscore";
 import type {
   TenantApplication,
   BankStatementAnalysis,
@@ -83,6 +85,15 @@ export default async function ApplicationDetailPage({
   const bankData = application.bank_statement_analysis as BankStatementAnalysis;
   const fraudFlags = application.fraud_flags ?? [];
 
+  // Minimal accessor: only the verification status, never a full
+  // tenant_profiles row. null user_id (anonymous/legacy application) means
+  // no linked tenant account, so the honest "no rental history yet" state
+  // renders the same as an explicit unverified status.
+  const verificationStatus = await getVerificationStatusForUser(
+    supabase,
+    application.user_id ?? null,
+  );
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
@@ -127,6 +138,9 @@ export default async function ApplicationDetailPage({
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               <ApplicationStatusBadge status={application.status} />
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                {trustScoreLabel(verificationStatus)}
+              </span>
               {application.credit_score != null && (
                 <div className="text-right">
                   <p className="text-xs text-slate-400">Credit score</p>
@@ -153,6 +167,18 @@ export default async function ApplicationDetailPage({
                   score={application.credit_score}
                   breakdown={application.credit_score_breakdown}
                 />
+              </div>
+            )}
+
+            {/* ── Message from applicant ───────────────────────────────────── */}
+            {application.message && (
+              <div className="card p-6">
+                <h2 className="mb-3 font-semibold text-slate-900">
+                  Message from applicant
+                </h2>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                  {application.message}
+                </p>
               </div>
             )}
 

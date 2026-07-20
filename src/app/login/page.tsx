@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getPostAuthPath, resolveRoleFlags } from "@/lib/auth/roles";
+import { consumeAuthReturnPath } from "@/lib/listings/return-path";
 
 function LoginForm() {
   const router = useRouter();
@@ -39,6 +40,13 @@ function LoginForm() {
         setError(signInError.message);
       }
       setLoading(false);
+      return;
+    }
+
+    const returnPath = consumeAuthReturnPath();
+    if (returnPath) {
+      router.push(returnPath);
+      router.refresh();
       return;
     }
 

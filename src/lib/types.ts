@@ -326,6 +326,11 @@ export type TenantApplication = {
   landlord_notes: string | null;
   created_at: string;
   updated_at: string;
+  // Added in migration_applications_authorship.sql / the public-listings
+  // migration respectively — optional here since not every historical row
+  // (or pre-migration database) has these populated.
+  user_id?: string | null;
+  message?: string | null;
 };
 
 // ─── Communications & tenant engagement ──────────────────────────────────────
