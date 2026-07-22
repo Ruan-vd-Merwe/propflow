@@ -39,6 +39,7 @@ type PropertyData = {
   pets_allowed?: boolean;
   parking_available?: boolean;
   fibre_available?: boolean;
+  is_published?: boolean;
 };
 
 type TenantData = {
@@ -94,6 +95,13 @@ export function EditPropertyForm({
   const [petsAllowed, setPetsAllowed] = useState(property.pets_allowed ?? false);
   const [parkingAvailable, setParkingAvailable] = useState(property.parking_available ?? false);
   const [fibreAvailable, setFibreAvailable] = useState(property.fibre_available ?? false);
+  // undefined before the public-listings migration has been run against
+  // this database (see supabase/migrations/20260720120000_public_listings.sql).
+  // The toggle is hidden entirely in that case rather than guessing a value.
+  const publishSupported = property.is_published !== undefined;
+  const [isPublished, setIsPublished] = useState(property.is_published ?? false);
+  const [publishSaving, setPublishSaving] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   // Tenants
   const [tenants, setTenants] = useState<TenantData[]>(initialTenants);
@@ -149,6 +157,28 @@ export function EditPropertyForm({
 
     setSuccess("Property updated.");
     router.push(`/properties/${property.id}`);
+    router.refresh();
+  }
+
+  async function handleTogglePublish() {
+    const next = !isPublished;
+    setPublishSaving(true);
+    setPublishError(null);
+
+    const { error: publishErr } = await supabase
+      .from("properties")
+      .update({ is_published: next })
+      .eq("id", property.id);
+
+    setPublishSaving(false);
+
+    if (publishErr) {
+      console.error("[edit-property] publish toggle failed:", publishErr.message);
+      setPublishError(publishErr.message);
+      return;
+    }
+
+    setIsPublished(next);
     router.refresh();
   }
 
@@ -223,6 +253,60 @@ export function EditPropertyForm({
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-900">Edit property</h1>
+
+      {/* ── Public listing page ── */}
+      {publishSupported && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Public listing page
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {isPublished
+                  ? "This property has a shareable public link. Anyone with the link can view it and apply."
+                  : "Publish to get a shareable public link for WhatsApp or Facebook. No landlord contact details are shown, applying through PropTrust is the contact channel."}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={publishSaving}
+              onClick={handleTogglePublish}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
+                isPublished
+                  ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              {publishSaving ? "Saving…" : isPublished ? "Published" : "Unpublished"}
+            </button>
+          </div>
+          {publishError && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {publishError}
+            </div>
+          )}
+          {isPublished && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              <span className="truncate">
+                {typeof window !== "undefined" ? window.location.origin : ""}
+                /listings/{property.id}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/listings/${property.id}`,
+                  )
+                }
+                className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-1 font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Copy link
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Property details ── */}
       <div className="card p-5">

@@ -59,6 +59,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/solutions/") ||
     pathname.startsWith("/resources/") ||
     // App public routes
+    // Public listing detail page only, not /listings/[id]/apply (that stays
+    // behind the auth wall below so signed-out visitors are redirected to
+    // /login; the apply CTA sets a return path first, see
+    // src/lib/listings/return-path.ts).
+    /^\/listings\/[^/]+$/.test(pathname) ||
     pathname.startsWith("/apply/") ||
     pathname.startsWith("/checkin/") ||
     pathname.startsWith("/api/") ||
