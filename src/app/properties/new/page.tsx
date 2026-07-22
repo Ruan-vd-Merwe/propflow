@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LeaseUploadReview } from "@/components/lease/LeaseUploadReview";
-import { VoiceDescribeProperty } from "@/components/VoiceDescribeProperty";
-import type { PropertyDescriptionExtraction } from "@/lib/anthropic";
+import { ListingAssistant } from "@/components/listing-assistant/ListingAssistant";
+import { ListingImprovementPanel } from "@/components/listing-assistant/ListingImprovementPanel";
+import type { ListingFormSnapshot, TagCatalogs } from "@/components/listing-assistant/types";
 import type { PropertyStatus } from "@/lib/types";
 
 const PROVINCES = [
@@ -136,6 +137,10 @@ export default function NewPropertyPage() {
   const [postCreatePhase, setPostCreatePhase] = useState<"none" | "ask" | "upload">("none");
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
 
+  // Manual re-entry into the Listing Improvement step (vacant mode), for
+  // landlords who filled the form by hand instead of via the assistant.
+  const [showImprovementPanel, setShowImprovementPanel] = useState(false);
+
   // Public listing page (vacant mode only — this flow IS "list your property")
   const [publishListing, setPublishListing] = useState(true);
 
@@ -178,7 +183,14 @@ export default function NewPropertyPage() {
     setPhotos((prev) => [...prev, ...files].slice(0, 6));
   }
 
-  function mapBathroomsValue(n: number): string {
+  function bathroomsStringToNumber(s: string): number | null {
+    if (!s) return null;
+    if (s === "3+") return 3;
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+
+  function numberToBathroomsString(n: number): string {
     if (n >= 3) return "3+";
     const rounded = Math.round(n * 2) / 2;
     if (rounded <= 1) return "1";
@@ -187,69 +199,70 @@ export default function NewPropertyPage() {
     return "2.5";
   }
 
-  function applyExtractedFields(fields: PropertyDescriptionExtraction) {
-    let filledCount = 0;
+  const listingFormSnapshot: ListingFormSnapshot = {
+    property_type: propertyType || null,
+    bedrooms,
+    bathrooms: bathroomsStringToNumber(bathrooms),
+    asking_rent: rent ? parseFloat(rent) : null,
+    deposit_amount: deposit ? parseFloat(deposit) : null,
+    available_from: availableFrom || null,
+    suburb: suburb || null,
+    description: description || null,
+    pets_allowed: petsAllowed,
+    parking_available: parkingAvailable,
+    fibre_available: fibreAvailable,
+    property_tags: propertyTags,
+    area_tags: areaTags,
+    lifestyle_tags: lifestyleTags,
+  };
 
-    if (
-      fields.property_type &&
-      PROPERTY_TYPES.some((t) => t.value === fields.property_type)
-    ) {
-      setPropertyType(fields.property_type);
-      filledCount++;
+  const listingTagCatalogs: TagCatalogs = {
+    property_tags: FEATURE_TAGS,
+    area_tags: AREA_TAGS,
+    lifestyle_tags: LIFESTYLE_TAGS,
+  };
+
+  function onApplyListingFields(fields: Partial<ListingFormSnapshot>) {
+    if (fields.property_type !== undefined)
+      setPropertyType(fields.property_type ?? "");
+    if (fields.bedrooms !== undefined) setBedrooms(fields.bedrooms);
+    if (fields.bathrooms !== undefined) {
+      setBathrooms(
+        fields.bathrooms != null ? numberToBathroomsString(fields.bathrooms) : "",
+      );
     }
-    if (fields.bedrooms != null) {
-      setBedrooms(fields.bedrooms);
-      filledCount++;
-    }
-    if (fields.bathrooms != null) {
-      setBathrooms(mapBathroomsValue(fields.bathrooms));
-      filledCount++;
-    }
-    if (fields.asking_rent != null) {
-      setRent(String(fields.asking_rent));
-      filledCount++;
-    }
-    if (fields.description) {
-      setDescription(fields.description);
-      filledCount++;
-    }
-    if (fields.pets_allowed != null) {
-      setPetsAllowed(fields.pets_allowed);
-      filledCount++;
-    }
-    if (fields.parking_available != null) {
+    if (fields.asking_rent !== undefined)
+      setRent(fields.asking_rent != null ? String(fields.asking_rent) : "");
+    if (fields.deposit_amount !== undefined)
+      setDeposit(
+        fields.deposit_amount != null ? String(fields.deposit_amount) : "",
+      );
+    if (fields.available_from !== undefined)
+      setAvailableFrom(fields.available_from ?? "");
+    if (fields.suburb !== undefined) setSuburb(fields.suburb ?? "");
+    if (fields.description !== undefined)
+      setDescription(fields.description ?? "");
+    if (fields.pets_allowed !== undefined) setPetsAllowed(fields.pets_allowed);
+    if (fields.parking_available !== undefined)
       setParkingAvailable(fields.parking_available);
-      filledCount++;
-    }
-    if (fields.fibre_available != null) {
+    if (fields.fibre_available !== undefined)
       setFibreAvailable(fields.fibre_available);
-      filledCount++;
-    }
-    if (fields.property_tags.length > 0) {
-      setPropertyTags((prev) =>
-        Array.from(new Set([...prev, ...fields.property_tags])),
-      );
-      filledCount++;
-    }
-    if (fields.area_tags.length > 0) {
-      setAreaTags((prev) =>
-        Array.from(new Set([...prev, ...fields.area_tags])),
-      );
-      filledCount++;
-    }
-    if (fields.lifestyle_tags.length > 0) {
-      setLifestyleTags((prev) =>
-        Array.from(new Set([...prev, ...fields.lifestyle_tags])),
-      );
-      filledCount++;
-    }
+    if (fields.property_tags !== undefined)
+      setPropertyTags(fields.property_tags);
+    if (fields.area_tags !== undefined) setAreaTags(fields.area_tags);
+    if (fields.lifestyle_tags !== undefined)
+      setLifestyleTags(fields.lifestyle_tags);
 
-    setToast(
-      filledCount > 0
-        ? `Filled in ${filledCount} field${filledCount === 1 ? "" : "s"} from your description, review below.`
-        : "Didn't find any details to fill in, you can enter them manually below.",
-    );
-    setTimeout(() => setToast(null), 3500);
+    setToast("Details applied, review below before submitting.");
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  function onApplyListingTitle(title: string) {
+    if (title) setName(title);
+  }
+
+  function onApplyListingDescription(desc: string) {
+    if (desc) setDescription(desc);
   }
 
   function removePhoto(i: number) {
@@ -571,7 +584,16 @@ export default function NewPropertyPage() {
             </h2>
 
             {mode === "vacant" && (
-              <VoiceDescribeProperty onExtracted={applyExtractedFields} />
+              <ListingAssistant
+                formSnapshot={listingFormSnapshot}
+                hasPhotos={photos.length > 0}
+                currentName={name}
+                currentDescription={description}
+                tagCatalogs={listingTagCatalogs}
+                onApplyFields={onApplyListingFields}
+                onApplyTitle={onApplyListingTitle}
+                onApplyDescription={onApplyListingDescription}
+              />
             )}
 
             <div className="space-y-4">
@@ -758,27 +780,25 @@ export default function NewPropertyPage() {
                 </div>
               </div>
 
-              {/* Occupied-only: deposit */}
-              {mode === "occupied" && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Deposit held
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
-                      R
-                    </span>
-                    <input
-                      type="number"
-                      className="input-field pl-7"
-                      placeholder="12 000"
-                      min={0}
-                      value={deposit}
-                      onChange={(e) => setDeposit(e.target.value)}
-                    />
-                  </div>
+              {/* Deposit — label differs by mode: held (occupied) vs required (vacant) */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  {mode === "occupied" ? "Deposit held" : "Deposit required"}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
+                    R
+                  </span>
+                  <input
+                    type="number"
+                    className="input-field pl-7"
+                    placeholder="12 000"
+                    min={0}
+                    value={deposit}
+                    onChange={(e) => setDeposit(e.target.value)}
+                  />
                 </div>
-              )}
+              </div>
 
               {/* Occupied-only: lease end date */}
               {mode === "occupied" && (
@@ -1005,10 +1025,21 @@ export default function NewPropertyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Description{" "}
-                  <span className="font-normal text-slate-400">(optional)</span>
-                </label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-sm font-medium text-slate-700">
+                    Description{" "}
+                    <span className="font-normal text-slate-400">(optional)</span>
+                  </label>
+                  {mode === "vacant" && !showImprovementPanel && (
+                    <button
+                      type="button"
+                      onClick={() => setShowImprovementPanel(true)}
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+                    >
+                      Improve my listing
+                    </button>
+                  )}
+                </div>
                 <textarea
                   className="input-field min-h-[90px] resize-y"
                   placeholder="Describe what makes this property special..."
@@ -1016,6 +1047,18 @@ export default function NewPropertyPage() {
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
+
+              {mode === "vacant" && showImprovementPanel && (
+                <ListingImprovementPanel
+                  formSnapshot={listingFormSnapshot}
+                  hasPhotos={photos.length > 0}
+                  currentName={name}
+                  currentDescription={description}
+                  onApplyTitle={onApplyListingTitle}
+                  onApplyDescription={onApplyListingDescription}
+                  onDone={() => setShowImprovementPanel(false)}
+                />
+              )}
 
               {/* Occupied-only: visibility choice */}
               {mode === "occupied" && (
