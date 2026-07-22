@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LeaseUploadReview } from "@/components/lease/LeaseUploadReview";
+import { VoiceDescribeProperty } from "@/components/VoiceDescribeProperty";
+import type { PropertyDescriptionExtraction } from "@/lib/anthropic";
 import type { PropertyStatus } from "@/lib/types";
 
 const PROVINCES = [
@@ -174,6 +176,80 @@ export default function NewPropertyPage() {
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     setPhotos((prev) => [...prev, ...files].slice(0, 6));
+  }
+
+  function mapBathroomsValue(n: number): string {
+    if (n >= 3) return "3+";
+    const rounded = Math.round(n * 2) / 2;
+    if (rounded <= 1) return "1";
+    if (rounded === 1.5) return "1.5";
+    if (rounded === 2) return "2";
+    return "2.5";
+  }
+
+  function applyExtractedFields(fields: PropertyDescriptionExtraction) {
+    let filledCount = 0;
+
+    if (
+      fields.property_type &&
+      PROPERTY_TYPES.some((t) => t.value === fields.property_type)
+    ) {
+      setPropertyType(fields.property_type);
+      filledCount++;
+    }
+    if (fields.bedrooms != null) {
+      setBedrooms(fields.bedrooms);
+      filledCount++;
+    }
+    if (fields.bathrooms != null) {
+      setBathrooms(mapBathroomsValue(fields.bathrooms));
+      filledCount++;
+    }
+    if (fields.asking_rent != null) {
+      setRent(String(fields.asking_rent));
+      filledCount++;
+    }
+    if (fields.description) {
+      setDescription(fields.description);
+      filledCount++;
+    }
+    if (fields.pets_allowed != null) {
+      setPetsAllowed(fields.pets_allowed);
+      filledCount++;
+    }
+    if (fields.parking_available != null) {
+      setParkingAvailable(fields.parking_available);
+      filledCount++;
+    }
+    if (fields.fibre_available != null) {
+      setFibreAvailable(fields.fibre_available);
+      filledCount++;
+    }
+    if (fields.property_tags.length > 0) {
+      setPropertyTags((prev) =>
+        Array.from(new Set([...prev, ...fields.property_tags])),
+      );
+      filledCount++;
+    }
+    if (fields.area_tags.length > 0) {
+      setAreaTags((prev) =>
+        Array.from(new Set([...prev, ...fields.area_tags])),
+      );
+      filledCount++;
+    }
+    if (fields.lifestyle_tags.length > 0) {
+      setLifestyleTags((prev) =>
+        Array.from(new Set([...prev, ...fields.lifestyle_tags])),
+      );
+      filledCount++;
+    }
+
+    setToast(
+      filledCount > 0
+        ? `Filled in ${filledCount} field${filledCount === 1 ? "" : "s"} from your description, review below.`
+        : "Didn't find any details to fill in, you can enter them manually below.",
+    );
+    setTimeout(() => setToast(null), 3500);
   }
 
   function removePhoto(i: number) {
@@ -493,6 +569,11 @@ export default function NewPropertyPage() {
             <h2 className="mb-5 text-lg font-bold text-slate-900">
               Property details
             </h2>
+
+            {mode === "vacant" && (
+              <VoiceDescribeProperty onExtracted={applyExtractedFields} />
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
