@@ -134,6 +134,9 @@ export default function NewPropertyPage() {
   const [postCreatePhase, setPostCreatePhase] = useState<"none" | "ask" | "upload">("none");
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
 
+  // Public listing page (vacant mode only — this flow IS "list your property")
+  const [publishListing, setPublishListing] = useState(true);
+
   // Step 1
   const [name, setName] = useState("");
   const [propertyType, setPropertyType] = useState("");
@@ -242,6 +245,7 @@ export default function NewPropertyPage() {
           : null,
         lease_end_date: mode === "occupied" && leaseEndDate ? leaseEndDate : null,
         photos: [],
+        is_published: mode === "vacant" ? publishListing : false,
       })
       .select()
       .single();
@@ -292,7 +296,15 @@ export default function NewPropertyPage() {
     }
 
     setToast("Property listed successfully!");
-    setTimeout(() => router.push(`/properties/${prop.id}`), 1200);
+    setTimeout(
+      () =>
+        router.push(
+          publishListing
+            ? `/properties/${prop.id}/edit`
+            : `/properties/${prop.id}`,
+        ),
+      1200,
+    );
   }
 
   return (
@@ -1114,6 +1126,34 @@ export default function NewPropertyPage() {
               className="hidden"
               onChange={handlePhotoSelect}
             />
+
+            {mode === "vacant" && (
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Public listing page
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {publishListing
+                        ? "A shareable public link will be created for WhatsApp or Facebook. No landlord contact details are shown, applying through PropTrust is the contact channel."
+                        : "No public link will be created. You can publish later from the property's edit page."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPublishListing((v) => !v)}
+                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      publishListing
+                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
+                    {publishListing ? "Published" : "Unpublished"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
