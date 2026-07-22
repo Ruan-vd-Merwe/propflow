@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
-  RENT_TO_INCOME_RATIO,
   INCOME_BANDS,
   deriveAffordability,
 } from "@/lib/affordability";
@@ -191,10 +190,7 @@ export function AffordabilityForm({ userId, existing }: AffordabilityFormProps) 
                     ? ` – ${fmtRand(affordability.max)}`
                     : "+"}
                 </strong>{" "}
-                /mo{" "}
-                <span className="text-slate-400">
-                  ({Math.round(RENT_TO_INCOME_RATIO * 100)}% of income)
-                </span>
+                /mo based on the income range you selected.
               </p>
             </div>
           )}

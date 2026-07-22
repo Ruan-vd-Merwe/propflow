@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       id, full_name, monthly_rent,
       properties!inner (
         name,
-        profiles!inner ( full_name, phone )
+        profiles!inner ( full_name, phone, whatsapp_opted_in )
       )
     `,
     )
@@ -48,10 +48,13 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const landlord: any = property.profiles;
 
+  const landlordOptedIn = landlord.whatsapp_opted_in ?? true;
+
   // Send WhatsApp to landlord
   if (landlord.phone) {
     sendTenantPaidNotification({
       landlordPhone: landlord.phone,
+      optedIn: landlordOptedIn,
       tenantName: tenant.full_name,
       amount: payment_id ? 0 : tenant.monthly_rent, // try to get actual amount below
       property: property.name,
@@ -70,6 +73,7 @@ export async function POST(req: NextRequest) {
     if (pmt && landlord.phone) {
       sendTenantPaidNotification({
         landlordPhone: landlord.phone,
+        optedIn: landlordOptedIn,
         tenantName: tenant.full_name,
         amount: pmt.amount,
         property: property.name,

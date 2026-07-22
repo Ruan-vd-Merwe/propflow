@@ -239,22 +239,22 @@ function PropertyCard({
       </div>
 
       {/* Body */}
-      <div className="flex-1 p-4">
-        <p className="font-semibold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
+      <div className="flex-1 p-5">
+        <p className="truncate text-base font-semibold leading-snug text-slate-900 transition-colors group-hover:text-blue-700">
           {p.name}
         </p>
 
         {(p.suburb || p.province) && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-            <IconMapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>
+          <div className="mt-2 flex items-start gap-1 text-xs text-slate-500">
+            <IconMapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="break-words leading-relaxed">
               {p.suburb}
               {p.province ? `, ${p.province}` : ""}
             </span>
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
           {p.bedrooms != null && (
             <span className="flex items-center gap-1">
               <IconBed className="h-3.5 w-3.5" />
@@ -262,42 +262,48 @@ function PropertyCard({
             </span>
           )}
           {p.property_type && (
-            <span className="capitalize text-slate-400">{p.property_type}</span>
+            <span className="capitalize">{p.property_type}</span>
           )}
         </div>
 
-        <div className="mt-3">
+        <div className="mt-4">
           {p.asking_rent ? (
-            <span className="text-xl font-bold text-[#0f172a]">
+            <p className="text-[28px] font-extrabold leading-none tracking-tight text-[#0f172a]">
               {fmtRand(p.asking_rent)}
-              <span className="text-sm font-normal text-slate-400">/mo</span>
-            </span>
+              <span className="ml-1 text-sm font-medium text-slate-400">/mo</span>
+            </p>
           ) : (
-            <span className="text-sm text-slate-400">Price on request</span>
+            <p className="text-sm text-slate-400">Price on request</p>
           )}
         </div>
 
         {p.available_from && (
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-400">
             Available {fmtDate(p.available_from)}
           </p>
         )}
 
         {isPersonalised && result?.match_reasons && result.match_reasons.length > 0 && (
-          <ul className="mt-3 space-y-1">
+          <ul className="mt-5 space-y-1.5 border-t border-slate-100 pt-4">
             {result.match_reasons.slice(0, 3).map((r) => (
-              <li key={r} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-green-700">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+              <li key={r} className="flex items-start gap-2 text-xs leading-relaxed text-green-700">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
                 {r}
               </li>
             ))}
           </ul>
         )}
         {isPersonalised && result?.warnings && result.warnings.length > 0 && (
-          <ul className="mt-2 space-y-1">
+          <ul
+            className={`space-y-1.5 ${
+              result?.match_reasons && result.match_reasons.length > 0
+                ? "mt-2"
+                : "mt-5 border-t border-slate-100 pt-4"
+            }`}
+          >
             {result.warnings.slice(0, 2).map((w) => (
-              <li key={w} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-700">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <li key={w} className="flex items-start gap-2 text-xs leading-relaxed text-amber-700">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                 {w}
               </li>
             ))}
@@ -309,14 +315,14 @@ function PropertyCard({
       <div className="flex gap-2 border-t border-slate-100 p-4">
         <Link
           href={`/browse/${p.id}`}
-          className={`rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? "flex-1" : "w-full"}`}
+          className={`flex min-h-[44px] items-center justify-center rounded-lg border border-slate-200 px-4 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${showApply ? "flex-1" : "w-full"}`}
         >
           View property
         </Link>
         {showApply && (
           <Link
             href={`/apply/${p.id}`}
-            className="flex-1 rounded-lg bg-blue-700 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
+            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-blue-700 px-4 text-center text-sm font-semibold text-white transition hover:bg-blue-800"
           >
             Apply with profile
           </Link>

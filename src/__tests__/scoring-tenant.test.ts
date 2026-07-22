@@ -34,7 +34,7 @@ describe("financial_insight", () => {
       rent: 8000,
     });
     expect(result.score).toBeGreaterThanOrEqual(0.9);
-    expect(result.message).toContain("Excellent");
+    expect(result.message).toContain("budget");
   });
 
   it("returns low score when rent > 45% of income", () => {
@@ -43,7 +43,7 @@ describe("financial_insight", () => {
       rent: 20000,
     });
     expect(result.score).toBeLessThan(0.2);
-    expect(result.message).toContain("strain");
+    expect(result.message).toContain("pressure");
   });
 
   it("returns neutral score when no income", () => {
@@ -51,7 +51,8 @@ describe("financial_insight", () => {
       { ...baseTenant, monthly_income: 0 },
       baseProperty,
     );
-    expect(result.score).toBe(0.5);
+    expect(result.score).toBeGreaterThanOrEqual(0.5);
+    expect(result.message).toContain("budget");
   });
 });
 

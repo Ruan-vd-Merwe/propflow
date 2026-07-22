@@ -5,7 +5,7 @@ import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import { tenant_interest_match_model } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
-import type { PropertyListing } from "@/lib/types";
+import { PUBLIC_PROPERTY_COLUMNS, type PropertyListing } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -117,13 +117,13 @@ export default async function BrowsePropertyPage({
   // Load property
   const { data: raw } = await supabase
     .from("properties")
-    .select("*")
+    .select(PUBLIC_PROPERTY_COLUMNS)
     .eq("id", params.id)
     .in("status", ["available", "available_from"])
     .single();
 
   if (!raw) notFound();
-  const property = raw as PropertyListing;
+  const property = raw as unknown as PropertyListing;
 
   // User roles
   let isLandlord = false;
@@ -151,7 +151,7 @@ export default async function BrowsePropertyPage({
       if (tp) {
         hasTenantProfile = true;
         const profile = mapTenantProfile(tp as Record<string, unknown>);
-        const propData = mapProperty(raw as Record<string, unknown>);
+        const propData = mapProperty(raw as unknown as Record<string, unknown>);
         scoreResult = tenant_interest_match_model(profile, propData);
       }
     }
@@ -179,7 +179,7 @@ export default async function BrowsePropertyPage({
   if (property.suburb || property.province) {
     const { data: simRaw } = await supabase
       .from("properties")
-      .select("*")
+      .select(PUBLIC_PROPERTY_COLUMNS)
       .in("status", ["available", "available_from"])
       .neq("id", property.id)
       .eq(
@@ -187,7 +187,7 @@ export default async function BrowsePropertyPage({
         (property.suburb ?? property.province) as string,
       )
       .limit(3);
-    similar = (simRaw ?? []) as PropertyListing[];
+    similar = (simRaw ?? []) as unknown as PropertyListing[];
   }
 
   const deposit = property.asking_rent ? property.asking_rent * 2 : null;
@@ -477,7 +477,7 @@ export default async function BrowsePropertyPage({
                     </p>
                   </div>
                   <Link
-                    href={`/apply?property_id=${property.id}`}
+                    href={`/apply/${property.id}`}
                     className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
                   >
                     Apply for this property
@@ -490,7 +490,7 @@ export default async function BrowsePropertyPage({
               ) : isTenant && hasTenantProfile ? (
                 <>
                   <Link
-                    href={`/apply?property_id=${property.id}`}
+                    href={`/apply/${property.id}`}
                     className="block w-full rounded-xl bg-blue-700 py-3.5 text-center text-sm font-bold text-white transition hover:bg-blue-800"
                   >
                     Apply for this property
@@ -633,13 +633,13 @@ export default async function BrowsePropertyPage({
                       </svg>
                     </div>
                   )}
-                  <div className="p-3">
-                    <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-700">
+                  <div className="p-4">
+                    <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-700">
                       {p.name}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">{p.suburb}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-400">{p.suburb}</p>
                     {p.asking_rent && (
-                      <p className="mt-1.5 text-sm font-bold text-slate-900">
+                      <p className="mt-2 text-base font-bold text-slate-900">
                         {fmtRand(p.asking_rent)}
                         <span className="text-xs font-normal text-slate-400">
                           /mo

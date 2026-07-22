@@ -208,10 +208,10 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
   // ─────────────────────────────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="card p-10 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+      <div className="card p-6 text-center sm:p-10">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
           <svg
-            className="h-8 w-8 text-emerald-600"
+            className="h-8 w-8 text-blue-700"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -241,7 +241,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
   return (
     <div>
       {/* Progress */}
-      <div className="mb-8 flex items-center gap-2">
+      <div className="mb-8 flex items-center justify-center gap-2 sm:justify-start">
         {steps.map((label, i) => {
           const n = (i + 1) as Step;
           const active = n === step;
@@ -260,7 +260,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
                       active
                         ? "bg-slate-900 text-white"
                         : complete
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-blue-50 text-blue-700"
                           : "bg-slate-100 text-slate-400"
                     }`}
                 >
@@ -377,7 +377,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
 
           <div className="mt-6 flex justify-end">
             <button
-              className="btn-primary w-auto px-6"
+              className="btn-primary min-h-[44px] w-full px-6 sm:w-auto"
               disabled={!step1Valid}
               onClick={() => setStep(2)}
             >
@@ -460,18 +460,32 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
               </div>
             )}
 
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <p className="text-sm font-semibold text-blue-950">
+                Why we ask for income documents
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-blue-900">
+                Your statement helps verify affordability for this application. PropTrust uses it to prepare an income and affordability summary.
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-blue-800">
+                Landlords see the application summary and submitted file reference for this property. Your documents stay linked to your PropTrust application record instead of being sent as loose email attachments.
+              </p>
+            </div>
+
             {/* Bank statement upload */}
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
                 Bank Statement (PDF)
                 <span className="ml-1 text-xs font-normal text-slate-400">
-                  — FNB, Standard Bank, Nedbank, ABSA or Capitec, last 3–6
-                  months
+                  last 3 to 6 months
                 </span>
               </label>
+              <p className="mb-3 text-xs leading-relaxed text-slate-500">
+                Upload a digital statement from FNB, Standard Bank, Nedbank, ABSA or Capitec. This is used for this application and affordability verification.
+              </p>
 
               <div
-                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center transition hover:border-slate-400"
+                className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition hover:border-slate-400 sm:p-8"
                 onClick={() => fileRef.current?.click()}
               >
                 <svg
@@ -563,15 +577,18 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-between">
+          <div
+            className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
             <button
-              className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              className="min-h-[44px] rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
               onClick={() => setStep(1)}
             >
               ← Back
             </button>
             <button
-              className="btn-primary w-auto px-6"
+              className="btn-primary min-h-[44px] w-full px-6 sm:w-auto"
               disabled={!step2Valid}
               onClick={() => setStep(3)}
             >
@@ -589,7 +606,7 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
               Review Your Application
             </h2>
 
-            <dl className="grid grid-cols-2 gap-3 text-sm">
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <ReviewRow label="Name" value={form.full_name} />
               <ReviewRow label="Email" value={form.email} />
               {form.phone && <ReviewRow label="Phone" value={form.phone} />}
@@ -635,15 +652,18 @@ export function ApplicationForm({ propertyId }: { propertyId: string }) {
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div
+            className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
             <button
-              className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              className="min-h-[44px] rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
               onClick={() => setStep(2)}
             >
               ← Back
             </button>
             <button
-              className="btn-primary w-auto px-8"
+              className="btn-primary min-h-[44px] w-full px-8 sm:w-auto"
               disabled={submitting}
               onClick={handleSubmit}
             >

@@ -13,6 +13,13 @@ export type Profile = {
   phone: string | null;
   province: string | null;
   city: string | null;
+  // Landlord payout destination: one per landlord, portfolio-wide (not
+  // per-property). Reference/ID only, never raw bank details — the exact
+  // shape depends on the payout provider's vendor model. payout_provider is
+  // provider-agnostic (e.g. 'payfast') so a future provider doesn't need a
+  // schema change. See src/lib/rent/payment-providers/types.ts SplitConfig.
+  payout_provider: string | null;
+  payout_provider_ref: string | null;
   created_at: string;
 };
 
@@ -53,6 +60,16 @@ export type PropertyListing = Property & {
   lifestyle_tags: string[];
 };
 
+// Column list matching PropertyListing, safe to select as the anon role.
+// The financial columns added in migration_finance.sql / migration_portfolio_finance.sql
+// (bond_*, purchase_price_cents, current_value_cents, levy/rates/insurance, notes)
+// are revoked from anon — do not add them here or add "*" back to a public query.
+export const PUBLIC_PROPERTY_COLUMNS =
+  "id, owner_id, name, address, created_at, property_type, bedrooms, " +
+  "asking_rent, available_from, suburb, province, description, is_listed, " +
+  "status, photos, floor_size_m2, pets_allowed, parking_available, " +
+  "fibre_available, property_tags, area_tags, lifestyle_tags";
+
 // ─── Marketplace ──────────────────────────────────────────────────────────────
 
 export type IncomeBand = "under_10k" | "10k_20k" | "20k_35k" | "35k_50k" | "50k_plus";
@@ -79,7 +96,6 @@ export type TenantProfile = {
   preferences_complete: boolean;
   affordability_complete: boolean;
   discoverable: boolean;
-  is_visible: boolean;
   has_pets: boolean;
   has_car: boolean;
   furnished_preference: "furnished" | "unfurnished" | "no_preference" | null;
@@ -389,6 +405,77 @@ export type LeaseAgreement = {
   created_at: string;
 };
 
+// ─── Rent ledger (Phase 1: manual-only) ───────────────────────────────────────
+
+export type RentScheduleStatus = "active" | "superseded";
+
+export type RentSchedule = {
+  id: string;
+  lease_id: string;
+  amount_cents: number;
+  due_day: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string | null; // YYYY-MM-DD
+  escalation_date: string | null; // YYYY-MM-DD
+  escalation_pct: number | null;
+  status: RentScheduleStatus;
+  created_at: string;
+};
+
+export type ObligationStatus =
+  | "pending"
+  | "processing" // Phase 2: a payment attempt is in flight
+  | "paid"
+  | "partial"
+  | "late"
+  | "failed"
+  | "waived";
+
+export type RentObligation = {
+  id: string;
+  schedule_id: string;
+  tenant_id: string;
+  property_id: string;
+  landlord_id: string;
+  period_start: string; // YYYY-MM-DD
+  due_date: string; // YYYY-MM-DD
+  amount_due_cents: number;
+  amount_paid_cents: number;
+  status: ObligationStatus;
+  paid_at: string | null; // Phase 2: set when status first becomes 'paid'
+  created_at: string;
+  updated_at: string;
+};
+
+// Phase 2 adds 'processing' (provider settling) and 'cancelled' (tenant
+// abandoned checkout) — both are payment states the tenant can see directly.
+export type PaymentAttemptStatus =
+  | "pending"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "refunded";
+export type PaymentAttemptInitiator = "tenant" | "landlord" | "system";
+
+export type PaymentAttempt = {
+  id: string;
+  obligation_id: string;
+  provider: string; // 'manual' in Phase 1, 'mock' in Phase 2, a real gateway later
+  provider_ref: string | null; // doubles as the provider's payment/session id
+  provider_checkout_url: string | null; // Phase 2: checkout/dev-checkout URL
+  amount_cents: number;
+  currency: string; // Phase 2, default 'ZAR'
+  status: PaymentAttemptStatus;
+  method: string | null;
+  failure_reason: string | null; // Phase 2
+  raw_provider_event: Record<string, unknown> | null; // Phase 2: last webhook payload
+  initiated_by: PaymentAttemptInitiator;
+  created_at: string;
+  updated_at: string; // Phase 2
+  confirmed_at: string | null;
+};
+
 // ─── Intelligence features ────────────────────────────────────────────────────
 
 export type ComponentTypeKey =
@@ -647,5 +734,77 @@ export type OwnerNotification = {
   body: string | null;
   link: string | null;
   read: boolean;
+  created_at: string;
+};
+
+// ─── Flatmate Finder ──────────────────────────────────────────────────────────
+
+export type FlatmateListingStatus = "active" | "filled" | "cancelled";
+
+export type FlatmateListing = {
+  id: string;
+  property_id: string;
+  created_by_tenant_id: string;
+  status: FlatmateListingStatus;
+  note: string | null;
+  rent_portion_cents: number;
+  move_in_date: string; // YYYY-MM-DD
+  share_token: string; // uuid
+  created_at: string;
+  filled_at: string | null;
+};
+
+export type FlatmateApplicantStatus = "pending" | "approved" | "declined";
+
+export type FlatmateApplicant = {
+  id: string;
+  listing_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  applicant_profile_id: string | null;
+  // Mirrors tenant_profiles.verification_status at apply time. Text, not a
+  // number: this codebase has no numeric TrustScore anywhere.
+  trust_status_snapshot: VerificationStatus | null;
+  status: FlatmateApplicantStatus;
+  created_at: string;
+};
+
+// ─── Lease upload and AI extraction ───────────────────────────────────────────
+
+export type LeaseUploaderRole = "landlord" | "tenant";
+export type LeaseExtractionStatus = "pending" | "extracted" | "failed";
+
+/**
+ * The fixed shape both the AI extraction and manual entry fill in. Every
+ * field is nullable: extraction may miss a field, and manual_fields only
+ * carries whatever the landlord or tenant entered for fields left null.
+ */
+export type LeaseExtractedFields = {
+  tenant_name: string | null;
+  landlord_name: string | null;
+  property_address: string | null;
+  monthly_rent_cents: number | null;
+  deposit_amount_cents: number | null;
+  lease_start: string | null; // YYYY-MM-DD
+  lease_end: string | null; // YYYY-MM-DD
+  payment_due_day: number | null;
+  escalation_pct: number | null;
+  escalation_date: string | null; // YYYY-MM-DD
+};
+
+export type LeaseExtraction = {
+  id: string;
+  uploaded_by_role: LeaseUploaderRole;
+  uploaded_by_profile_id: string;
+  property_id: string | null;
+  tenant_id: string | null;
+  storage_path: string;
+  original_filename: string;
+  status: LeaseExtractionStatus;
+  extracted_fields: LeaseExtractedFields | null;
+  manual_fields: LeaseExtractedFields | null;
+  confirmed: boolean;
+  confirmed_at: string | null;
   created_at: string;
 };

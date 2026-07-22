@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ObligationStatusBadge } from "@/components/ObligationStatusBadge";
 import type {
   TenantQuery,
-  Payment,
+  RentObligation,
+  PaymentAttempt,
   QueryCategory,
   QueryStatus,
 } from "@/lib/types";
+
+// A rent obligation plus its most recent payment attempt (if any) — the
+// tenant-visible payment status comes from the attempt, not the obligation.
+type ObligationWithAttempt = RentObligation & {
+  latest_attempt: PaymentAttempt | null;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -147,25 +155,33 @@ export function TenantPortal({
   tenant,
   property,
   landlord,
-  initialPayments,
+  initialObligations,
   initialQueries,
   serviceCategories,
   serviceProviders,
-  nextPayment,
+  nextObligation,
   initialLease,
+  devMode,
+  initialTab,
 }: {
   token: string;
   tenant: TenantInfo;
   property: PropertyInfo;
   landlord: LandlordInfo;
-  initialPayments: Payment[];
+  initialObligations: ObligationWithAttempt[];
   initialQueries: TenantQuery[];
   serviceCategories: ServiceCategory[];
   serviceProviders: ServiceProvider[];
-  nextPayment: Payment | null;
+  nextObligation: RentObligation | null;
   initialLease: LeaseInfo | null;
+  devMode: boolean;
+  initialTab?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const isValidTab = (t: string | undefined): t is TabId =>
+    !!t && TABS.some((tab) => tab.id === t);
+  const [activeTab, setActiveTab] = useState<TabId>(
+    isValidTab(initialTab) ? initialTab : "home",
+  );
   const [queries, setQueries] = useState<TenantQuery[]>(initialQueries);
   const [lease, setLease] = useState<LeaseInfo | null>(initialLease);
   const [selectedServiceCat, setSelectedServiceCat] = useState<string | null>(
@@ -198,12 +214,16 @@ export function TenantPortal({
           tenant={tenant}
           property={property}
           landlord={landlord}
-          nextPayment={nextPayment}
+          nextObligation={nextObligation}
           onNavigate={setActiveTab}
         />
       )}
       {activeTab === "payments" && (
-        <PaymentsTab payments={initialPayments} token={token} />
+        <PaymentsTab
+          obligations={initialObligations}
+          token={token}
+          devMode={devMode}
+        />
       )}
       {activeTab === "lease" && (
         <LeaseTab
@@ -251,16 +271,16 @@ function HomeTab({
   tenant,
   property,
   landlord,
-  nextPayment,
+  nextObligation,
   onNavigate,
 }: {
   tenant: TenantInfo;
   property: PropertyInfo;
   landlord: LandlordInfo;
-  nextPayment: Payment | null;
+  nextObligation: RentObligation | null;
   onNavigate: (tab: TabId) => void;
 }) {
-  const days = nextPayment ? daysUntil(nextPayment.due_date) : null;
+  const days = nextObligation ? daysUntil(nextObligation.due_date) : null;
 
   const paymentColour =
     days === null
@@ -287,10 +307,10 @@ function HomeTab({
         <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
           Next payment
         </p>
-        {nextPayment ? (
+        {nextObligation ? (
           <>
             <p className={`text-2xl font-bold ${paymentTextColour}`}>
-              {fmtRand(nextPayment.amount)}
+              {fmtRand(nextObligation.amount_due_cents - nextObligation.amount_paid_cents)}
             </p>
             <p className={`mt-0.5 text-sm font-medium ${paymentTextColour}`}>
               {days === 0
@@ -299,8 +319,14 @@ function HomeTab({
                   ? "Due tomorrow"
                   : days! < 0
                     ? `${Math.abs(days!)} days overdue`
-                    : `Due in ${days} days (${fmtDate(nextPayment.due_date)})`}
+                    : `Due in ${days} days (${fmtDate(nextObligation.due_date)})`}
             </p>
+            <button
+              onClick={() => onNavigate("payments")}
+              className="mt-3 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-95"
+            >
+              Pay rent →
+            </button>
           </>
         ) : (
           <p className="text-sm text-slate-500">No outstanding payments</p>
@@ -416,26 +442,80 @@ function HomeTab({
 // ─── PAYMENTS TAB ─────────────────────────────────────────────────────────────
 
 function PaymentsTab({
-  payments,
+  obligations: initialObligations,
   token,
+  devMode,
 }: {
-  payments: Payment[];
+  obligations: ObligationWithAttempt[];
   token: string;
+  devMode: boolean;
 }) {
-  const [notifiedId, setNotifiedId] = useState<string | null>(null);
-  const [notifying, setNotifying] = useState<string | null>(null);
+  const [obligations, setObligations] =
+    useState<ObligationWithAttempt[]>(initialObligations);
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [simulatingId, setSimulatingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function notifyPaid(paymentId: string) {
-    setNotifying(paymentId);
+  async function handlePay(obligationId: string) {
+    setPayingId(obligationId);
+    setError(null);
     try {
-      await fetch("/api/tenant/paid", {
+      const res = await fetch(`/api/rent/obligations/${obligationId}/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, payment_id: paymentId }),
+        body: JSON.stringify({ token }),
       });
-      setNotifiedId(paymentId);
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Failed to start payment");
+        return;
+      }
+      setObligations((prev) =>
+        prev.map((o) =>
+          o.id === obligationId
+            ? { ...o, status: "processing", latest_attempt: json.payment_attempt }
+            : o,
+        ),
+      );
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
-      setNotifying(null);
+      setPayingId(null);
+    }
+  }
+
+  async function handleSimulate(
+    obligationId: string,
+    attemptId: string,
+    outcome: "succeeded" | "failed" | "cancelled",
+  ) {
+    setSimulatingId(attemptId);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/rent/payment-attempts/${attemptId}/simulate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ outcome, token }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Simulation failed");
+        return;
+      }
+      setObligations((prev) =>
+        prev.map((o) =>
+          o.id === obligationId
+            ? { ...o, ...json.obligation, latest_attempt: json.payment_attempt }
+            : o,
+        ),
+      );
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSimulatingId(null);
     }
   }
 
@@ -443,25 +523,37 @@ function PaymentsTab({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-white/70">Payment history</p>
+      <p className="text-sm font-medium text-white/70">Rent payments</p>
 
-      {payments.length === 0 && (
-        <Card className="border border-slate-100 p-8 text-center">
-          <p className="text-slate-500">No payment records yet.</p>
+      {error && (
+        <Card className="border border-red-200 bg-red-50 p-3">
+          <p className="text-sm text-red-700">{error}</p>
         </Card>
       )}
 
-      {payments.map((pmt) => {
-        const overdue = pmt.status !== "paid" && pmt.due_date < today;
-        const notified = notifiedId === pmt.id;
+      {obligations.length === 0 && (
+        <Card className="border border-slate-100 p-8 text-center">
+          <p className="text-slate-500">No rent obligations yet.</p>
+        </Card>
+      )}
+
+      {obligations.map((o) => {
+        const overdue =
+          o.status !== "paid" && o.status !== "waived" && o.due_date < today;
+        const attempt = o.latest_attempt;
+        const attemptInFlight =
+          !!attempt && (attempt.status === "pending" || attempt.status === "processing");
+        const outstanding = o.amount_due_cents - o.amount_paid_cents;
+        const isPaying = payingId === o.id;
+        const isRetry = attempt?.status === "failed" || attempt?.status === "cancelled";
 
         return (
           <Card
-            key={pmt.id}
+            key={o.id}
             className={`border p-4 ${
               overdue
                 ? "border-red-200 bg-red-50"
-                : pmt.status === "paid"
+                : o.status === "paid" || o.status === "waived"
                   ? "border-slate-100"
                   : "border-amber-200 bg-amber-50"
             }`}
@@ -469,56 +561,96 @@ function PaymentsTab({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-slate-900">
-                  {fmtMonth(pmt.due_date)}
+                  {fmtMonth(o.period_start)}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Due {fmtDate(pmt.due_date)}
+                  Due {fmtDate(o.due_date)}
                 </p>
-                {pmt.paid_date && (
+                {o.paid_at && (
                   <p className="mt-0.5 text-xs text-emerald-600">
-                    Paid {fmtDate(pmt.paid_date)}
+                    Paid {fmtDate(o.paid_at)}
                   </p>
                 )}
               </div>
               <div className="text-right">
                 <p className="text-base font-bold text-slate-900">
-                  {fmtRand(pmt.amount)}
+                  {fmtRand(o.amount_due_cents)}
                 </p>
-                <span
-                  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                    pmt.status === "paid"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : pmt.status === "late"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {pmt.status === "paid"
-                    ? "✓ Paid"
-                    : overdue
-                      ? "⚠ Overdue"
-                      : "⏳ Unpaid"}
-                </span>
+                <div className="mt-1 flex justify-end">
+                  <ObligationStatusBadge status={o.status} />
+                </div>
               </div>
             </div>
 
-            {/* "I paid" button for unpaid */}
-            {pmt.status !== "paid" && (
+            {/* Action area */}
+            {o.status === "paid" && (
               <button
-                disabled={notifying === pmt.id || notified}
-                onClick={() => notifyPaid(pmt.id)}
-                className={`mt-3 w-full rounded-xl py-2.5 text-sm font-semibold transition ${
-                  notified
-                    ? "bg-emerald-100 text-emerald-700 cursor-default"
-                    : "bg-slate-900 text-white hover:bg-slate-700 active:scale-95"
-                }`}
+                disabled
+                className="mt-3 w-full cursor-not-allowed rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-400"
               >
-                {notified
-                  ? "✓ Landlord notified"
-                  : notifying === pmt.id
-                    ? "Notifying…"
-                    : "✓ I have paid — notify landlord"}
+                📄 Receipt (coming soon)
               </button>
+            )}
+
+            {o.status === "waived" && (
+              <p className="mt-3 text-center text-xs text-slate-400">
+                Waived by your landlord — nothing due.
+              </p>
+            )}
+
+            {o.status !== "paid" && o.status !== "waived" && !attemptInFlight && (
+              <button
+                disabled={isPaying}
+                onClick={() => handlePay(o.id)}
+                className="mt-3 w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 active:scale-95"
+              >
+                {isPaying
+                  ? "Starting…"
+                  : isRetry
+                    ? `↻ Retry — pay ${fmtRand(outstanding)}`
+                    : `Pay rent — ${fmtRand(outstanding)}`}
+              </button>
+            )}
+
+            {attemptInFlight && (
+              <div className="mt-3 rounded-xl bg-indigo-50 px-3 py-2.5 text-center text-sm font-medium text-indigo-700">
+                ⏳{" "}
+                {attempt!.status === "processing"
+                  ? "Processing payment…"
+                  : "Waiting for payment to complete…"}
+              </div>
+            )}
+
+            {/* Dev-only: stands in for a provider's sandbox checkout */}
+            {devMode && attemptInFlight && attempt && (
+              <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Dev checkout — simulate provider response
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    disabled={simulatingId === attempt.id}
+                    onClick={() => handleSimulate(o.id, attempt.id, "succeeded")}
+                    className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    Succeed
+                  </button>
+                  <button
+                    disabled={simulatingId === attempt.id}
+                    onClick={() => handleSimulate(o.id, attempt.id, "failed")}
+                    className="flex-1 rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Fail
+                  </button>
+                  <button
+                    disabled={simulatingId === attempt.id}
+                    onClick={() => handleSimulate(o.id, attempt.id, "cancelled")}
+                    className="flex-1 rounded-lg border border-slate-300 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </Card>
         );

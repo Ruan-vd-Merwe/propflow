@@ -52,8 +52,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/how-scoring-works" ||
     pathname === "/unsubscribe" ||
     pathname === "/trust" ||
-    pathname === "/for-tenants" ||
-    pathname === "/for-landlords" ||
+    pathname === "/tenant-verification" ||
+    pathname === "/rental-ecosystem" ||
     pathname === "/become-a-connector" ||
     pathname.startsWith("/browse") ||
     pathname.startsWith("/solutions/") ||

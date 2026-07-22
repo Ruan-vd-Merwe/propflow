@@ -4,13 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { NavBar } from "@/components/NavBar";
 import { RiskBadge } from "@/components/RiskBadge";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
+import { groupObligationsByTenant } from "@/lib/rent/ledger";
 import { calculateMatchScore, displayName } from "@/lib/matching";
 import { IntroduceButton } from "./IntroduceButton";
 import { SharePortalButton } from "./SharePortalButton";
 import { PropertyPhotoUpload } from "./PropertyPhotoUpload";
+import {
+  PropertyLegalStatusPill,
+  type PropertyLegalStatus,
+} from "@/components/xpello/PropertyLegalStatusPill";
 import type {
   Payment,
+  RentObligation,
   Tenant,
   PropertyListing,
   TenantProfile,
@@ -134,6 +140,7 @@ function TenantMatchCard({
       <IntroduceButton
         tenantId={tenantId}
         propertyId={propertyId}
+        tenantName={name}
         alreadyRequested={alreadyRequested}
       />
     </div>
@@ -226,12 +233,41 @@ export default async function PropertyPage({
     paymentsByTenant.get(p.tenant_id)!.push(p);
   }
 
+  // Tenants on a rent schedule are tracked in rent_obligations, not the
+  // legacy payments table, so risk must prefer this ledger when present.
+  const { data: obligationsRaw } = tenantIds.length
+    ? await supabase
+        .from("rent_obligations")
+        .select("*")
+        .in("tenant_id", tenantIds)
+    : { data: [] };
+
+  const obligationsByTenant = groupObligationsByTenant(
+    (obligationsRaw ?? []) as RentObligation[],
+  );
+
   const tenantsWithRisk = tenantList
     .map((t) => ({
       ...t,
-      risk: calculateRiskScore(paymentsByTenant.get(t.id) ?? []),
+      risk: riskForTenant(
+        paymentsByTenant.get(t.id) ?? [],
+        obligationsByTenant.get(t.id) ?? [],
+      ),
     }))
     .sort((a, b) => a.risk.score - b.risk.score);
+
+  // ── Xpello legal status (concept) ─────────────────────────────────────────
+  const { data: propertyLeases } = await supabase
+    .from("lease_agreements")
+    .select("xpello_enrolled")
+    .eq("property_id", property.id);
+
+  const isXpelloEnrolled = (propertyLeases ?? []).some((l) => l.xpello_enrolled);
+  const legalStatus: PropertyLegalStatus = isXpelloEnrolled
+    ? "protected"
+    : tenantList.length === 0
+      ? "incomplete"
+      : "ready";
 
   // ── Recommended tab — only fetched when active ────────────────────────────
   type MatchRow = {
@@ -261,7 +297,7 @@ export default async function PropertyPage({
       service
         .from("tenant_profiles")
         .select("*")
-        .eq("is_visible", true)
+        .eq("discoverable", true)
         .limit(200)
         .order("created_at", { ascending: false }),
       supabase
@@ -325,6 +361,13 @@ export default async function PropertyPage({
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{property.name}</h1>
             <p className="mt-1 text-sm text-slate-500">{property.address}</p>
+            <div className="mt-3">
+              <PropertyLegalStatusPill
+                status={legalStatus}
+                propertyId={property.id}
+                propertyName={property.name}
+              />
+            </div>
           </div>
           <Link
             href={`/properties/${params.id}/edit`}
@@ -353,13 +396,18 @@ export default async function PropertyPage({
         </div>
 
         {/* Tab nav */}
-        <div className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1">
+        <div
+          role="tablist"
+          className="mb-6 flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1"
+        >
           <Link
             href={`/properties/${params.id}`}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+            role="tab"
+            aria-selected={tab === "tenants"}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
               tab === "tenants"
                 ? "bg-white shadow-sm text-slate-900"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-slate-500 hover:bg-white/60 hover:text-slate-700"
             }`}
           >
             Tenants
@@ -375,10 +423,12 @@ export default async function PropertyPage({
           </Link>
           <Link
             href={`/properties/${params.id}?tab=recommended`}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+            role="tab"
+            aria-selected={tab === "recommended"}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
               tab === "recommended"
                 ? "bg-white shadow-sm text-slate-900"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-slate-500 hover:bg-white/60 hover:text-slate-700"
             }`}
           >
             Recommended Tenants

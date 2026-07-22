@@ -24,7 +24,13 @@ export function financial_insight(
   const budget = profile.rental_budget;
 
   if (income === 0)
-    return { score: 0.5, message: "No income data to assess affordability." };
+    return {
+      score: budget > 0 && rent <= budget ? 0.8 : 0.5,
+      message:
+        budget > 0 && rent <= budget
+          ? "Within your stated rental budget. Add affordability details for a more complete view."
+          : "Add affordability details for a more complete budget view.",
+    };
 
   const income_ratio = safe_div(rent, income);
   const budget_ratio = safe_div(rent, budget);
@@ -32,27 +38,27 @@ export function financial_insight(
   if (income_ratio <= 0.25 && budget_ratio <= 0.9) {
     return {
       score: 0.95,
-      message: `Excellent fit — rent is ${Math.round(income_ratio * 100)}% of income, well within budget.`,
+      message: "Comfortably within your stated rental budget.",
     };
   } else if (income_ratio <= 0.3 && budget_ratio <= 1.0) {
     return {
       score: 0.8,
-      message: `Good fit — rent is ${Math.round(income_ratio * 100)}% of income and within budget.`,
+      message: "Within your stated rental budget.",
     };
   } else if (income_ratio <= 0.35 || budget_ratio <= 1.1) {
     return {
       score: 0.6,
-      message: `Manageable — rent is ${Math.round(income_ratio * 100)}% of income, slightly stretched.`,
+      message: "Close to your stated budget. Review total monthly costs.",
     };
   } else if (income_ratio <= 0.45) {
     return {
       score: 0.35,
-      message: `Stretched — rent takes ${Math.round(income_ratio * 100)}% of income. Consider your full cost of living.`,
+      message: "This may stretch your budget. Consider your full cost of living.",
     };
   } else {
     return {
       score: 0.1,
-      message: `High financial strain — rent exceeds ${Math.round(income_ratio * 100)}% of income.`,
+      message: "This is likely to place pressure on your budget.",
     };
   }
 }
@@ -76,24 +82,24 @@ export function deal_insight(
   if (diff <= -0.1) {
     return {
       score: 0.95,
-      message: `${Math.round(Math.abs(diff) * 100)}% below suburb average — excellent deal.`,
+      message: `${Math.round(Math.abs(diff) * 100)}% below suburb average. Excellent deal.`,
     };
   } else if (diff <= -0.03) {
     return {
       score: 0.8,
-      message: "Slightly below suburb average — good value.",
+      message: "Slightly below suburb average. Good value.",
     };
   } else if (diff <= 0.05) {
     return { score: 0.65, message: "In line with suburb average pricing." };
   } else if (diff <= 0.15) {
     return {
       score: 0.4,
-      message: `${Math.round(diff * 100)}% above suburb average — on the higher end.`,
+      message: `${Math.round(diff * 100)}% above suburb average. On the higher end.`,
     };
   } else {
     return {
       score: 0.15,
-      message: `${Math.round(diff * 100)}% above suburb average — significantly overpriced.`,
+      message: `${Math.round(diff * 100)}% above suburb average. Significantly overpriced.`,
     };
   }
 }
@@ -111,19 +117,19 @@ export function timing_insight(
     return {
       score: 0.5,
       message:
-        "Peak rental season — expect high competition and standard pricing.",
+        "Peak rental season. Expect high competition and standard pricing.",
     };
   } else if (shoulder_months.includes(month)) {
     return {
       score: 0.7,
       message:
-        "Shoulder season — moderate competition with potential negotiating room.",
+        "Shoulder season. Moderate competition with potential negotiating room.",
     };
   } else {
     return {
       score: 0.85,
       message:
-        "Off-peak timing — good position to negotiate and less competition.",
+        "Off-peak timing. Good position to negotiate and less competition.",
     };
   }
 }
@@ -156,7 +162,7 @@ export function lifestyle_insight(
     const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
     const msg =
       avg > 0.7
-        ? "Great amenity access — coffee, groceries and parks nearby."
+        ? "Great amenity access. Coffee, groceries and parks nearby."
         : avg > 0.5
           ? "Good access to daily amenities."
           : "Some amenities may require travel.";
@@ -177,19 +183,19 @@ export function lifestyle_insight(
   if (match_ratio >= 0.7) {
     return {
       score: 0.9,
-      message: "Strong lifestyle match — this area fits your profile well.",
+      message: "Strong lifestyle match. This area fits your profile well.",
     };
   } else if (match_ratio >= 0.4) {
     return {
       score: 0.65,
       message:
-        "Moderate lifestyle match — some preferences align with this area.",
+        "Moderate lifestyle match. Some preferences align with this area.",
     };
   } else {
     return {
       score: 0.35,
       message:
-        "Limited lifestyle match — this area may not align with your preferences.",
+        "Limited lifestyle match. This area may not align with your preferences.",
     };
   }
 }
@@ -239,27 +245,27 @@ export function commute_insight(
   if (avg_time <= 15) {
     return {
       score: 0.95,
-      message: `Excellent commute — ${Math.round(avg_time)} min average to work.`,
+      message: `Excellent commute. ${Math.round(avg_time)} min average to work.`,
     };
   } else if (avg_time <= 30) {
     return {
       score: 0.8,
-      message: `Good commute — ${Math.round(avg_time)} min to work.`,
+      message: `Good commute. ${Math.round(avg_time)} min to work.`,
     };
   } else if (avg_time <= 45) {
     return {
       score: 0.6,
-      message: `Moderate commute — ${Math.round(avg_time)} min to work.`,
+      message: `Moderate commute. ${Math.round(avg_time)} min to work.`,
     };
   } else if (avg_time <= 60) {
     return {
       score: 0.35,
-      message: `Long commute — ${Math.round(avg_time)} min to work. Consider transport costs.`,
+      message: `Long commute. ${Math.round(avg_time)} min. Consider transport costs.`,
     };
   } else {
     return {
       score: 0.1,
-      message: `Very long commute — ${Math.round(avg_time)} min. This may significantly impact your daily life.`,
+      message: `Very long commute. ${Math.round(avg_time)} min. This may significantly impact your daily life.`,
     };
   }
 }
@@ -285,7 +291,7 @@ export function safety_insight(property: PropertyData): InsightResult {
   if (overall >= 0.8) {
     return {
       score: overall,
-      message: "Very safe area — low crime index and good security presence.",
+      message: "Very safe area. Low crime and good security presence.",
     };
   } else if (overall >= 0.6) {
     return {
@@ -295,13 +301,13 @@ export function safety_insight(property: PropertyData): InsightResult {
   } else if (overall >= 0.4) {
     return {
       score: overall,
-      message: "Moderate safety concerns — check neighbourhood security.",
+      message: "Moderate safety concerns. Check neighbourhood security.",
     };
   } else {
     return {
       score: overall,
       message:
-        "Higher crime area — consider security measures and local safety resources.",
+        "Higher crime area. Consider security measures and local safety resources.",
     };
   }
 }
@@ -338,22 +344,22 @@ export function approval_insight(
   if (overall >= 0.75) {
     return {
       score: overall,
-      message: `Strong approval profile — ${pct}% likelihood based on your credentials.`,
+      message: `Strong approval profile. ${pct}% likelihood based on your credentials.`,
     };
   } else if (overall >= 0.55) {
     return {
       score: overall,
-      message: `Good approval chances — ${pct}% likelihood. ${apps} other applicants.`,
+      message: `Good approval chances. ${pct}% likelihood, ${apps} other applicants.`,
     };
   } else if (overall >= 0.4) {
     return {
       score: overall,
-      message: `Moderate chances — ${pct}% likelihood. ${apps} competing applications.`,
+      message: `Moderate chances. ${pct}% likelihood, ${apps} competing applications.`,
     };
   } else {
     return {
       score: overall,
-      message: `Lower approval likelihood — ${pct}%. Consider strengthening your application.`,
+      message: `Lower approval likelihood. ${pct}%. Consider strengthening your application.`,
     };
   }
 }
@@ -380,22 +386,22 @@ export function landlord_insight(property: PropertyData): InsightResult {
     return {
       score: overall,
       message:
-        "Highly rated landlord — excellent communication and maintenance response.",
+        "Highly rated landlord. Excellent communication and maintenance response.",
     };
   } else if (overall >= 0.6) {
     return {
       score: overall,
-      message: "Good landlord track record — responsive and fair.",
+      message: "Good landlord track record. Responsive and fair.",
     };
   } else if (overall >= 0.4) {
     return {
       score: overall,
-      message: "Average landlord rating — some mixed feedback.",
+      message: "Average landlord rating. Some mixed feedback.",
     };
   } else {
     return {
       score: overall,
-      message: "Low landlord score — review dispute history before committing.",
+      message: "Low landlord score. Review dispute history before committing.",
     };
   }
 }
@@ -418,17 +424,17 @@ export function market_pressure_insight(property: PropertyData): InsightResult {
   if (pressure >= 0.7) {
     return {
       score: 1 - pressure,
-      message: `High demand — ${views} views, ${apps} applications. Act quickly.`,
+      message: `High demand. ${views} views, ${apps} applications. Act quickly.`,
     };
   } else if (pressure >= 0.4) {
     return {
       score: 0.7,
-      message: `Moderate interest — ${apps} applications received.`,
+      message: `Moderate interest. ${apps} applications received.`,
     };
   } else {
     return {
       score: 0.9,
-      message: `Low competition — ${dom} days on market with ${apps} applications.`,
+      message: `Low competition. ${dom} days on market with ${apps} applications.`,
     };
   }
 }
@@ -502,17 +508,17 @@ export function hidden_cost_insight(
   if (cost_ratio <= 0.85) {
     return {
       score: 0.9,
-      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} incl. utilities — comfortable within your budget.`,
+      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} incl. utilities. Comfortable within your budget.`,
     };
   } else if (cost_ratio <= 1.0) {
     return {
       score: 0.65,
-      message: `Total R${Math.round(total_cost).toLocaleString("en-ZA")} incl. extras — just within total budget.`,
+      message: `Total R${Math.round(total_cost).toLocaleString("en-ZA")} incl. extras. Just within total budget.`,
     };
   } else {
     return {
       score: 0.25,
-      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")} — exceeds your total living budget by ${Math.round((cost_ratio - 1) * 100)}%.`,
+      message: `Total costs R${Math.round(total_cost).toLocaleString("en-ZA")}. Exceeds your total living budget by ${Math.round((cost_ratio - 1) * 100)}%.`,
     };
   }
 }

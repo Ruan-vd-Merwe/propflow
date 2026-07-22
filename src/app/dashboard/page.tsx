@@ -3,11 +3,19 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
 import { RiskBadge } from "@/components/RiskBadge";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
 import { rank_properties_for_tenant_interests } from "@/lib/scoring/interest-engine";
 import { mapTenantProfile, mapProperty } from "@/lib/scoring/mappers";
 import { getComponentHealth } from "@/lib/maintenance";
+import {
+  rentLedgerTotals,
+  lateTenantIds,
+  groupObligationsByTenant,
+} from "@/lib/rent/ledger";
 import { PaymentWarningsButton } from "./PaymentWarningsButton";
+import { LegalProtectionCard } from "@/components/xpello/LegalProtectionCard";
+import { PropertyLegalStatusPill } from "@/components/xpello/PropertyLegalStatusPill";
+import { PropTrustGuide } from "@/components/PropTrustGuide";
 import type {
   Payment,
   Property,
@@ -17,6 +25,7 @@ import type {
   BodyCorpFlag,
   TenantProfile,
   PropertyListing,
+  RentObligation,
 } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +137,20 @@ export default async function DashboardPage({
 
   const paymentList: Payment[] = payments ?? [];
 
+  // All-time obligations per tenant, for risk scoring. Tenants on a rent
+  // schedule stop getting new "payments" rows after onboarding, so risk
+  // must prefer this live ledger over the legacy table when it has data.
+  const { data: allObligationsRaw } = propertyIds.length
+    ? await supabase
+        .from("rent_obligations")
+        .select("*")
+        .eq("landlord_id", user.id)
+    : { data: [] };
+
+  const obligationsByTenant = groupObligationsByTenant(
+    (allObligationsRaw ?? []) as RentObligation[],
+  );
+
   // ── Intelligence data ─────────────────────────────────────────────────────
   // Maintenance jobs
   const { data: jobsRaw } = propertyIds.length
@@ -186,16 +209,41 @@ export default async function DashboardPage({
     | "resolved"
   >[];
 
+  // ── Ways to get involved data ──────────────────────────────────────────────
+  const [{ count: activeSvcCount }, { data: landlordNeighbourRaw }] =
+    await Promise.all([
+      supabase
+        .from("service_providers")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_user_id", user.id)
+        .eq("is_active", true),
+      supabase
+        .from("neighbour_profiles")
+        .select("id, is_active")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+  const landlordHasListing = (activeSvcCount ?? 0) > 0;
+  const landlordNeighbour = landlordNeighbourRaw as {
+    id: string;
+    is_active: boolean;
+  } | null;
+  const landlordIsGoodNeighbour = landlordNeighbour?.is_active === true;
+
   // ── Lease / Xpello stats ─────────────────────────────────────────────────────
   const { data: leasesRaw } = await supabase
     .from("lease_agreements")
-    .select("id, xpello_enrolled")
+    .select("id, property_id, xpello_enrolled")
     .eq("landlord_id", user.id)
     .in("status", ["sent", "signed"]);
 
   const leaseList = leasesRaw ?? [];
   const xpelloEnrolled = leaseList.filter((l) => l.xpello_enrolled).length;
   const xpelloUnenrolled = leaseList.filter((l) => !l.xpello_enrolled).length;
+  const xpelloEnrolledPropertyIds = new Set(
+    leaseList.filter((l) => l.xpello_enrolled).map((l) => l.property_id),
+  );
 
   // ── Computed stats ────────────────────────────────────────────────────────
   const paymentsByTenant = new Map<string, Payment[]>();
@@ -218,10 +266,47 @@ export default async function DashboardPage({
   const totalTenants = tenantList.length;
   const atRisk = tenantList.filter((t) => {
     return (
-      calculateRiskScore(paymentsByTenant.get(t.id) ?? []).colour === "red"
+      riskForTenant(
+        paymentsByTenant.get(t.id) ?? [],
+        obligationsByTenant.get(t.id) ?? [],
+      ).colour === "red"
     );
   }).length;
   const totalRentCents = tenantList.reduce((s, t) => s + t.monthly_rent, 0);
+
+  // ── Rent ledger (this month) ──────────────────────────────────────────────
+  const now = new Date();
+  const rentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+  const rentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .split("T")[0];
+
+  const { data: rentObligationsRaw } = await supabase
+    .from("rent_obligations")
+    .select("*")
+    .eq("landlord_id", user.id)
+    .gte("period_start", rentMonthStart)
+    .lte("period_start", rentMonthEnd);
+
+  const rentObligations: RentObligation[] = rentObligationsRaw ?? [];
+  const rentTotals = rentLedgerTotals(rentObligations);
+  const rentLateTenantCount = lateTenantIds(rentObligations).length;
+  const rentFailedCount = rentObligations.filter(
+    (o) => o.status === "failed",
+  ).length;
+
+  const todayStr = now.toISOString().split("T")[0];
+  const dueSoonDate = new Date(now);
+  dueSoonDate.setDate(now.getDate() + 3);
+  const dueSoonStr = dueSoonDate.toISOString().split("T")[0];
+  const rentDueSoonCount = rentObligations.filter(
+    (o) =>
+      (o.status === "pending" || o.status === "processing") &&
+      o.due_date >= todayStr &&
+      o.due_date <= dueSoonStr,
+  ).length;
 
   // ── Payment warnings stats ─────────────────────────────────────────────────
   const todayMidnight = new Date();
@@ -290,7 +375,7 @@ export default async function DashboardPage({
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {/* ── Tenant tab ──────────────────────────────────────────────────── */}
         {tab === "tenant" && (
           <div>
@@ -371,12 +456,12 @@ export default async function DashboardPage({
                     <div className="flex flex-col items-end gap-2">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          myTenantProfile.is_visible
+                          myTenantProfile.discoverable
                             ? "bg-green-100 text-green-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
                       >
-                        {myTenantProfile.is_visible
+                        {myTenantProfile.discoverable
                           ? "Actively looking"
                           : "Hidden"}
                       </span>
@@ -418,88 +503,95 @@ export default async function DashboardPage({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {myMatchedProperties.map(({ property: p, score, match_reasons }) => (
-                      <div
-                        key={p.id}
-                        className="card flex items-center gap-4 overflow-hidden p-0"
-                      >
-                        {/* Photo */}
-                        <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
-                          {p.photos?.length > 0 ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.photos[0]}
-                              alt={p.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                              <svg
-                                className="h-8 w-8 text-slate-300"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1}
-                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        {/* Details */}
-                        <div className="min-w-0 flex-1 py-3">
-                          <p className="truncate font-semibold text-slate-900">
-                            {p.name}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {p.suburb}
-                            {p.province ? `, ${p.province}` : ""}
-                          </p>
-                          {p.asking_rent && (
-                            <p className="mt-1 text-sm font-bold text-slate-900">
-                              R{(p.asking_rent / 100).toLocaleString("en-ZA")}
-                              <span className="text-xs font-normal text-slate-400">
-                                /mo
-                              </span>
+                    {myMatchedProperties.map(
+                      ({ property: p, score, match_reasons }) => (
+                        <div
+                          key={p.id}
+                          className="card flex items-center gap-4 overflow-hidden p-0"
+                        >
+                          {/* Photo */}
+                          <div className="h-24 w-24 shrink-0 overflow-hidden sm:h-28 sm:w-32">
+                            {p.photos?.length > 0 ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={p.photos[0]}
+                                alt={p.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                                <svg
+                                  className="h-8 w-8 text-slate-300"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1}
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          {/* Details */}
+                          <div className="min-w-0 flex-1 py-3">
+                            <p className="truncate font-semibold text-slate-900">
+                              {p.name}
                             </p>
-                          )}
+                            <p className="text-xs text-slate-400">
+                              {p.suburb}
+                              {p.province ? `, ${p.province}` : ""}
+                            </p>
+                            {p.asking_rent && (
+                              <p className="mt-1 text-sm font-bold text-slate-900">
+                                R{(p.asking_rent / 100).toLocaleString("en-ZA")}
+                                <span className="text-xs font-normal text-slate-400">
+                                  /mo
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                          {/* Score + reasons + action */}
+                          <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
+                                score >= 75
+                                  ? "bg-green-100 text-green-700"
+                                  : score >= 45
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {score}/100
+                            </span>
+                            {match_reasons.length > 0 && (
+                              <ul className="max-w-[180px] space-y-1 text-right">
+                                {match_reasons.slice(0, 3).map((r, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex items-start justify-end gap-1.5"
+                                  >
+                                    <span className="text-[11px] leading-snug text-green-700">
+                                      {r}
+                                    </span>
+                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <Link
+                              href={`/browse/${p.id}`}
+                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                            >
+                              View
+                            </Link>
+                          </div>
                         </div>
-                        {/* Score + reasons + action */}
-                        <div className="flex shrink-0 flex-col items-end gap-2 pr-4">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
-                              score >= 75
-                                ? "bg-green-100 text-green-700"
-                                : score >= 45
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {score}/100
-                          </span>
-                          {match_reasons.length > 0 && (
-                            <ul className="max-w-[180px] space-y-1 text-right">
-                              {match_reasons.slice(0, 3).map((r, i) => (
-                                <li key={i} className="flex items-start justify-end gap-1.5">
-                                  <span className="text-[11px] leading-snug text-green-700">{r}</span>
-                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          <Link
-                            href={`/browse/${p.id}`}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                          >
-                            View
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 )}
 
@@ -532,7 +624,7 @@ export default async function DashboardPage({
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/properties/new"
-                  className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
+                  className="flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow transition hover:bg-blue-800"
                 >
                   <svg
                     className="h-4 w-4"
@@ -549,16 +641,22 @@ export default async function DashboardPage({
                   </svg>
                   Add Property
                 </Link>
-                <PaymentWarningsButton
-                  overdueCount={overdueTenantsCount}
-                  warningWindowCount={paymentsInWindow.length}
-                />
+                {totalProperties > 0 && (
+                  <PropTrustGuide
+                    role="landlord"
+                    firstPropertyId={propertyList[0].id}
+                  />
+                )}
               </div>
             </div>
 
             {/* Top stats */}
             <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard label="Properties" value={String(totalProperties)} />
+              <StatCard
+                label="Properties"
+                value={String(totalProperties)}
+                href="/portfolio"
+              />
               <StatCard label="Tenants" value={String(totalTenants)} />
               <StatCard
                 label="High Risk"
@@ -571,12 +669,197 @@ export default async function DashboardPage({
               />
             </div>
 
+            {totalProperties === 0 && (
+              <div className="mb-8">
+                <PropTrustGuide
+                  role="landlord"
+                  variant="contextual"
+                  heading="Not sure where to start?"
+                  description="Choose what you want to manage and we’ll take you to the right PropTrust workflow."
+                />
+              </div>
+            )}
+
+            {/* ── Rent tracking ────────────────────────────────────────────────── */}
+            <div id="rent-tracking" className="card mb-8 p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M20.5 12a8.5 8.5 0 1 1-4-7.2"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M20.5 4.5v5h-5"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-slate-900">
+                      Rent tracking
+                    </h2>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      Know who has paid without opening your bank account.
+                    </p>
+                  </div>
+                </div>
+                {(rentLateTenantCount > 0 ||
+                  rentTotals.outstandingCents > 0 ||
+                  overdueTenantsCount > 0) && (
+                  <PaymentWarningsButton
+                    overdueCount={overdueTenantsCount}
+                    warningWindowCount={paymentsInWindow.length}
+                  />
+                )}
+              </div>
+
+              {rentObligations.length === 0 ? (
+                <div className="rounded-xl bg-slate-50 px-4 py-6 text-center">
+                  <p className="text-sm font-medium text-slate-600">
+                    {totalProperties === 0
+                      ? "Set up rent tracking by adding a property and a tenant."
+                      : totalTenants === 0
+                        ? "Set up rent tracking by adding a tenant to a property."
+                        : "No rent obligations yet this month. Set up a rent schedule to start tracking payments automatically."}
+                  </p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {totalTenants === 0 ? (
+                      <Link
+                        href={
+                          totalProperties > 0
+                            ? `/properties/${propertyList[0].id}`
+                            : "/properties/new"
+                        }
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      >
+                        {totalProperties > 0
+                          ? "Add a tenant"
+                          : "Add your first property"}
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/leases"
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      >
+                        Set up rent schedule
+                      </Link>
+                    )}
+                    {totalTenants > 0 && (
+                      <Link
+                        href={`/tenants/${tenantList[0].id}`}
+                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        View rent ledger
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Expected
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-slate-900">
+                        {formatRand(rentTotals.expectedCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Collected
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-emerald-600">
+                        {formatRand(rentTotals.collectedCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Outstanding
+                      </p>
+                      <p
+                        className={`mt-1 text-xl font-bold ${
+                          rentTotals.outstandingCents > 0
+                            ? "text-red-600"
+                            : "text-slate-900"
+                        }`}
+                      >
+                        {formatRand(rentTotals.outstandingCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                        Late tenants
+                      </p>
+                      <p
+                        className={`mt-1 text-xl font-bold ${
+                          rentLateTenantCount > 0
+                            ? "text-red-600"
+                            : "text-emerald-600"
+                        }`}
+                      >
+                        {rentLateTenantCount}
+                      </p>
+                    </div>
+                  </div>
+
+                  {(rentFailedCount > 0 || rentDueSoonCount > 0) && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {rentFailedCount > 0 && (
+                        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                          ⚠ {rentFailedCount} failed payment
+                          {rentFailedCount !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {rentDueSoonCount > 0 && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                          ⏳ {rentDueSoonCount} due soon
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                    <Link
+                      href={`/tenants/${
+                        lateTenantIds(rentObligations)[0] ??
+                        rentObligations[0].tenant_id
+                      }`}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View rent ledger
+                    </Link>
+                    <Link
+                      href="/leases"
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Set up rent schedule
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <LegalProtectionCard />
+
             {/* ── Portfolio nudge ────────────────────────────────────────────── */}
             {isLandlord &&
               propertyList.length > 0 &&
-              (propertyList as (typeof propertyList[0] & { bond_monthly_payment_cents?: number | null })[]).every(
-                (p) => p.bond_monthly_payment_cents == null,
-              ) && (
+              (
+                propertyList as ((typeof propertyList)[0] & {
+                  bond_monthly_payment_cents?: number | null;
+                })[]
+              ).every((p) => p.bond_monthly_payment_cents == null) && (
                 <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
@@ -928,6 +1211,86 @@ export default async function DashboardPage({
                 </div>
               )}
 
+            {/* ── Ways to get involved ─────────────────────────────────────────── */}
+            <div className="mb-8">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Ways to get involved
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Link
+                  href="/services/list"
+                  className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {landlordHasListing
+                        ? "Manage your listing"
+                        : "List your service"}
+                    </p>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {landlordHasListing
+                        ? "You have an active listing in the services directory."
+                        : "Offer your skills to residents in the PropTrust community."}
+                    </p>
+                    <span className="mt-2 inline-block text-xs font-semibold text-blue-700">
+                      {landlordHasListing ? "Manage →" : "Get started →"}
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/neighbour"
+                  className="card flex items-start gap-4 p-5 transition duration-200 ease-out hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                    <svg
+                      className="h-5 w-5 text-blue-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {landlordIsGoodNeighbour
+                        ? "You're a Good Neighbour"
+                        : "Be a Good Neighbour"}
+                    </p>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {landlordIsGoodNeighbour
+                        ? "Your profile is active. Keep helping your community."
+                        : "Small acts of goodwill build your reputation. No money involved."}
+                    </p>
+                    <span className="mt-2 inline-block text-xs font-semibold text-blue-700">
+                      {landlordIsGoodNeighbour ? "View profile →" : "Opt in →"}
+                    </span>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
             {/* ── Properties ────────────────────────────────────────────────────── */}
             <div>
               <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -986,8 +1349,9 @@ export default async function DashboardPage({
                           {propertyTenants.length > 0 && (
                             <div className="mt-4 flex flex-wrap gap-2">
                               {propertyTenants.map((t) => {
-                                const risk = calculateRiskScore(
+                                const risk = riskForTenant(
                                   paymentsByTenant.get(t.id) ?? [],
+                                  obligationsByTenant.get(t.id) ?? [],
                                 );
                                 return (
                                   <div
@@ -1075,6 +1439,22 @@ export default async function DashboardPage({
                               </Link>
                             </div>
                           )}
+
+                        {/* Xpello legal status */}
+                        <div className="border-t border-slate-100 px-4 py-2.5">
+                          <PropertyLegalStatusPill
+                            status={
+                              xpelloEnrolledPropertyIds.has(property.id)
+                                ? "protected"
+                                : propertyTenants.length === 0
+                                  ? "incomplete"
+                                  : "ready"
+                            }
+                            propertyId={property.id}
+                            propertyName={property.name}
+                            size="sm"
+                          />
+                        </div>
                       </div>
                     );
                   })}
@@ -1109,22 +1489,41 @@ export default async function DashboardPage({
 
                   <div className="divide-y divide-slate-100">
                     {tenantList.map((tenant) => {
-                      const risk = calculateRiskScore(
-                        paymentsByTenant.get(tenant.id) ?? [],
-                      );
                       const pmts = paymentsByTenant.get(tenant.id) ?? [];
-                      const paid = pmts.filter(
-                        (p) => p.status === "paid",
-                      ).length;
+                      const obls = obligationsByTenant.get(tenant.id) ?? [];
+                      const usingLedger = obls.length > 0;
+                      const risk = riskForTenant(pmts, obls);
+
+                      // Tenants on a rent schedule are tracked in
+                      // rent_obligations, not the legacy payments table, so
+                      // this summary must draw from whichever one has data.
+                      const totalCount = usingLedger
+                        ? obls.length
+                        : pmts.length;
+                      const paidCount = usingLedger
+                        ? obls.filter((o) => o.status === "paid").length
+                        : pmts.filter((p) => p.status === "paid").length;
                       const pctOnTime =
-                        pmts.length > 0
-                          ? Math.round((paid / pmts.length) * 100)
+                        totalCount > 0
+                          ? Math.round((paidCount / totalCount) * 100)
                           : null;
-                      const lastPmt = [...pmts].sort(
-                        (a, b) =>
-                          new Date(b.due_date).getTime() -
-                          new Date(a.due_date).getTime(),
-                      )[0];
+                      const lastObligation = usingLedger
+                        ? [...obls].sort(
+                            (a, b) =>
+                              new Date(b.due_date).getTime() -
+                              new Date(a.due_date).getTime(),
+                          )[0]
+                        : null;
+                      const lastPmt = usingLedger
+                        ? null
+                        : [...pmts].sort(
+                            (a, b) =>
+                              new Date(b.due_date).getTime() -
+                              new Date(a.due_date).getTime(),
+                          )[0];
+                      const lastStatusLabel =
+                        lastObligation?.status ?? lastPmt?.status ?? null;
+                      const lastStatusOk = lastStatusLabel === "paid";
                       const riskCls =
                         risk.colour === "green"
                           ? "bg-green-100 text-green-800"
@@ -1166,18 +1565,18 @@ export default async function DashboardPage({
                               </p>
                               {pctOnTime !== null ? (
                                 <p className="text-xs text-slate-400">
-                                  {pctOnTime}% on time · {pmts.length} payment
-                                  {pmts.length !== 1 ? "s" : ""}
-                                  {lastPmt && (
+                                  {pctOnTime}% on time · {totalCount} payment
+                                  {totalCount !== 1 ? "s" : ""}
+                                  {lastStatusLabel && (
                                     <span
                                       className={
-                                        lastPmt.status === "paid"
+                                        lastStatusOk
                                           ? " text-emerald-600"
                                           : " text-red-600"
                                       }
                                     >
                                       {" "}
-                                      · last {lastPmt.status}
+                                      · last {lastStatusLabel}
                                     </span>
                                   )}
                                 </p>
@@ -1305,19 +1704,34 @@ function StatCard({
   label,
   value,
   valueClass = "text-slate-900",
+  href,
 }: {
   label: string;
   value: string;
   valueClass?: string;
+  href?: string;
 }) {
-  return (
-    <div className="card p-5">
+  const content = (
+    <>
       <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
         {label}
       </p>
       <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="card block p-5 transition hover:border-slate-300 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="card p-5">{content}</div>;
 }
 
 function MiniStat({

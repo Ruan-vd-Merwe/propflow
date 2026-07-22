@@ -125,6 +125,10 @@ export async function POST(req: NextRequest) {
     if (tenant.phone) {
       const waOpts = {
         phone: tenant.phone,
+        // tenants table has no whatsapp_opted_in column (only profiles/
+        // tenant_profiles do) — landlord-entered records are treated as
+        // opted-in by default; see the WhatsApp founder runbook.
+        optedIn: true,
         name: tenant.full_name,
         amount: payment.amount,
         property: property.name,

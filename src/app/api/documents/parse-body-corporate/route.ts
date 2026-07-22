@@ -66,15 +66,11 @@ export async function POST(req: NextRequest) {
 
   if (doc.mime_type === "application/pdf") {
     const buffer = await fileRes.arrayBuffer();
-    // Dynamic import — pdf-parse is a CJS module and only needed server-side
-    // pdf-parse exports differ between CJS and ESM builds; handle both
-    const pdfModule = await import("pdf-parse");
-    const pdfParse =
-      "default" in pdfModule
-        ? (pdfModule as { default: (buf: Buffer) => Promise<{ text: string }> }).default
-        : (pdfModule as unknown as (buf: Buffer) => Promise<{ text: string }>);
-    const parsed = await pdfParse(Buffer.from(buffer));
-    documentText = parsed.text;
+    const { PDFParse } = await import("pdf-parse");
+    const pdfParser = new PDFParse({ data: Buffer.from(buffer) });
+    const parsed = await pdfParser.getText();
+    await pdfParser.destroy();
+    documentText = parsed.text ?? "";
   } else {
     documentText = await fileRes.text();
   }

@@ -270,11 +270,7 @@ export default function ConnectorInterestPage() {
                   I agree that PropTrust may store and use the information I
                   provide here to contact me about the Connector programme. My
                   data will be handled in line with PropTrust&apos;s privacy
-                  approach and I can request deletion at any time.{" "}
-                  <span className="font-semibold text-slate-500">
-                    [Consent copy is a placeholder — requires legal review
-                    before launch.]
-                  </span>
+                  approach and I can request deletion at any time.
                 </span>
               </label>
             </div>

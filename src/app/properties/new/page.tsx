@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { LeaseUploadReview } from "@/components/lease/LeaseUploadReview";
 import type { PropertyStatus } from "@/lib/types";
 
 const PROVINCES = [
@@ -128,6 +129,10 @@ export default function NewPropertyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Post-creation optional lease upload (occupied mode only)
+  const [postCreatePhase, setPostCreatePhase] = useState<"none" | "ask" | "upload">("none");
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
 
   // Step 1
   const [name, setName] = useState("");
@@ -279,11 +284,14 @@ export default function NewPropertyPage() {
     }
 
     setLoading(false);
-    const msg =
-      mode === "occupied" && visibilityChoice === "private"
-        ? "Property added successfully!"
-        : "Property listed successfully!";
-    setToast(msg);
+
+    if (mode === "occupied") {
+      setCreatedPropertyId(prop.id);
+      setPostCreatePhase("ask");
+      return;
+    }
+
+    setToast("Property listed successfully!");
     setTimeout(() => router.push(`/properties/${prop.id}`), 1200);
   }
 
@@ -338,6 +346,60 @@ export default function NewPropertyPage() {
           </p>
         </div>
 
+        {postCreatePhase !== "none" ? (
+          <div className="card p-6">
+            {postCreatePhase === "ask" ? (
+              <>
+                <h2 className="mb-2 text-lg font-bold text-slate-900">
+                  Property added
+                </h2>
+                <p className="mb-6 text-sm text-slate-500">
+                  Do you already have a signed lease for this property? We can
+                  read it and set up rent tracking automatically.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/properties/${createdPropertyId}`)
+                    }
+                    className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Skip for now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPostCreatePhase("upload")}
+                    className="flex-[2] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800"
+                  >
+                    Yes, upload it
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="mb-2 text-lg font-bold text-slate-900">
+                  Upload the signed lease
+                </h2>
+                <p className="mb-6 text-sm text-slate-500">
+                  We will read the document and pre-fill the details for you
+                  to review.
+                </p>
+                <LeaseUploadReview
+                  role="landlord"
+                  fixedPropertyId={createdPropertyId ?? undefined}
+                  onComplete={() =>
+                    router.push(`/properties/${createdPropertyId}`)
+                  }
+                  onSkip={() =>
+                    router.push(`/properties/${createdPropertyId}`)
+                  }
+                />
+              </>
+            )}
+          </div>
+        ) : (
+          <>
         <StepBar current={step} mode={mode} />
 
         {/* ── Step 0: Choose mode ── */}
@@ -1092,6 +1154,8 @@ export default function NewPropertyPage() {
               </button>
             )}
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

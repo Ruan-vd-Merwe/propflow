@@ -2,7 +2,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
-import type { MaintenanceJob, JobStatus, JobUrgency } from "@/lib/types";
+import { TriageInbox, type TriageItem, type ComponentOption } from "./TriageInbox";
+import type {
+  MaintenanceJob,
+  JobStatus,
+  JobUrgency,
+  TenantQuery,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +77,60 @@ export default async function MaintenanceJobsPage() {
     properties: { name: string } | null;
   })[];
 
+  // ── Triage inbox: open tenant reports not yet converted into a job ────────
+  // Monthly check-in maintenance flags already land here too (the check-in
+  // route auto-creates a tenant_queries row when maintenance_needed is set
+  // with details), so this single query surfaces both intake sources.
+  const { data: tenantsForTriage } = propIds.length
+    ? await supabase
+        .from("tenants")
+        .select("id, full_name, property_id")
+        .in("property_id", propIds)
+    : { data: [] };
+
+  const tenantIdsForTriage = (tenantsForTriage ?? []).map((t) => t.id);
+  const tenantById = new Map((tenantsForTriage ?? []).map((t) => [t.id, t]));
+
+  const { data: openQueries } = tenantIdsForTriage.length
+    ? await supabase
+        .from("tenant_queries")
+        .select("*")
+        .in("tenant_id", tenantIdsForTriage)
+        .in("category", ["emergency", "maintenance"])
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+    : { data: [] };
+
+  const triageItems: TriageItem[] = ((openQueries ?? []) as TenantQuery[])
+    .map((q) => {
+      const tenant = tenantById.get(q.tenant_id);
+      if (!tenant) return null;
+      return {
+        id: q.id,
+        category: q.category,
+        title: q.title,
+        description: q.description,
+        created_at: q.created_at,
+        tenantName: tenant.full_name,
+        propertyName: propMap.get(tenant.property_id) ?? "—",
+        propertyId: tenant.property_id,
+      };
+    })
+    .filter((i): i is TriageItem => i !== null);
+
+  const { data: componentsRaw } = propIds.length
+    ? await supabase
+        .from("property_components")
+        .select("id, name, property_id")
+        .in("property_id", propIds)
+    : { data: [] };
+
+  const componentsByProperty: Record<string, ComponentOption[]> = {};
+  for (const c of componentsRaw ?? []) {
+    if (!componentsByProperty[c.property_id]) componentsByProperty[c.property_id] = [];
+    componentsByProperty[c.property_id].push({ id: c.id, name: c.name });
+  }
+
   // Stats
   const active = jobList.filter(
     (j) => !["completed", "declined"].includes(j.status),
@@ -91,8 +151,6 @@ export default async function MaintenanceJobsPage() {
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
   });
 
-  void propMap;
-
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
@@ -106,6 +164,8 @@ export default async function MaintenanceJobsPage() {
             Contractor communication and job tracking
           </p>
         </div>
+
+        <TriageInbox items={triageItems} componentsByProperty={componentsByProperty} />
 
         {/* Stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
@@ -137,8 +197,8 @@ export default async function MaintenanceJobsPage() {
               No maintenance jobs yet
             </p>
             <p className="mt-1 text-sm text-slate-400">
-              Jobs are created from the property maintenance tracker when a
-              component needs attention.
+              Convert a tenant report above, or create one from the property
+              maintenance tracker when a component needs attention.
             </p>
           </div>
         ) : (

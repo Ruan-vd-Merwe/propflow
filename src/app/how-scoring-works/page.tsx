@@ -8,7 +8,7 @@ const DIMENSIONS = [
   {
     name: "Affordability",
     weight: "22%",
-    desc: "Compares rent and total living costs against your income and budget. Flags properties that stretch your finances beyond the 30% rule.",
+    desc: "Compares rent and total living costs against your stated budget, with income band used only as a soft profile signal.",
   },
   {
     name: "Property Fit",

@@ -23,29 +23,14 @@ export default async function ApplyPage({
     <div className="min-h-screen bg-slate-50">
       {/* Minimal header */}
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-6 py-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900">
-            <svg
-              className="h-4 w-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              />
-            </svg>
-          </div>
+        <div className="mx-auto flex max-w-2xl items-center px-6 py-4">
           <span className="text-lg font-bold tracking-tight text-slate-900">
             PropTrust
           </span>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-6 py-8">
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Property context */}
         <div className="mb-8">
           <p className="text-sm font-medium uppercase tracking-wider text-slate-400">

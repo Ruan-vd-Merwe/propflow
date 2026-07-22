@@ -142,8 +142,11 @@ export async function POST(req: NextRequest) {
 
   const providerPhone = provider.whatsapp ?? provider.phone;
   if (providerPhone && scheduled_date) {
+    // service_providers has no opt-in column (third-party contractors, not
+    // app users with a consent flow) — gated on phone presence only.
     sendBookingToProvider({
       phone: providerPhone,
+      optedIn: true,
       providerName: provider.name,
       service: "Service booking",
       tenantName,

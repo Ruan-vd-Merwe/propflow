@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { syncSignedLeaseToTenant } from "@/lib/lease/sync-tenant";
 
 export async function POST(req: Request) {
   const supabase = createServiceClient();
@@ -54,5 +55,10 @@ export async function POST(req: Request) {
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (data.status === "signed") {
+    await syncSignedLeaseToTenant(supabase, data);
+  }
+
   return NextResponse.json({ lease: data });
 }

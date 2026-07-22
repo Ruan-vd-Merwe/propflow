@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type NavLink = { label: string; href: string; desc?: string };
 type NavSection =
@@ -13,29 +14,17 @@ const NAV: NavSection[] = [
     type: "dropdown",
     label: "For Tenants",
     items: [
-      { label: "Find my area", href: "/area-match", desc: "Match suburbs by budget, commute, and lifestyle" },
-      { label: "Browse properties", href: "/browse", desc: "View available rental listings" },
-      { label: "Rental profiles", href: "/for-tenants", desc: "Create and manage your rental profile" },
-      { label: "How it works", href: "/for-tenants#how-it-works", desc: "How PropTrust works for tenants" },
+      { label: "Find a place to live", href: "/browse", desc: "Browse verified rental properties" },
+      { label: "Tenant profile", href: "/solutions/tenants", desc: "Create and manage your rental profile" },
     ],
   },
   {
     type: "dropdown",
     label: "For Landlords",
     items: [
-      { label: "Manage properties", href: "/for-landlords", desc: "Property management tools" },
+      { label: "List my property", href: "/register?role=owner", desc: "Add your property to PropTrust" },
       { label: "Tenant screening", href: "/features#screening", desc: "Review verified tenant applications" },
       { label: "Portfolio finance", href: "/portfolio", desc: "Track yield, cash flow, and bond payments" },
-      { label: "List a property", href: "/register?type=landlord", desc: "Add your property to PropTrust" },
-      { label: "Investment Scores", href: "/investment-scores", desc: "Compare suburbs by yield, growth and risk" },
-    ],
-  },
-  {
-    type: "dropdown",
-    label: "For Connectors",
-    items: [
-      { label: "Become a Connector", href: "/become-a-connector", desc: "Register your interest in helping locally" },
-      { label: "How it works", href: "/#connectors", desc: "Learn about the Connector community" },
     ],
   },
   { type: "link", label: "Area Match", href: "/area-match" },
@@ -108,28 +97,24 @@ function IconClose() {
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 
-export function NavLogo({ white = false }: { white?: boolean }) {
+export function NavLogo({ white = false, href = "/" }: { white?: boolean; href?: string }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5">
-      <div
-        className={`flex h-8 w-8 items-center justify-center rounded-lg ${white ? "bg-blue-500" : "bg-[#0f172a]"}`}
+    <Link href={href} className="flex items-center gap-2">
+      <svg
+        className={`h-5 w-5 shrink-0 ${white ? "text-white" : "text-[#0f172a]"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
       >
-        <svg
-          className="h-4 w-4 text-white"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      </div>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+        />
+      </svg>
       <span
-        className={`text-[17px] font-bold tracking-tight ${white ? "text-white" : "text-[#0f172a]"}`}
+        className={`text-[18px] font-bold tracking-tight ${white ? "text-white" : "text-[#0f172a]"}`}
       >
         PropTrust
       </span>
@@ -208,11 +193,33 @@ function DesktopDropdown({
 export default function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoHref, setLogoHref] = useState("/");
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      setAuthed(true);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_tenant, is_connector")
+        .eq("id", user.id)
+        .single();
+      if (profile?.is_tenant) {
+        setLogoHref("/tenant/dashboard");
+      } else if (profile?.is_connector) {
+        setLogoHref("/connector/tasks");
+      } else {
+        setLogoHref("/dashboard");
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -235,7 +242,7 @@ export default function MarketingNav() {
       >
         {/* Top bar */}
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-6 lg:py-3.5">
-          <NavLogo />
+          <NavLogo href={logoHref} />
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-0.5 lg:flex">
@@ -260,18 +267,29 @@ export default function MarketingNav() {
 
           {/* Right buttons */}
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <Link
-              href="/register"
-              className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
-            >
-              Register
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-md border-[1.5px] border-[#0f172a] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
-            >
-              Login
-            </Link>
+            {authed ? (
+              <Link
+                href={logoHref}
+                className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+              >
+                Open app
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="rounded-md bg-[#1e40af] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+                >
+                  Register
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-md border-[1.5px] border-[#0f172a] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] transition hover:bg-slate-50 lg:rounded-lg lg:px-4 lg:py-2 lg:text-sm"
+                >
+                  Login
+                </Link>
+              </>
+            )}
             {/* Hamburger — mobile only */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
@@ -334,28 +352,49 @@ export default function MarketingNav() {
             })}
 
             {/* CTA buttons */}
-            <div className="px-4 pb-8 pt-5" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Link
-                href="/register"
-                onClick={closeMobile}
-                className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
-                style={{ height: 48, background: "#1e40af", fontSize: 15 }}
-              >
-                Get started
-              </Link>
-              <Link
-                href="/login"
-                onClick={closeMobile}
-                className="flex items-center justify-center rounded-xl font-bold transition hover:bg-slate-50"
-                style={{
-                  height: 48,
-                  border: "2px solid #0f172a",
-                  color: "#0f172a",
-                  fontSize: 15,
-                }}
-              >
-                Login
-              </Link>
+            <div
+              className="px-4 pb-8 pt-5"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+              }}
+            >
+              {authed ? (
+                <Link
+                  href={logoHref}
+                  onClick={closeMobile}
+                  className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
+                  style={{ height: 48, background: "#1e40af", fontSize: 15 }}
+                >
+                  Open app
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    onClick={closeMobile}
+                    className="flex items-center justify-center rounded-xl font-bold text-white transition hover:bg-blue-800"
+                    style={{ height: 48, background: "#1e40af", fontSize: 15 }}
+                  >
+                    Register
+                  </Link>
+                  <Link
+                    href="/login"
+                    onClick={closeMobile}
+                    className="flex items-center justify-center rounded-xl font-bold transition hover:bg-slate-50"
+                    style={{
+                      height: 48,
+                      border: "2px solid #0f172a",
+                      color: "#0f172a",
+                      fontSize: 15,
+                    }}
+                  >
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

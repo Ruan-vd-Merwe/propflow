@@ -114,7 +114,7 @@ function GuestTeaser() {
       <ul className="space-y-1 text-xs text-blue-700">
         <li className="flex items-start gap-1.5">
           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-          Affordability against your income
+          Affordability against your budget and profile
         </li>
         <li className="flex items-start gap-1.5">
           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />

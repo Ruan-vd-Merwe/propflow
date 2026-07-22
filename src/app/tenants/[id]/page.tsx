@@ -2,9 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NavBar } from "@/components/NavBar";
-import { calculateRiskScore } from "@/lib/risk";
+import { riskForTenant } from "@/lib/risk";
 import { TenantPageClient } from "./TenantPageClient";
-import type { Payment } from "@/lib/types";
+import type { Payment, RentObligation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,7 @@ export default async function TenantPage({
 
   const property = tenant.properties as { id: string; name: string; owner_id: string };
 
-  const [paymentsRes, documentsRes, commsRes] = await Promise.all([
+  const [paymentsRes, documentsRes, commsRes, obligationsRes] = await Promise.all([
     supabase
       .from("payments")
       .select("*")
@@ -51,13 +51,43 @@ export default async function TenantPage({
       .eq("tenant_id", tenant.id)
       .order("sent_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("rent_obligations")
+      .select("*")
+      .eq("tenant_id", tenant.id)
+      .order("due_date", { ascending: false }),
   ]);
 
   const paymentList: Payment[] = paymentsRes.data ?? [];
   const documents = documentsRes.data ?? [];
   const commsLog = commsRes.data ?? [];
+  const obligations: RentObligation[] = obligationsRes.data ?? [];
 
-  const risk = calculateRiskScore(paymentList);
+  // Succeeded payment attempts, to flag which "paid" obligations came through
+  // a provider (mock/real) rather than the landlord's manual "Mark paid".
+  const obligationIds = obligations.map((o) => o.id);
+  const { data: succeededAttemptsRaw } = obligationIds.length
+    ? await supabase
+        .from("payment_attempts")
+        .select("obligation_id, provider, confirmed_at")
+        .in("obligation_id", obligationIds)
+        .eq("status", "succeeded")
+        .order("confirmed_at", { ascending: false })
+    : { data: [] };
+
+  const providerByObligation = new Map<string, string>();
+  for (const a of succeededAttemptsRaw ?? []) {
+    if (!providerByObligation.has(a.obligation_id)) {
+      providerByObligation.set(a.obligation_id, a.provider);
+    }
+  }
+
+  const obligationsWithProvider = obligations.map((o) => ({
+    ...o,
+    paid_via_provider: providerByObligation.get(o.id) ?? null,
+  }));
+
+  const risk = riskForTenant(paymentList, obligations);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -92,6 +122,7 @@ export default async function TenantPage({
           risk={risk}
           initialDocuments={documents}
           initialCommsLog={commsLog}
+          initialObligations={obligationsWithProvider}
         />
       </main>
     </div>

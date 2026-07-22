@@ -17,6 +17,63 @@ export type LifestylePriority =
   | "gym"
   | "parks_mountain";
 
+export type WorkHubKey = "cbd" | "bellville" | "centuryCity" | "stellenbosch" | "remote";
+
+export interface WorkHub {
+  key: WorkHubKey;
+  label: string; // short display label, e.g. "CBD", "Bellville". Empty string for "remote" (no destination to name).
+  aliases: string[]; // lowercase substrings matched against free-text workLocation input
+}
+
+export const WORK_HUBS: WorkHub[] = [
+  {
+    key: "remote",
+    label: "",
+    aliases: ["remote", "work from home", "wfh", "n/a", "none"],
+  },
+  {
+    key: "bellville",
+    label: "Bellville",
+    aliases: ["bellville", "tygervalley", "tyger valley", "n1 city", "parow", "brackenfell"],
+  },
+  {
+    key: "centuryCity",
+    label: "Century City",
+    aliases: ["century city", "paarden eiland", "montague gardens", "ndabeni", "epping", "airport"],
+  },
+  {
+    key: "stellenbosch",
+    label: "Stellenbosch",
+    aliases: ["stellenbosch", "winelands", "franschhoek"],
+  },
+  {
+    key: "cbd",
+    label: "CBD",
+    aliases: ["cbd", "city bowl", "city centre", "city center", "town", "cape town"],
+  },
+];
+
+// Resolves a user's free-text work location into the nearest known hub.
+// Falls back to CBD (flagged as isFallback: true) when nothing matches or the
+// input is blank, since CBD is the only destination with full coverage today.
+export function resolveWorkHub(freeText: string): { key: WorkHubKey; label: string; isFallback: boolean } {
+  const text = freeText.trim().toLowerCase();
+  if (text === "") {
+    return { key: "cbd", label: "CBD", isFallback: true };
+  }
+  for (const hub of WORK_HUBS) {
+    if (hub.key === "cbd") continue;
+    if (hub.aliases.some((alias) => text.includes(alias))) {
+      return { key: hub.key, label: hub.label, isFallback: false };
+    }
+  }
+  const cbdHub = WORK_HUBS.find((h) => h.key === "cbd")!;
+  if (cbdHub.aliases.some((alias) => text.includes(alias))) {
+    return { key: "cbd", label: "CBD", isFallback: false };
+  }
+  return { key: "cbd", label: "CBD", isFallback: true };
+}
+
 export interface AreaMatchInputs {
   budget: number; // ZAR/month
   workLocation: string; // free text — used for display, future geocoding
@@ -57,6 +114,14 @@ export interface AreaData {
     walk: number;
   };
 
+  // Approximate commute to other common Cape Town work hubs (minutes by main mode).
+  // Same static hand-built approach as commute_cbd, not live routing data.
+  commute_hubs: {
+    bellville: { drive: number; transit: number; cycle: number; walk: number };
+    centuryCity: { drive: number; transit: number; cycle: number; walk: number };
+    stellenbosch: { drive: number; transit: number; cycle: number; walk: number };
+  };
+
   // Lifestyle tags — matched against user priorities
   tags: string[];
 
@@ -83,6 +148,8 @@ export interface AreaRecommendation {
   };
   rentRange: [number, number]; // for user's bedroom count
   commuteMinutes: number; // estimated commute using preferred transport
+  commuteDestinationLabel: string; // resolved hub label, e.g. "CBD", "Bellville". Empty string when hub is "remote" (no daily commute).
+  commuteIsEstimate: boolean; // true when the user's workLocation text didn't match a known hub and we fell back to a CBD estimate
   matchReasons: string[]; // up to 3 positive signals
   concerns: string[]; // up to 2 concerns
 }
@@ -110,6 +177,11 @@ export const AREAS: AreaData[] = [
       cycling: 6,
     },
     commute_cbd: { drive: 15, transit: 22, cycle: 28, walk: 60 },
+    commute_hubs: {
+      bellville: { drive: 35, transit: 55, cycle: 999, walk: 999 },
+      centuryCity: { drive: 20, transit: 35, cycle: 999, walk: 999 },
+      stellenbosch: { drive: 50, transit: 80, cycle: 999, walk: 999 },
+    },
     tags: [
       "beach",
       "restaurants",
@@ -147,6 +219,11 @@ export const AREAS: AreaData[] = [
       cycling: 7,
     },
     commute_cbd: { drive: 10, transit: 16, cycle: 18, walk: 45 },
+    commute_hubs: {
+      bellville: { drive: 30, transit: 50, cycle: 999, walk: 999 },
+      centuryCity: { drive: 15, transit: 28, cycle: 40, walk: 999 },
+      stellenbosch: { drive: 45, transit: 75, cycle: 999, walk: 999 },
+    },
     tags: [
       "beach",
       "restaurants",
@@ -183,6 +260,11 @@ export const AREAS: AreaData[] = [
       cycling: 6,
     },
     commute_cbd: { drive: 8, transit: 12, cycle: 14, walk: 35 },
+    commute_hubs: {
+      bellville: { drive: 28, transit: 40, cycle: 999, walk: 999 },
+      centuryCity: { drive: 15, transit: 25, cycle: 35, walk: 999 },
+      stellenbosch: { drive: 42, transit: 70, cycle: 999, walk: 999 },
+    },
     tags: ["restaurants", "coffee", "social", "mountain", "parks", "outdoor"],
     safety_score: 63,
     best_for: ["Short commute", "Mountain access", "Walkable streets"],
@@ -210,6 +292,11 @@ export const AREAS: AreaData[] = [
       cycling: 5,
     },
     commute_cbd: { drive: 12, transit: 20, cycle: 25, walk: 55 },
+    commute_hubs: {
+      bellville: { drive: 30, transit: 50, cycle: 999, walk: 999 },
+      centuryCity: { drive: 18, transit: 32, cycle: 999, walk: 999 },
+      stellenbosch: { drive: 45, transit: 75, cycle: 999, walk: 999 },
+    },
     tags: ["mountain", "parks", "outdoor", "quiet", "running", "remote_work"],
     safety_score: 73,
     best_for: ["Safety", "Mountain access", "Peaceful streets"],
@@ -237,6 +324,11 @@ export const AREAS: AreaData[] = [
       cycling: 8,
     },
     commute_cbd: { drive: 8, transit: 10, cycle: 14, walk: 40 },
+    commute_hubs: {
+      bellville: { drive: 22, transit: 25, cycle: 60, walk: 999 },
+      centuryCity: { drive: 12, transit: 20, cycle: 25, walk: 90 },
+      stellenbosch: { drive: 40, transit: 65, cycle: 999, walk: 999 },
+    },
     tags: [
       "coffee",
       "restaurants",
@@ -276,6 +368,11 @@ export const AREAS: AreaData[] = [
       cycling: 4,
     },
     commute_cbd: { drive: 25, transit: 35, cycle: 70, walk: 180 },
+    commute_hubs: {
+      bellville: { drive: 5, transit: 5, cycle: 10, walk: 20 },
+      centuryCity: { drive: 15, transit: 25, cycle: 40, walk: 999 },
+      stellenbosch: { drive: 30, transit: 40, cycle: 999, walk: 999 },
+    },
     tags: ["schools", "quiet", "value", "parks"],
     safety_score: 63,
     best_for: ["Value for money", "Schools", "Car owners"],
@@ -303,6 +400,11 @@ export const AREAS: AreaData[] = [
       cycling: 4,
     },
     commute_cbd: { drive: 30, transit: 50, cycle: 90, walk: 240 },
+    commute_hubs: {
+      bellville: { drive: 15, transit: 30, cycle: 40, walk: 100 },
+      centuryCity: { drive: 20, transit: 40, cycle: 60, walk: 999 },
+      stellenbosch: { drive: 35, transit: 55, cycle: 999, walk: 999 },
+    },
     tags: ["schools", "quiet", "parks", "outdoor", "value"],
     safety_score: 76,
     best_for: ["Families", "Schools", "Safety"],
@@ -333,6 +435,11 @@ export const AREAS: AreaData[] = [
       cycling: 8,
     },
     commute_cbd: { drive: 45, transit: 70, cycle: 180, walk: 999 },
+    commute_hubs: {
+      bellville: { drive: 30, transit: 40, cycle: 999, walk: 999 },
+      centuryCity: { drive: 40, transit: 60, cycle: 999, walk: 999 },
+      stellenbosch: { drive: 5, transit: 5, cycle: 10, walk: 20 },
+    },
     tags: [
       "running",
       "mountain",
@@ -374,6 +481,11 @@ export const AREAS: AreaData[] = [
       cycling: 5,
     },
     commute_cbd: { drive: 55, transit: 80, cycle: 999, walk: 999 },
+    commute_hubs: {
+      bellville: { drive: 35, transit: 50, cycle: 999, walk: 999 },
+      centuryCity: { drive: 50, transit: 70, cycle: 999, walk: 999 },
+      stellenbosch: { drive: 20, transit: 35, cycle: 60, walk: 999 },
+    },
     tags: ["mountain", "quiet", "parks", "outdoor", "value"],
     safety_score: 62,
     best_for: ["Budget", "Space and peace", "Winelands lifestyle"],
@@ -395,18 +507,20 @@ function getRentRange(area: AreaData, bedrooms: number): [number, number] {
   return area.rent.bed3plus;
 }
 
-function getCommuteMinutes(area: AreaData, transport: TransportMode): number {
+function getCommuteMinutes(area: AreaData, transport: TransportMode, hub: WorkHubKey): number {
+  if (hub === "remote") return 0;
+  const table = hub === "cbd" ? area.commute_cbd : area.commute_hubs[hub];
   switch (transport) {
     case "drive":
-      return area.commute_cbd.drive;
+      return table.drive;
     case "public":
-      return area.commute_cbd.transit;
+      return table.transit;
     case "cycle":
-      return area.commute_cbd.cycle;
+      return table.cycle;
     case "walk":
-      return area.commute_cbd.walk;
+      return table.walk;
     case "uber":
-      return area.commute_cbd.drive + 5; // Uber ~ drive + wait
+      return table.drive + 5; // Uber ~ drive + wait
   }
 }
 
@@ -544,9 +658,11 @@ function buildConcerns(
 }
 
 export function scoreAreas(inputs: AreaMatchInputs): AreaRecommendation[] {
+  const resolvedHub = resolveWorkHub(inputs.workLocation);
+
   const results: AreaRecommendation[] = AREAS.map((area) => {
     const rentRange = getRentRange(area, inputs.bedrooms);
-    const commuteMinutes = getCommuteMinutes(area, inputs.transport);
+    const commuteMinutes = getCommuteMinutes(area, inputs.transport, resolvedHub.key);
 
     const bScore = budgetScore(inputs.budget, rentRange);
     const lScore = lifestyleScore(area, inputs.lifestyle);
@@ -584,6 +700,8 @@ export function scoreAreas(inputs: AreaMatchInputs): AreaRecommendation[] {
       breakdown,
       rentRange,
       commuteMinutes,
+      commuteDestinationLabel: resolvedHub.label,
+      commuteIsEstimate: resolvedHub.isFallback,
       matchReasons: buildMatchReasons(area, inputs, breakdown, commuteMinutes),
       concerns: buildConcerns(area, inputs, commuteMinutes),
     };

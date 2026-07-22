@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         .single(),
       service
         .from("profiles")
-        .select("full_name, email, phone")
+        .select("full_name, email, phone, whatsapp_opted_in")
         .eq("id", tenant_id)
         .single(),
     ]);
@@ -86,14 +86,13 @@ export async function POST(req: NextRequest) {
       propertyProvince: property.province ?? "",
       appUrl,
     });
-    // WhatsApp (fire-and-forget)
-    if (tenantProfile.phone) {
-      sendIntroductionWhatsApp({
-        phone: tenantProfile.phone,
-        name: tenantProfile.full_name,
-        suburb: property.suburb ?? property.province ?? "your area",
-      }).catch(console.error);
-    }
+    // WhatsApp (fire-and-forget) — respects the tenant's real opt-in flag
+    sendIntroductionWhatsApp({
+      phone: tenantProfile.phone,
+      optedIn: tenantProfile.whatsapp_opted_in ?? true,
+      name: tenantProfile.full_name,
+      suburb: property.suburb ?? property.province ?? "your area",
+    }).catch(console.error);
   }
 
   return NextResponse.json(

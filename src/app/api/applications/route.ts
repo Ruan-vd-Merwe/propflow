@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { createAnonClient } from "@/lib/supabase/anon";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { validateSAId } from "@/lib/id-validator";
 import {
   calcCreditScore,
@@ -12,6 +14,10 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    // Detect authenticated session without requiring it — anon submissions stay unchanged.
+    const { data: { user } } = await createServerClient().auth.getUser();
+    const authenticatedUid = user?.id ?? null;
+
     const body = await req.json();
 
     const {
@@ -120,9 +126,14 @@ export async function POST(req: NextRequest) {
       });
 
     // ── Insert ───────────────────────────────────────────────────────────────
-    const { data: application, error } = await supabase
+    // Pre-generate id: anon has no SELECT policy so .select().single() would
+    // return 0 rows even after a successful insert.
+    const applicationId = randomUUID();
+    const { error } = await supabase
       .from("tenant_applications")
       .insert({
+        id: applicationId,
+        user_id: authenticatedUid,
         property_id,
         full_name,
         email,
@@ -141,9 +152,7 @@ export async function POST(req: NextRequest) {
         credit_score,
         credit_score_breakdown,
         status: "pending",
-      })
-      .select("id")
-      .single();
+      });
 
     if (error) {
       console.error("[applications POST]", error);
@@ -151,7 +160,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, id: application.id },
+      { success: true, id: applicationId },
       { status: 201 },
     );
   } catch (err) {

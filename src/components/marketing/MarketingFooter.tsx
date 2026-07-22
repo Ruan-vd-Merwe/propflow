@@ -8,25 +8,17 @@ const COLS = [
       { label: "Area Match", href: "/area-match" },
       { label: "Browse properties", href: "/browse" },
       { label: "Create rental profile", href: "/register" },
-      { label: "How it works", href: "/for-tenants" },
+      { label: "Tenant FAQ", href: "/resources/faq" },
     ],
   },
   {
     title: "For Landlords",
     links: [
-      { label: "Manage properties", href: "/for-landlords" },
+      { label: "List my property", href: "/register?role=owner" },
       { label: "Pricing", href: "/pricing" },
-      { label: "List a property", href: "/register?type=landlord" },
       { label: "Portfolio", href: "/portfolio" },
       { label: "Seller Assistant", href: "/sell/listing-assistant" },
       { label: "Savings Calculator", href: "/sell/savings-calculator" },
-    ],
-  },
-  {
-    title: "For Connectors",
-    links: [
-      { label: "Become a Connector", href: "/become-a-connector" },
-      { label: "How it works", href: "/#connectors" },
     ],
   },
   {
@@ -49,16 +41,16 @@ const COLS = [
       { label: "Trust and Security", href: "/trust" },
       { label: "POPIA approach", href: "/trust#popia" },
       { label: "FAQ", href: "/resources/faq" },
-      { label: "How scoring works", href: "/how-scoring-works" },
+      { label: "How verification works", href: "/how-scoring-works" },
     ],
   },
 ];
 
 export default function MarketingFooter() {
   return (
-    <footer id="contact" className="bg-[#0f172a] px-6 pb-10 pt-16">
+    <footer id="contact" className="bg-slate-950 px-6 pb-10 pt-16">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-12 grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {/* Brand col */}
           <div>
             <NavLogo white />
